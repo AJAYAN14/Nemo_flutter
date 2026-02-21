@@ -1,0 +1,1703 @@
+package com.jian.nemo.feature.learning.presentation
+
+import android.content.Context
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.jian.nemo.core.common.Result
+import com.jian.nemo.core.common.util.DateTimeUtils
+import com.jian.nemo.core.domain.model.Grammar
+import com.jian.nemo.core.domain.model.Word
+import com.jian.nemo.core.domain.repository.GrammarRepository
+import com.jian.nemo.core.domain.repository.SettingsRepository
+import com.jian.nemo.core.domain.repository.StudyRecordRepository
+import com.jian.nemo.core.domain.repository.WordRepository
+import com.jian.nemo.core.domain.service.SyncService
+import com.jian.nemo.core.domain.service.SrsCalculator
+import com.jian.nemo.core.domain.usecase.grammar.GetDueGrammarsUseCase
+import com.jian.nemo.core.domain.usecase.grammar.GetNewGrammarsUseCase
+import com.jian.nemo.core.domain.usecase.grammar.GetTodayLearnedGrammarsCountUseCase
+import com.jian.nemo.core.domain.usecase.grammar.UpdateGrammarUseCase
+import com.jian.nemo.core.domain.usecase.word.GetDueWordsUseCase
+import com.jian.nemo.core.domain.usecase.word.GetNewWordsUseCase
+import com.jian.nemo.core.domain.usecase.word.GetTodayLearnedWordsCountUseCase
+import com.jian.nemo.core.domain.usecase.word.UpdateWordUseCase
+import com.jian.nemo.feature.learning.domain.LearningSessionPolicy
+import com.jian.nemo.feature.learning.domain.LearningQueueManager
+import com.jian.nemo.feature.learning.domain.LearningScheduler
+import com.jian.nemo.feature.learning.domain.LearningUndoHelper
+import com.jian.nemo.feature.learning.domain.QueueSelectionResult
+import com.jian.nemo.feature.learning.domain.SavedSession
+import com.jian.nemo.feature.learning.domain.ScheduleResult
+import com.jian.nemo.feature.learning.domain.UndoSnapshot
+import com.jian.nemo.feature.learning.domain.SessionLoadResult
+import com.jian.nemo.feature.learning.domain.SessionLoader
+import com.jian.nemo.feature.learning.domain.SrsIntervalPreview
+import com.jian.nemo.core.domain.repository.AudioRepository
+import com.jian.nemo.core.domain.repository.TtsEvent
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
+import javax.inject.Inject
+
+/**
+ * 学习项封装 (统一 Word 和 Grammar)
+ *
+ * 设计文档: 本系统同时支持"语法"学习，逻辑与单词类似
+ */
+sealed class LearningItem {
+    abstract val id: Int
+    abstract val isNew: Boolean
+    abstract val displayName: String
+    abstract val repetitionCount: Int
+
+    // Anki-Mode 必需字段
+    abstract val step: Int
+    abstract val dueTime: Long
+
+    data class WordItem(
+        val word: Word,
+        override val step: Int = 0,
+        override val dueTime: Long = 0
+    ) : LearningItem() {
+        override val id: Int get() = word.id
+        override val isNew: Boolean get() = word.repetitionCount == 0
+        override val displayName: String get() = word.japanese
+        override val repetitionCount: Int get() = word.repetitionCount
+    }
+
+    data class GrammarItem(
+        val grammar: Grammar,
+        override val step: Int = 0,
+        override val dueTime: Long = 0
+    ) : LearningItem() {
+        override val id: Int get() = grammar.id
+        override val isNew: Boolean get() = grammar.repetitionCount == 0
+        override val displayName: String get() = grammar.grammar
+        override val repetitionCount: Int get() = grammar.repetitionCount
+    }
+}
+
+/**
+ * 卡片状态标记
+ *
+ * 设计文档 4.2: 状态标记 (Card Badge)
+ * - 新词 (New): 蓝标，今天第一次见
+ * - 复习 (Review): 绿标，老朋友
+ * - 重来 (Learning/Lapse): 红标，刚才忘了的
+ */
+enum class CardBadge {
+    NEW,      // 新词 (蓝)
+    REVIEW,   // 复习 (绿)
+    RELEARN   // 重来 (红)
+}
+
+/**
+ * 新版学习 ViewModel
+ *
+ * 基于《学习功能逻辑设计文档.md》完整重写
+ *
+ * 核心设计原则：
+ * 1. 统一处理 Word 和 Grammar
+ * 2. 自由导航（允许前后浏览）
+ * 3. 简化评分流转逻辑
+ * 4. 钉子户保护机制
+ */
+@HiltViewModel
+class LearningViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
+    // Word UseCases
+    private val getNewWordsUseCase: GetNewWordsUseCase,
+    private val getDueWordsUseCase: GetDueWordsUseCase,
+    private val updateWordUseCase: UpdateWordUseCase,
+    private val getTodayLearnedWordsCountUseCase: GetTodayLearnedWordsCountUseCase,
+    // Grammar UseCases
+    private val getNewGrammarsUseCase: GetNewGrammarsUseCase,
+    private val getDueGrammarsUseCase: GetDueGrammarsUseCase,
+    private val updateGrammarUseCase: UpdateGrammarUseCase,
+    private val getTodayLearnedGrammarsCountUseCase: GetTodayLearnedGrammarsCountUseCase,
+    // Repositories
+    private val settingsRepository: SettingsRepository,
+    private val studyRecordRepository: StudyRecordRepository,
+    private val wordRepository: WordRepository,
+    private val grammarRepository: GrammarRepository,
+    // Services
+    private val srsCalculator: SrsCalculator,
+    private val syncService: SyncService,
+    // Domain
+    private val learningSessionPolicy: LearningSessionPolicy,
+
+    private val srsIntervalPreview: SrsIntervalPreview,
+    private val sessionLoader: SessionLoader,
+    private val learningQueueManager: LearningQueueManager,
+    private val learningScheduler: LearningScheduler,
+    private val learningUndoHelper: LearningUndoHelper,
+    private val audioRepository: AudioRepository
+) : ViewModel() {
+    // ========== 常量 ==========
+    companion object {
+        /** 钉子户阈值：连续失败次数达到此值时暂停学习 */
+        private const val LEECH_THRESHOLD = 5
+
+        /** 导航防抖延迟 (ms) */
+        private const val NAVIGATION_DEBOUNCE_MS = 400L
+
+        /** 评分防抖延迟 (ms) */
+        private const val RATING_DEBOUNCE_MS = 300L
+    }
+
+    // ========== 状态 ==========
+    private val _uiState = MutableStateFlow(LearningUiState())
+    val uiState: StateFlow<LearningUiState> = _uiState.asStateFlow()
+
+    // ========== 内部状态 ==========
+    /** 学习阶段追踪 (ItemId -> StepIndex) */
+    private val _learningSteps = mutableMapOf<Int, Int>()
+
+    /** Anki-Mode: 到期时间记录 (ID -> DueTime Epoch Millis) */
+    private val _learningDueTimes = mutableMapOf<Int, Long>()
+
+    /** 失败次数追踪 (用于钉子户检测) */
+    private var _lapseCounts = mapOf<Int, Int>()
+
+    /** 重入队标记 (用于红标显示) */
+    private val _requeuedItems = mutableSetOf<Int>()
+
+    /** 会话锁定的学习日 (用于零点跨天保护) */
+    private var _sessionLockedDay: Long? = null
+
+    /** 学习日重置时间 (小时) */
+    private var _resetHour: Int = 4
+
+    /** 学习步进配置 (分钟列表) */
+    private var _learningStepsConfig: List<Int> = listOf(1, 10)
+
+    /** 重学步进配置 (分钟列表) */
+    private var _relearningStepsConfig: List<Int> = listOf(1, 10)
+
+    /** 提前学习限制 (毫秒) */
+    private var _learnAheadLimitMs: Long = 20 * 60 * 1000L
+
+    // ========== 防抖 Job ==========
+    private var ratingJob: Job? = null
+    private var navigationJob: Job? = null
+    private var loadingJob: Job? = null
+
+    // ========== 初始化 ==========
+    init {
+        // 1. 监听 TTS 事件以更新播放状态 (必须在 _uiState 初始化后)
+        viewModelScope.launch {
+            audioRepository.ttsEvents.collect { event ->
+                when (event) {
+                    is TtsEvent.OnStart -> {
+                        _uiState.update { it.copy(playingAudioId = event.id) }
+                    }
+                    is TtsEvent.OnDone -> {
+                        _uiState.update {
+                            if (it.playingAudioId == event.id) {
+                                it.copy(playingAudioId = null)
+                            } else {
+                                it
+                            }
+                        }
+                    }
+                    is TtsEvent.OnError -> {
+                        _uiState.update { it.copy(playingAudioId = null) }
+                    }
+                    TtsEvent.GoogleTtsMissing -> {
+                        _uiState.update { it.copy(playingAudioId = null) }
+                    }
+                }
+            }
+        }
+
+        // 2. 监听设置变化
+        viewModelScope.launch {
+            // 监听每日目标变化 - 豁免机制 (Hot-swap)
+            // 设计文档 7.4: 学习中途改了每日目标会怎样？
+            // 不强制结束当前会话，只更新目标并提示
+            launch {
+                settingsRepository.dailyGoalFlow.distinctUntilChanged().collect { newGoal ->
+                    val state = _uiState.value
+                    if (state.learningMode == LearningMode.Word && state.status == LearningStatus.Learning) {
+                        handleDailyGoalChange(newGoal)
+                    }
+                }
+            }
+
+            launch {
+                settingsRepository.grammarDailyGoalFlow.distinctUntilChanged().collect { newGoal ->
+                    val state = _uiState.value
+                    if (state.learningMode == LearningMode.Grammar && state.status == LearningStatus.Learning) {
+                        handleDailyGoalChange(newGoal)
+                    }
+                }
+            }
+
+            // 监听失败次数
+            launch {
+                settingsRepository.wordLapsesFlow.collect { lapses ->
+                    if (_uiState.value.learningMode == LearningMode.Word) {
+                        _lapseCounts = lapses
+                    }
+                }
+            }
+
+            launch {
+                settingsRepository.grammarLapsesFlow.collect { lapses ->
+                    if (_uiState.value.learningMode == LearningMode.Grammar) {
+                        _lapseCounts = lapses
+                    }
+                }
+            }
+
+            // 监听学习配置
+            launch {
+                settingsRepository.learningStepsFlow.collect { stepsStr ->
+                    _learningStepsConfig = parseSteps(stepsStr)
+                    println("⚙️ 学习步进更新: $_learningStepsConfig (mins)")
+                }
+            }
+
+            launch {
+                settingsRepository.relearningStepsFlow.collect { stepsStr ->
+                    _relearningStepsConfig = parseSteps(stepsStr)
+                    println("⚙️ 重学步进更新: $_relearningStepsConfig (mins)")
+                }
+            }
+
+            launch {
+                settingsRepository.learnAheadLimitFlow.collect { limit ->
+                    _learnAheadLimitMs = limit * 60 * 1000L
+                    println("⚙️ 提前学习限制更新: $limit mins")
+                }
+            }
+
+            // 监听自动朗读设置
+            launch {
+                settingsRepository.isAutoPlayAudioEnabledFlow.collect { enabled ->
+                    _uiState.update { it.copy(isAutoAudioEnabled = enabled) }
+                }
+            }
+        }
+    }
+
+    /**
+     * 处理每日目标变化 - 豁免机制 (Hot-swap)
+     *
+     * 设计文档 7.4: 学习中途改了每日目标会怎样？
+     * - 如果已学超过新目标：提示"今日已达标"，但不强制结束
+     * - 用户可以选择继续学完，或者直接退出
+     */
+    private fun handleDailyGoalChange(newGoal: Int) {
+        val state = _uiState.value
+        val completedToday = state.completedToday
+
+        _uiState.update { it.copy(dailyGoal = newGoal) }
+
+        if (completedToday >= newGoal) {
+            // 已达标，但不强制结束
+            println("🎯 豁免机制: 目标改为 $newGoal，已学 $completedToday，今日已达标")
+            _uiState.update {
+                it.copy(error = "🎉 今日目标已达标！可继续学习或退出")
+            }
+        } else {
+            println("🎯 目标更新: $newGoal (已学 $completedToday)")
+        }
+    }
+
+    // ========== 事件处理 ==========
+
+    /**
+     * 处理所有 UI 事件
+     */
+    fun onEvent(event: LearningEvent) {
+        when (event) {
+            is LearningEvent.StartLearning -> {
+                _uiState.update { it.copy(learningMode = event.mode) }
+                startLearning(event.level)
+            }
+            is LearningEvent.ChangeLearningMode -> changeLearningMode(event.mode)
+            is LearningEvent.ChangeLevel -> changeLevel(event.level)
+
+            // 卡片交互
+            is LearningEvent.FlipCard -> showAnswer()
+            is LearningEvent.ShowAnswer -> showAnswer()
+
+            // 评分 (统一处理)
+            is LearningEvent.RateWord -> rate(event.quality)
+            is LearningEvent.RateGrammar -> rate(event.quality)
+
+            // 导航
+            is LearningEvent.NavigateNext -> navigateNext()
+            is LearningEvent.NavigatePrev -> navigatePrev()
+            is LearningEvent.GoToIndex -> navigateTo(event.index)
+
+            // 其他
+            is LearningEvent.ShowTypingPractice -> _uiState.update { it.copy(showTypingPractice = true) }
+            is LearningEvent.HideTypingPractice -> _uiState.update { it.copy(showTypingPractice = false) }
+            is LearningEvent.Retry -> startLearning(_uiState.value.selectedLevel)
+            is LearningEvent.Undo -> undo()
+            is LearningEvent.DismissUndo -> {
+                learningUndoHelper.clear()
+                _uiState.update { it.copy(canUndo = false) }
+            }
+            is LearningEvent.ResumeFromWaiting -> resumeFromWaiting()
+            is LearningEvent.SuspendCurrent -> suspendCurrentItem()
+            is LearningEvent.BuryCurrent -> buryCurrentItem()
+            is LearningEvent.ExitLearning -> exitLearning()
+
+            // 语法专用
+            is LearningEvent.ToggleGrammarDetail -> toggleGrammarDetail()
+            is LearningEvent.LoadPreviousGrammar -> navigatePrev()
+            is LearningEvent.LoadNextGrammar -> navigateNext()
+            is LearningEvent.MasterGrammar -> rate(5) // 掌握 = 评分5
+
+            // TTS 朗读
+            is LearningEvent.SpeakWord -> speakWord(event.text)
+            is LearningEvent.SpeakExample -> speakExample(event.japanese, event.chinese, event.id)
+            is LearningEvent.ToggleAutoPlayAudio -> toggleAutoPlayAudio(event.enabled)
+        }
+    }
+
+    // ========== 核心方法：启动学习 ==========
+
+    /**
+     * 启动学习会话
+     *
+     * 设计文档 1.3: 进入学习模式
+     * - 断点续学：完全恢复之前的现场
+     * - 新会话：抽取新词+复习词，穿插混合
+     */
+    private fun startLearning(level: String) {
+        // 清空撤销快照
+                learningUndoHelper.clear()
+
+        loadingJob?.cancel()
+        loadingJob = viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    status = LearningStatus.Loading,
+                    selectedLevel = level,
+                    error = null
+                )
+            }
+
+            try {
+                val mode = _uiState.value.learningMode
+
+                // 获取配置
+                val dailyGoal = when (mode) {
+                    LearningMode.Word -> settingsRepository.dailyGoalFlow.first()
+                    LearningMode.Grammar -> settingsRepository.grammarDailyGoalFlow.first()
+                }
+
+                // 获取学习日重置时间并锁定当前学习日 (零点跨天保护)
+                _resetHour = settingsRepository.learningDayResetHourFlow.first()
+                _sessionLockedDay = DateTimeUtils.getLearningDay(_resetHour)
+                println("🕐 会话锁定学习日: $_sessionLockedDay (重置时间: $_resetHour:00)")
+
+                val completedToday = when (mode) {
+                    LearningMode.Word -> {
+                        getTodayLearnedWordsCountUseCase()
+                            .first { it !is Result.Loading }
+                            .let { if (it is Result.Success) it.data else 0 }
+                    }
+                    LearningMode.Grammar -> {
+                        getTodayLearnedGrammarsCountUseCase()
+                            .first { it !is Result.Loading }
+                            .let { if (it is Result.Success) it.data else 0 }
+                    }
+                }
+
+                // 获取已保存的会话
+                val savedSession = loadSavedSession(mode, level)
+
+                // 加载失败计数
+                _lapseCounts = when (mode) {
+                    LearningMode.Word -> settingsRepository.wordLapsesFlow.first()
+                    LearningMode.Grammar -> settingsRepository.grammarLapsesFlow.first()
+                }
+
+                // 使用 SessionLoader 加载会话
+                val result = when (mode) {
+                    LearningMode.Word -> loadWordSession(level, dailyGoal, completedToday, savedSession)
+                    LearningMode.Grammar -> loadGrammarSession(level, dailyGoal, completedToday, savedSession)
+                }
+
+                // 处理加载结果
+                handleSessionLoadResult(result, dailyGoal, completedToday, level)
+
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                println("❌ 启动学习会话失败: ${e.message}")
+                _uiState.update {
+                    it.copy(
+                        status = LearningStatus.Error,
+                        error = "启动失败: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    private suspend fun loadSavedSession(mode: LearningMode, level: String): SavedSession? {
+        val restored = when (mode) {
+            LearningMode.Word -> settingsRepository.getWordSession().first()
+            LearningMode.Grammar -> settingsRepository.getGrammarSession().first()
+        }
+        return restored?.let {
+            SavedSession(
+                ids = it.ids,
+                index = it.currentIndex,
+                level = it.level,
+                steps = it.steps,
+                waitingUntil = it.waitingUntil
+            )
+        }
+    }
+
+    private suspend fun loadWordSession(
+        level: String,
+        dailyGoal: Int,
+        completedToday: Int,
+        savedSession: SavedSession?
+    ): SessionLoadResult<Word> {
+        return sessionLoader.loadSession(
+            level = level,
+            dailyGoal = dailyGoal,
+            completedToday = completedToday,
+            savedSession = savedSession,
+            getItemsByIds = { ids -> wordRepository.getWordsByIds(ids) },
+            getDueItems = {
+                val r = getDueWordsUseCase().first { it !is Result.Loading }
+                if (r is Result.Success) r.data else emptyList()
+            },
+            getNewItems = {
+                val isRandom = settingsRepository.isRandomNewContentEnabledFlow.first()
+                val r = getNewWordsUseCase(level, isRandom).first { it !is Result.Loading }
+                if (r is Result.Success) r.data else emptyList()
+            },
+            getItemId = { it.id },
+            filterByLevel = { it.level == level }
+        )
+    }
+
+    private suspend fun loadGrammarSession(
+        level: String,
+        dailyGoal: Int,
+        completedToday: Int,
+        savedSession: SavedSession?
+    ): SessionLoadResult<Grammar> {
+        return sessionLoader.loadSession(
+            level = level,
+            dailyGoal = dailyGoal,
+            completedToday = completedToday,
+            savedSession = savedSession,
+            getItemsByIds = { ids -> grammarRepository.getGrammarsByIds(ids) },
+            getDueItems = {
+                val r = getDueGrammarsUseCase().first { it !is Result.Loading }
+                if (r is Result.Success) r.data else emptyList()
+            },
+            getNewItems = {
+                val isRandom = settingsRepository.isRandomNewContentEnabledFlow.first()
+                val r = getNewGrammarsUseCase(level, isRandom).first { it !is Result.Loading }
+                if (r is Result.Success) r.data else emptyList()
+            },
+            getItemId = { it.id },
+            filterByLevel = { it.grammarLevel == level }
+        )
+    }
+
+    private fun <T> handleSessionLoadResult(
+        result: SessionLoadResult<T>,
+        dailyGoal: Int,
+        completedToday: Int,
+        level: String
+    ) {
+        val mode = _uiState.value.learningMode
+
+        when (result) {
+            is SessionLoadResult.Restored -> {
+                _learningSteps.clear()
+                _learningSteps.putAll(result.steps)
+                _requeuedItems.clear()
+
+                val items = wrapItems(result.items)
+                val currentItem = items.getOrNull(result.index)
+
+                _uiState.update {
+                    it.copy(
+                        wordList = if (mode == LearningMode.Word) result.items.filterIsInstance<Word>() else emptyList(),
+                        grammarList = if (mode == LearningMode.Grammar) result.items.filterIsInstance<Grammar>() else emptyList(),
+                        currentIndex = result.index,
+                        currentWord = (currentItem as? LearningItem.WordItem)?.word,
+                        currentGrammar = (currentItem as? LearningItem.GrammarItem)?.grammar,
+                        currentGrammarIndex = if (mode == LearningMode.Grammar) result.index else 0,
+                        dailyGoal = result.dailyGoal,
+                        completedToday = result.completedToday,
+                        isAnswerShown = false,
+                        isCardFlipped = false,
+                        isGrammarDetailVisible = false,
+                        error = null,
+                        sessionInitialSize = items.size,
+                        ratingIntervals = calculateRatingIntervals(currentItem),
+                        sessionProcessedCount = result.index,
+                        status = if (result.waitingUntil > System.currentTimeMillis()) LearningStatus.Waiting else LearningStatus.Learning,
+                        waitingUntil = result.waitingUntil
+                    )
+                }
+
+            println("✅ 恢复学习会话: ${items.size} 个项目, 索引 ${result.index}")
+            }
+
+            is SessionLoadResult.NewSession -> {
+                _learningSteps.clear()
+                _requeuedItems.clear()
+
+                val items = wrapItems(result.items)
+                val firstItem = items.firstOrNull()
+
+                _uiState.update {
+                    it.copy(
+                        status = LearningStatus.Learning,
+                        wordList = if (mode == LearningMode.Word) result.items.filterIsInstance<Word>() else emptyList(),
+                        grammarList = if (mode == LearningMode.Grammar) result.items.filterIsInstance<Grammar>() else emptyList(),
+                        currentIndex = 0,
+                        currentWord = (firstItem as? LearningItem.WordItem)?.word,
+                        currentGrammar = (firstItem as? LearningItem.GrammarItem)?.grammar,
+                        currentGrammarIndex = 0,
+                        dailyGoal = result.dailyGoal,
+                        completedToday = result.completedToday,
+                        isAnswerShown = false,
+                        isCardFlipped = false,
+                        isGrammarDetailVisible = false,
+                        error = null,
+                        sessionInitialSize = items.size,
+                        ratingIntervals = calculateRatingIntervals(firstItem),
+                        sessionProcessedCount = 0
+                    )
+                }
+
+                // 保存初始会话
+                saveSessionState(items.map { it.id }, 0, level)
+
+                println("✅ 新学习会话: ${items.size} 个项目 (复习: ${result.dueCount}, 新: ${result.newCount})")
+            }
+
+            is SessionLoadResult.Completed -> {
+                clearSession()
+                _uiState.update {
+                    it.copy(
+                        status = LearningStatus.SessionCompleted,
+                        dailyGoal = result.dailyGoal,
+                        completedToday = result.completedToday,
+                        wordList = emptyList(),
+                        grammarList = emptyList(),
+                        currentWord = null,
+                        currentGrammar = null
+                    )
+                }
+
+                println("✅ 今日学习已完成")
+            }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> wrapItems(items: List<T>): List<LearningItem> {
+        return items.mapNotNull { item ->
+            when (item) {
+                is Word -> LearningItem.WordItem(item)
+                is Grammar -> LearningItem.GrammarItem(item)
+                else -> null
+            }
+        }
+    }
+
+    // ========== 核心方法：显示答案 ==========
+
+    /**
+     * 显示答案
+     *
+     * 设计文档 2.2: 第二阶段：验证 (背面)
+     * 点击"显示答案"后，卡片翻转或展开
+     */
+    private fun showAnswer() {
+        if (_uiState.value.status == LearningStatus.Processing) return
+        _uiState.update { it.copy(isAnswerShown = true, isCardFlipped = true) }
+
+        // 自动朗读逻辑
+        if (_uiState.value.isAutoAudioEnabled) {
+             val state = _uiState.value
+             // 仅在单词模式下自动朗读
+             if (state.learningMode == LearningMode.Word) {
+                 state.currentWord?.let { word ->
+                     speakWord(word.hiragana) // 优先朗读假名/发音
+                 }
+             }
+             // 语法模式即使开启也不自动朗读
+             // else if (state.learningMode == LearningMode.Grammar) { ... }
+        }
+    }
+
+    private fun toggleAutoPlayAudio(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setAutoPlayAudioEnabled(enabled)
+        }
+    }
+
+    // ========== 撤销功能 ==========
+
+    /**
+     * 保存撤销快照
+     */
+    /**
+     * 保存撤销快照
+     */
+    private fun saveUndoSnapshot() {
+        val state = _uiState.value
+        val currentItem = getCurrentItem() ?: return
+
+        val snapshot = UndoSnapshot(
+            item = currentItem,
+            originalWord = (currentItem as? LearningItem.WordItem)?.word,
+            originalGrammar = (currentItem as? LearningItem.GrammarItem)?.grammar,
+            wordList = state.wordList.toList(),
+            grammarList = state.grammarList.toList(),
+            currentIndex = state.currentIndex,
+            currentGrammarIndex = state.currentGrammarIndex,
+            learningSteps = _learningSteps.toMap(),
+            lapseCounts = _lapseCounts.toMap(),
+            requeuedItems = _requeuedItems.toSet(),
+            learningDueTimes = _learningDueTimes.toMap(),
+            completedToday = state.completedToday,
+            completedThisSession = state.completedThisSession,
+            sessionProcessedCount = state.sessionProcessedCount,
+            wasNew = currentItem.isNew
+        )
+
+        learningUndoHelper.saveSnapshot(snapshot)
+
+        println("📸 快照已保存: ${currentItem.displayName}")
+    }
+
+    /**
+     * 撤销上一次评分
+     */
+    private fun undo() {
+        val snapshot = learningUndoHelper.popSnapshot() ?: return
+
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(status = LearningStatus.Processing) }
+
+                // 恢复数据库状态
+                when (snapshot.item) {
+                    is LearningItem.WordItem -> {
+                        snapshot.originalWord?.let { updateWordUseCase(it) }
+                        if (snapshot.wasNew) {
+                            studyRecordRepository.incrementLearnedWords(-1)
+                        } else {
+                            studyRecordRepository.incrementReviewedWords(-1)
+                        }
+                    }
+                    is LearningItem.GrammarItem -> {
+                        snapshot.originalGrammar?.let { updateGrammarUseCase(it) }
+                        if (snapshot.wasNew) {
+                            studyRecordRepository.incrementLearnedGrammars(-1)
+                        } else {
+                            studyRecordRepository.incrementReviewedGrammars(-1)
+                        }
+                    }
+                }
+
+                // 恢复 ViewModel 内部状态
+                _learningSteps.clear()
+                _learningSteps.putAll(snapshot.learningSteps)
+                _lapseCounts = snapshot.lapseCounts
+                _requeuedItems.clear()
+                _requeuedItems.addAll(snapshot.requeuedItems)
+                _learningDueTimes.clear()
+                _learningDueTimes.putAll(snapshot.learningDueTimes)
+
+                // 恢复 UI 状态
+                val mode = _uiState.value.learningMode
+                _uiState.update {
+                    it.copy(
+                        status = LearningStatus.Learning,
+                        wordList = snapshot.wordList,
+                        grammarList = snapshot.grammarList,
+                        currentIndex = snapshot.currentIndex,
+                        currentGrammarIndex = snapshot.currentGrammarIndex,
+                        currentWord = snapshot.originalWord,
+                        currentGrammar = snapshot.originalGrammar,
+                        completedToday = snapshot.completedToday,
+                        completedThisSession = snapshot.completedThisSession,
+                        sessionProcessedCount = snapshot.sessionProcessedCount,
+                        isAnswerShown = true,  // 撤销后显示答案面
+                        isCardFlipped = true,
+                        canUndo = false,  // 撤销后不能再撤销
+                        ratingIntervals = calculateRatingIntervals(snapshot.item),
+                        slideDirection = SlideDirection.BACKWARD
+                    )
+                }
+
+                // 保存会话状态
+                val ids = if (mode == LearningMode.Word)
+                    snapshot.wordList.map { it.id }
+                else
+                    snapshot.grammarList.map { it.id }
+                saveSessionState(ids, snapshot.currentIndex, _uiState.value.selectedLevel)
+
+
+
+                println("↩️ 撤销成功: ${snapshot.item.displayName}")
+
+            } catch (e: Exception) {
+                println("❌ 撤销失败: ${e.message}")
+                _uiState.update {
+                    it.copy(
+                        status = LearningStatus.Learning,
+                        error = "撤销失败: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    // ========== 核心方法：评分 ==========
+
+    /**
+     * 评分 (统一处理 Word 和 Grammar)
+     *
+     * 设计文档 3: 评分与卡片流转机制
+     * - 评分 < 3: 忘记/不认识 → 重新入队到末尾
+     * - 评分 >= 3: 认识/掌握 → 移出队列，SRS 计算
+     * - 评分 = 5: 熟词速通 → 直接毕业
+     *
+     * @param quality 评分 (0-5)
+     */
+    private fun rate(quality: Int) {
+        // 防抖
+        if (_uiState.value.status == LearningStatus.Processing) return
+
+        ratingJob?.cancel()
+        ratingJob = viewModelScope.launch {
+            // 保存撤销快照
+            saveUndoSnapshot()
+
+            _uiState.update { it.copy(status = LearningStatus.Processing) }
+
+            try {
+                val currentItem = getCurrentItem() ?: run {
+                    _uiState.update { it.copy(status = LearningStatus.Learning) }
+                    return@launch
+                }
+
+                val isNew = currentItem.isNew
+                val currentStep = _learningSteps[currentItem.id]
+                val isLearning = isNew || currentStep != null
+
+                when {
+                    // 熟词速通 (评分 = 5)
+                    quality == 5 -> {
+                        println("🚀 熟词速通: ${currentItem.displayName}")
+                        _learningSteps.remove(currentItem.id)
+                        processSrsUpdate(currentItem, quality, isLapse = false)
+                    }
+
+                     // 忘记 (评分 < 3)
+                    quality < 3 -> {
+                        // 1. 先应用惩罚 (更新数据库中的 Interval/EF)，确保下次毕业时基于惩罚后的值计算
+                        val penalizedItem = applyLapsePenalty(currentItem, quality) ?: currentItem
+
+                        // 2. 调度失败流程 (进入 Learning Queue)
+                         val currentLapseCount = _lapseCounts[currentItem.id] ?: 0
+                         val result = learningScheduler.scheduleFailure(
+                             penalizedItem, // 使用更新后的 item
+                             currentLapseCount,
+                             _relearningStepsConfig
+                         )
+                         handleScheduleResult(result)
+                    }
+
+                    // 掌握 (评分 3-4)
+                    else -> {
+                        if (isLearning) {
+                             // Use Relearning Config if it's NOT a New Card (i.e. has Repetitions)
+                             val config = if(isNew) _learningStepsConfig else _relearningStepsConfig
+                            val result = learningScheduler.schedulePass(
+                                currentItem,
+                                quality,
+                                currentStep ?: 0,
+                                config
+                            )
+                            handleScheduleResult(result)
+                        } else {
+                            processSrsUpdate(currentItem, quality, isLapse = false)
+                        }
+                    }
+                }
+
+                // 评分防抖
+                delay(RATING_DEBOUNCE_MS)
+
+            } catch (e: Exception) {
+                println("❌ 评分异常: ${e.message}")
+                _uiState.update {
+                    it.copy(
+                        status = LearningStatus.Error,
+                        error = "评分异常: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+
+    /**
+     * 应用失败惩罚 (Lapse Penalty)
+     *
+     * 当用户点击"重来"时，立即更新数据库中的 Interval 和 EF。
+     * 这样做的目的是：当卡片在重学阶段结束后再次毕业时，
+     * 它的下一次间隔会基于这个"打折后"的值来计算，而不是基于原来的长间隔。
+     */
+    private suspend fun applyLapsePenalty(item: LearningItem, quality: Int): LearningItem? {
+        val today = _sessionLockedDay ?: DateTimeUtils.getLearningDay(_resetHour)
+
+        return when (item) {
+            is LearningItem.WordItem -> {
+                val srsResult = srsCalculator.calculate(item.word, quality, today)
+                val updatedWord = item.word.copy(
+                    interval = srsResult.interval,
+                    repetitionCount = srsResult.repetitionCount,
+                    easinessFactor = srsResult.easinessFactor,
+                    nextReviewDate = srsResult.nextReviewDate,
+                    lastReviewedDate = srsResult.lastReviewedDate,
+                    firstLearnedDate = srsResult.firstLearnedDate,
+                    lastModifiedTime = com.jian.nemo.core.common.util.DateTimeUtils.getCurrentCompensatedMillis()
+                )
+                // 更新数据库
+                updateWordUseCase(updatedWord)
+                // 返回更新后的 Item
+                item.copy(word = updatedWord)
+            }
+            is LearningItem.GrammarItem -> {
+                val srsResult = srsCalculator.calculate(item.grammar, quality, today)
+                val updatedGrammar = item.grammar.copy(
+                    interval = srsResult.interval,
+                    repetitionCount = srsResult.repetitionCount,
+                    easinessFactor = srsResult.easinessFactor,
+                    nextReviewDate = srsResult.nextReviewDate,
+                    lastReviewedDate = srsResult.lastReviewedDate,
+                    firstLearnedDate = srsResult.firstLearnedDate,
+                    lastModifiedTime = com.jian.nemo.core.common.util.DateTimeUtils.getCurrentCompensatedMillis()
+                )
+                // 更新数据库
+                updateGrammarUseCase(updatedGrammar)
+                // 返回更新后的 Item
+                item.copy(grammar = updatedGrammar)
+            }
+        }
+    }
+
+    /**
+     * 处理重学毕业 (Re-learning Graduation)
+     *
+     * 此时卡片的 Interval 已经在 Lapse 时被惩罚过了 (例如 100 -> 45)。
+     * 毕业时，只需将其移回复习队列，并设定下次复习日期为 Today + 45。
+     * 不需要再次乘以 EF。
+     * 但我们会应用轻微的 Fuzzing (模糊) 以防止复习尖峰。
+     */
+    private suspend fun processRelearningGraduation(item: LearningItem) {
+        val today = _sessionLockedDay ?: DateTimeUtils.getLearningDay(_resetHour)
+        val isNew = item.isNew // Should be false here
+
+        // Fuzzing factor: 0.95 ~ 1.05
+        val fuzz = kotlin.random.Random.nextDouble(0.95, 1.05)
+
+        when (item) {
+            is LearningItem.WordItem -> {
+                val word = item.word
+                // 应用 Fuzzing
+                val fuzzedInterval = kotlin.math.max(1, (word.interval * fuzz).roundToInt())
+
+                // 仅更新日期和次数，保持 Interval (经过 Fuzz) 和 EF 不变
+                val updatedWord = word.copy(
+                    interval = fuzzedInterval,
+                    repetitionCount = word.repetitionCount + 1,
+                    lastReviewedDate = today,
+                    nextReviewDate = today + fuzzedInterval,
+                    lastModifiedTime = com.jian.nemo.core.common.util.DateTimeUtils.getCurrentCompensatedMillis()
+                )
+                println("🎓 重学恢复: id=${updatedWord.id}, interval=${updatedWord.interval}d (原 ${word.interval}d)")
+                val result = updateWordUseCase(updatedWord)
+                handleSrsUpdateResult(result, isNew, isLapse = false)
+            }
+            is LearningItem.GrammarItem -> {
+                val grammar = item.grammar
+                val fuzzedInterval = kotlin.math.max(1, (grammar.interval * fuzz).roundToInt())
+
+                val updatedGrammar = grammar.copy(
+                    interval = fuzzedInterval,
+                    repetitionCount = grammar.repetitionCount + 1,
+                    lastReviewedDate = today,
+                    nextReviewDate = today + fuzzedInterval,
+                    lastModifiedTime = com.jian.nemo.core.common.util.DateTimeUtils.getCurrentCompensatedMillis()
+                )
+                println("🎓 重学恢复: id=${updatedGrammar.id}, interval=${updatedGrammar.interval}d (原 ${grammar.interval}d)")
+                val result = updateGrammarUseCase(updatedGrammar)
+                handleSrsUpdateResult(result, isNew, isLapse = false)
+            }
+        }
+    }
+
+    /**
+     * 处理调度结果
+     */
+    private suspend fun handleScheduleResult(result: ScheduleResult) {
+        when (result) {
+            is ScheduleResult.Leech -> handleLeech(result.item, result.totalLapses)
+            is ScheduleResult.Graduate -> {
+                println("🎓 毕业 (Graduated): ${result.item.displayName}")
+                _learningSteps.remove(result.item.id)
+
+                // 区分: 新卡毕业 vs 重学毕业 (Re-learning Graduation)
+                // 重学毕业时，不应再次乘以 EF (因为 Lapse 时已经重置了间隔)，只需恢复到复习队列
+                if (!result.item.isNew && result.quality < 5) {
+                    processRelearningGraduation(result.item)
+                } else {
+                    processSrsUpdate(result.item, result.quality, isLapse = false)
+                }
+            }
+            is ScheduleResult.Requeue -> {
+                val item = result.updatedItem
+                _learningSteps[item.id] = result.nextStepIndex
+
+                // Keep due time logic consistent with Requeue
+                if (result.isLapse) {
+                    println("❌ 失败 (Again): ${item.displayName}, Step ${result.nextStepIndex}, Due in ${(result.dueTime - System.currentTimeMillis())/1000}s")
+                    // Increase lapse count in DB
+                     val mode = _uiState.value.learningMode
+                     when (mode) {
+                        LearningMode.Word -> settingsRepository.incrementWordLapse(item.id)
+                        LearningMode.Grammar -> settingsRepository.incrementGrammarLapse(item.id)
+                    }
+                } else {
+                     if (result.nextStepIndex == _learningSteps[item.id]) {
+                          println("🟠 困难 (Hard): ${item.displayName}, Keep Step ${result.nextStepIndex}, Due in ${(result.dueTime - System.currentTimeMillis())/1000/60}m")
+                     } else {
+                          println("🆙 进阶 (Good): ${item.displayName} (Step -> ${result.nextStepIndex}), Due in ${(result.dueTime - System.currentTimeMillis())/1000/60}m")
+                     }
+                }
+
+                reQueueToEnd(item)
+            }
+        }
+    }
+
+    /**
+     * SRS 更新
+     *
+     * 使用会话锁定的学习日 (零点跨天保护)
+     */
+    private suspend fun processSrsUpdate(item: LearningItem, quality: Int, isLapse: Boolean) {
+        // 使用会话锁定的学习日，如果未设置则使用当前学习日
+        val today = _sessionLockedDay ?: DateTimeUtils.getLearningDay(_resetHour)
+        val isNew = item.isNew
+
+        when (item) {
+            is LearningItem.WordItem -> {
+                val word = item.word
+                val srsResult = srsCalculator.calculate(word, quality, today)
+                val updatedWord = word.copy(
+                    interval = srsResult.interval,
+                    repetitionCount = srsResult.repetitionCount,
+                    easinessFactor = srsResult.easinessFactor,
+                    nextReviewDate = srsResult.nextReviewDate,
+                    lastReviewedDate = srsResult.lastReviewedDate,
+                    firstLearnedDate = srsResult.firstLearnedDate,
+                    lastModifiedTime = com.jian.nemo.core.common.util.DateTimeUtils.getCurrentCompensatedMillis()
+                )
+
+                println("📝 更新单词: id=${updatedWord.id}, rep=${updatedWord.repetitionCount}, interval=${updatedWord.interval}d")
+                val result = updateWordUseCase(updatedWord)
+                handleSrsUpdateResult(result, isNew, isLapse)
+            }
+
+            is LearningItem.GrammarItem -> {
+                val grammar = item.grammar
+                val srsResult = srsCalculator.calculate(grammar, quality, today)
+                val updatedGrammar = grammar.copy(
+                    interval = srsResult.interval,
+                    repetitionCount = srsResult.repetitionCount,
+                    easinessFactor = srsResult.easinessFactor,
+                    nextReviewDate = srsResult.nextReviewDate,
+                    lastReviewedDate = srsResult.lastReviewedDate,
+                    firstLearnedDate = if (grammar.firstLearnedDate == null && grammar.repetitionCount == 0) today else grammar.firstLearnedDate,
+                    lastModifiedTime = com.jian.nemo.core.common.util.DateTimeUtils.getCurrentCompensatedMillis()
+                )
+
+                println("📝 更新语法: id=${updatedGrammar.id}, rep=${updatedGrammar.repetitionCount}, interval=${updatedGrammar.interval}d")
+                val result = updateGrammarUseCase(updatedGrammar)
+                handleSrsUpdateResult(result, isNew, isLapse)
+            }
+        }
+    }
+
+    private suspend fun handleSrsUpdateResult(result: Result<Unit>, isNew: Boolean, isLapse: Boolean) {
+        when (result) {
+            is Result.Success -> {
+                if (isLapse) {
+                    // Lapse: 已在 handleFailure 中处理
+                } else {
+                    // 更新统计
+                    val mode = _uiState.value.learningMode
+                    when (mode) {
+                        LearningMode.Word -> {
+                            if (isNew) studyRecordRepository.incrementLearnedWords(1)
+                            else studyRecordRepository.incrementReviewedWords(1)
+                        }
+                        LearningMode.Grammar -> {
+                            if (isNew) studyRecordRepository.incrementLearnedGrammars(1)
+                            else studyRecordRepository.incrementReviewedGrammars(1)
+                        }
+                    }
+
+                    _uiState.update {
+                        it.copy(
+                            completedThisSession = it.completedThisSession + 1,
+                            completedToday = if (isNew) it.completedToday + 1 else it.completedToday,
+                            sessionProcessedCount = it.sessionProcessedCount + 1,
+                            canUndo = true  // 评分成功后可撤销
+                        )
+                    }
+
+                    // 移出队列并前进
+                    removeCurrentAndMoveNext()
+                }
+            }
+            is Result.Error -> {
+                _uiState.update {
+                    it.copy(
+                        status = LearningStatus.Error,
+                        error = "更新失败: ${result.exception.message}"
+                    )
+                }
+            }
+            else -> {}
+        }
+    }
+
+    // ========== 核心方法：队列操作 ==========
+
+    /**
+     * 重新入队到末尾
+     *
+     * 设计文档 3.1: 卡片重新插回队列末尾
+     */
+    private fun reQueueToEnd(item: LearningItem) {
+        val state = _uiState.value
+        val mode = state.learningMode
+
+        // 保存 Anki 状态 (Step & DueTime)
+        _learningSteps[item.id] = item.step
+        _learningDueTimes[item.id] = item.dueTime
+
+        println("♻️ 重入队: ${item.displayName}, Step=${item.step}")
+
+        when (mode) {
+            LearningMode.Word -> {
+                if (item is LearningItem.WordItem) {
+                    val newList = state.wordList.toMutableList().apply {
+                        add(item.word)
+                    }
+                    _uiState.update {
+                        it.copy(
+                            wordList = newList,
+                            sessionProcessedCount = it.sessionProcessedCount + 1
+                        )
+                    }
+                }
+            }
+            LearningMode.Grammar -> {
+                if (item is LearningItem.GrammarItem) {
+                    val newList = state.grammarList.toMutableList().apply {
+                        add(item.grammar)
+                    }
+                    _uiState.update {
+                        it.copy(
+                            grammarList = newList,
+                            sessionProcessedCount = it.sessionProcessedCount + 1
+                        )
+                    }
+                }
+            }
+        }
+
+        // 移除当前项并前进
+        removeCurrentAndMoveNext()
+    }
+
+    /**
+     * 从等待状态恢复
+     * 忽略时间限制，强制显示下一个卡片
+     */
+    private fun resumeFromWaiting() {
+        val state = _uiState.value
+        val mode = state.learningMode
+        val now = System.currentTimeMillis()
+
+        // 重置状态
+        _uiState.update { it.copy(waitingUntil = 0L) }
+
+        val selection = when (mode) {
+            LearningMode.Word -> {
+                learningQueueManager.selectNextItem(
+                    items = state.wordList,
+                    getDueTime = { _learningDueTimes[it.id] ?: 0L },
+                    now = now,
+                    learnAheadLimitMs = Long.MAX_VALUE // 强制恢复，忽略限制
+                )
+            }
+            LearningMode.Grammar -> {
+                learningQueueManager.selectNextItem(
+                    items = state.grammarList,
+                    getDueTime = { _learningDueTimes[it.id] ?: 0L },
+                    now = now,
+                    learnAheadLimitMs = Long.MAX_VALUE
+                )
+            }
+        }
+
+        // 复用 handleSelectionResult，但此时不应该再返回 Wait
+        // 因为我们传了 MAX_VALUE，除非队列为空
+        val list = if (mode == LearningMode.Word) state.wordList else state.grammarList
+        handleSelectionResult(selection, list, state.selectedLevel, isWord = mode == LearningMode.Word)
+    }
+
+    /**
+     * 移除当前项并移动到下一个
+     *
+     * Anki Logic: Priority Queue Selection + Learn Ahead Limit
+     * - 移除当前项
+     * - 扫描剩余项，优先选最早到期 (min dueTime) 的
+     * - Learn Ahead Check:
+     *   - 如果 dueTime <= now: 立即显示
+     *   - 如果 dueTime <= now + 20min: 提前显示 (Learn Ahead)
+     *   - 如果 dueTime > now + 20min: 理论上应等待 (但为防止数据丢失目前强制显示，未来可优化为 Waiting 状态)
+     */
+    private fun removeCurrentAndMoveNext() {
+        val state = _uiState.value
+        val mode = state.learningMode
+        val now = System.currentTimeMillis()
+
+        when (mode) {
+            LearningMode.Word -> {
+                val currentIndex = state.currentIndex
+                val newList = state.wordList.toMutableList().apply {
+                    if (currentIndex in indices) removeAt(currentIndex)
+                }
+
+                val selection = learningQueueManager.selectNextItem(
+                    items = newList,
+                    getDueTime = { _learningDueTimes[it.id] ?: 0L },
+                    now = now,
+                    learnAheadLimitMs = _learnAheadLimitMs
+                )
+
+                handleSelectionResult(selection, newList, state.selectedLevel, isWord = true)
+            }
+
+            LearningMode.Grammar -> {
+                val currentIndex = state.currentGrammarIndex
+                val newList = state.grammarList.toMutableList().apply {
+                    if (currentIndex in indices) removeAt(currentIndex)
+                }
+
+                val selection = learningQueueManager.selectNextItem(
+                    items = newList,
+                    getDueTime = { _learningDueTimes[it.id] ?: 0L },
+                    now = now,
+                    learnAheadLimitMs = _learnAheadLimitMs
+                )
+
+                handleSelectionResult(selection, newList, state.selectedLevel, isWord = false)
+            }
+        }
+    }
+
+    private fun <T> handleSelectionResult(
+        result: QueueSelectionResult<T>,
+        newList: List<T>,
+        level: String,
+        isWord: Boolean
+    ) {
+        when (result) {
+            is QueueSelectionResult.Empty -> {
+                completeSession()
+            }
+            is QueueSelectionResult.Wait -> {
+                println("⏳ 等待中: Waiting until ${result.waitingUntil}")
+                _uiState.update {
+                    if (isWord) {
+                        @Suppress("UNCHECKED_CAST")
+                        it.copy(
+                            status = LearningStatus.Waiting,
+                            wordList = newList as List<Word>,
+                            waitingUntil = result.waitingUntil
+                        )
+                    } else {
+                        @Suppress("UNCHECKED_CAST")
+                        it.copy(
+                            status = LearningStatus.Waiting,
+                            grammarList = newList as List<Grammar>,
+                            waitingUntil = result.waitingUntil
+                        )
+                    }
+                }
+                // Save state (using 0 as index since we are waiting)
+                @Suppress("UNCHECKED_CAST")
+                val ids = if (isWord) (newList as List<Word>).map { it.id } else (newList as List<Grammar>).map { it.id }
+                saveSessionState(ids, 0, level)
+            }
+            is QueueSelectionResult.Next -> {
+                val nextIndex = result.index
+                val nextItemObj = result.item
+
+                if (isWord) {
+                    val nextWord = nextItemObj as Word
+                    // Anki Learn Ahead check was already done in manager
+                    val due = _learningDueTimes[nextWord.id] ?: 0L
+                    if (due > System.currentTimeMillis()) {
+                         println("⚡ 提前学习 (Learn Ahead)")
+                    }
+
+                    val nextItem = LearningItem.WordItem(
+                        nextWord,
+                        step = _learningSteps[nextWord.id] ?: 0,
+                        dueTime = due
+                    )
+
+                    _uiState.update {
+                        @Suppress("UNCHECKED_CAST")
+                        it.copy(
+                            status = LearningStatus.Learning,
+                            wordList = newList as List<Word>,
+                            currentIndex = nextIndex,
+                            currentWord = nextWord,
+                            isAnswerShown = false,
+                            isCardFlipped = false,
+                            ratingIntervals = calculateRatingIntervals(nextItem),
+                            slideDirection = SlideDirection.FORWARD
+                        )
+                    }
+                    @Suppress("UNCHECKED_CAST")
+                    saveSessionState((newList as List<Word>).map { it.id }, nextIndex, level)
+                } else {
+                    val nextGrammar = nextItemObj as Grammar
+                    val due = _learningDueTimes[nextGrammar.id] ?: 0L
+                    if (due > System.currentTimeMillis()) {
+                         println("⚡ 提前学习 (Learn Ahead)")
+                    }
+
+                    val nextItem = LearningItem.GrammarItem(
+                        nextGrammar,
+                        step = _learningSteps[nextGrammar.id] ?: 0,
+                        dueTime = due
+                    )
+
+                    _uiState.update {
+                        @Suppress("UNCHECKED_CAST")
+                        it.copy(
+                            status = LearningStatus.Learning,
+                            grammarList = newList as List<Grammar>,
+                            currentGrammarIndex = nextIndex,
+                            currentGrammar = nextGrammar,
+                            isAnswerShown = false,
+                            isGrammarDetailVisible = false,
+                            ratingIntervals = calculateRatingIntervals(nextItem),
+                            slideDirection = SlideDirection.FORWARD
+                        )
+                    }
+                    @Suppress("UNCHECKED_CAST")
+                    saveSessionState((newList as List<Grammar>).map { it.id }, nextIndex, level)
+                }
+            }
+        }
+    }
+
+    /**
+     * 完成会话
+     *
+     * 设计文档 6: 学习结算
+     */
+    private fun completeSession() {
+        // 清空撤销快照
+        learningUndoHelper.clear()
+
+        _uiState.update {
+            it.copy(
+                status = LearningStatus.SessionCompleted,
+                currentWord = null,
+                currentGrammar = null,
+                wordList = emptyList(),
+                grammarList = emptyList(),
+                currentIndex = 0,
+                currentGrammarIndex = 0
+            )
+        }
+
+        clearSession()
+        syncService.onLearningCompleted()
+
+        println("🎉 会话完成！")
+    }
+
+    // ========== 核心方法：自由导航 ==========
+
+    /**
+     * 导航到下一个
+     *
+     * 设计文档 5.1: 自由浏览 + 自由评分
+     */
+    private fun navigateNext() {
+        val state = _uiState.value
+        if (state.isNavigating || state.status == LearningStatus.Processing) return
+
+        val listSize = when (state.learningMode) {
+            LearningMode.Word -> state.wordList.size
+            LearningMode.Grammar -> state.grammarList.size
+        }
+        val currentIndex = when (state.learningMode) {
+            LearningMode.Word -> state.currentIndex
+            LearningMode.Grammar -> state.currentGrammarIndex
+        }
+
+        val nextIndex = currentIndex + 1
+        if (nextIndex >= listSize) return
+
+        navigateTo(nextIndex)
+    }
+
+    /**
+     * 导航到上一个
+     *
+     * 设计文档 5.1: 自由浏览 - 允许查看前一张
+     */
+    private fun navigatePrev() {
+        val state = _uiState.value
+        if (state.isNavigating || state.status == LearningStatus.Processing) return
+
+        val currentIndex = when (state.learningMode) {
+            LearningMode.Word -> state.currentIndex
+            LearningMode.Grammar -> state.currentGrammarIndex
+        }
+
+        val prevIndex = currentIndex - 1
+        if (prevIndex < 0) return
+
+        navigateTo(prevIndex)
+    }
+
+    /**
+     * 导航到指定索引
+     *
+     * 设计文档 5.1: 自由浏览 + 自由选择
+     * 可在任意位置查看答案并评分
+     */
+    private fun navigateTo(index: Int) {
+        val state = _uiState.value
+        if (state.isNavigating || state.status == LearningStatus.Processing) return
+
+        navigationJob?.cancel()
+        navigationJob = viewModelScope.launch {
+            _uiState.update { it.copy(isNavigating = true) }
+
+            when (state.learningMode) {
+                LearningMode.Word -> {
+                    if (index !in state.wordList.indices) {
+                        _uiState.update { it.copy(isNavigating = false) }
+                        return@launch
+                    }
+
+                    val direction = if (index > state.currentIndex) SlideDirection.FORWARD else SlideDirection.BACKWARD
+                    val targetWord = state.wordList[index]
+                    val targetItem = LearningItem.WordItem(targetWord)
+
+                    _uiState.update {
+                        it.copy(
+                            currentIndex = index,
+                            currentWord = targetWord,
+                            isAnswerShown = false,
+                            isCardFlipped = false,
+                            ratingIntervals = calculateRatingIntervals(targetItem),
+                            slideDirection = direction
+                        )
+                    }
+
+                    saveSessionState(state.wordList.map { it.id }, index, state.selectedLevel)
+                }
+
+                LearningMode.Grammar -> {
+                    if (index !in state.grammarList.indices) {
+                        _uiState.update { it.copy(isNavigating = false) }
+                        return@launch
+                    }
+
+                    val direction = if (index > state.currentGrammarIndex) SlideDirection.FORWARD else SlideDirection.BACKWARD
+                    val targetGrammar = state.grammarList[index]
+                    val targetItem = LearningItem.GrammarItem(targetGrammar)
+
+                    _uiState.update {
+                        it.copy(
+                            currentGrammarIndex = index,
+                            currentGrammar = targetGrammar,
+                            isAnswerShown = false,
+                            isGrammarDetailVisible = false,
+                            ratingIntervals = calculateRatingIntervals(targetItem),
+                            slideDirection = direction
+                        )
+                    }
+
+                    saveSessionState(state.grammarList.map { it.id }, index, state.selectedLevel)
+                }
+            }
+
+            delay(NAVIGATION_DEBOUNCE_MS)
+            _uiState.update { it.copy(isNavigating = false) }
+        }
+    }
+
+    // ========== 辅助方法 ==========
+
+    private fun getCurrentItem(): LearningItem? {
+        val state = _uiState.value
+        return when (state.learningMode) {
+            LearningMode.Word -> state.currentWord?.let { LearningItem.WordItem(it) }
+            LearningMode.Grammar -> state.currentGrammar?.let { LearningItem.GrammarItem(it) }
+        }
+    }
+
+    private fun calculateRatingIntervals(item: LearningItem?): Map<Int, String> {
+        if (item == null) return emptyMap()
+
+        val today = _sessionLockedDay ?: DateTimeUtils.getLearningDay(_resetHour)
+
+        return when (item) {
+            is LearningItem.WordItem -> srsIntervalPreview.calculate(item.word, item.id, _learningSteps, _learningStepsConfig, _relearningStepsConfig, today)
+            is LearningItem.GrammarItem -> srsIntervalPreview.calculate(item.grammar, item.id, _learningSteps, _learningStepsConfig, _relearningStepsConfig, today)
+        }
+    }
+
+    /**
+     * 获取卡片状态标记
+     */
+    fun getCardBadge(item: LearningItem): CardBadge {
+        return when {
+            _requeuedItems.contains(item.id) -> CardBadge.RELEARN
+            item.isNew -> CardBadge.NEW
+            else -> CardBadge.REVIEW
+        }
+    }
+
+    private fun saveSessionState(ids: List<Int>, index: Int, level: String) {
+        val waitingUntil = _uiState.value.waitingUntil
+        viewModelScope.launch {
+            when (_uiState.value.learningMode) {
+                LearningMode.Word -> settingsRepository.saveWordSession(ids, index, level, _learningSteps, waitingUntil)
+                LearningMode.Grammar -> settingsRepository.saveGrammarSession(ids, index, level, _learningSteps, waitingUntil)
+            }
+        }
+    }
+
+    private fun clearSession() {
+        viewModelScope.launch {
+            when (_uiState.value.learningMode) {
+                LearningMode.Word -> settingsRepository.clearWordSession()
+                LearningMode.Grammar -> settingsRepository.clearGrammarSession()
+            }
+        }
+    }
+
+    private fun changeLearningMode(mode: LearningMode) {
+        _uiState.update { it.copy(learningMode = mode) }
+    }
+
+    private fun changeLevel(level: String) {
+        _uiState.update { it.copy(selectedLevel = level) }
+        if (_uiState.value.status != LearningStatus.Idle) {
+            startLearning(level)
+        }
+    }
+
+    private fun toggleGrammarDetail() {
+        if (_uiState.value.status != LearningStatus.Learning) return
+        _uiState.update { it.copy(isGrammarDetailVisible = !it.isGrammarDetailVisible) }
+    }
+
+    private fun exitLearning() {
+        // 清空撤销快照
+        learningUndoHelper.clear()
+
+        _uiState.value = LearningUiState()
+    }
+
+
+
+    /**
+     * 处理钉子户 (Leech)
+     *
+     * 设计文档 3.1: 连续5次失败 (Again)
+     * - 自动暂停 (Suspend) 该卡片
+     * - 从当前学习队列中移除
+     */
+    private suspend fun handleLeech(item: LearningItem, totalLapses: Int) {
+        println("🩸 钉子户 (Leech): ${item.displayName} (Lapses: $totalLapses)")
+
+        // 提示用户
+        _uiState.update {
+            it.copy(error = "已暂停钉子户: ${item.displayName} (累计失败 $totalLapses 次)")
+        }
+
+        // 执行暂停逻辑
+        suspendItem(item)
+    }
+
+    /**
+     * 暂停当前项 (用户手动)
+     */
+    private fun suspendCurrentItem() {
+        val currentItem = getCurrentItem() ?: return
+        println("⏸️ 手动暂停: ${currentItem.displayName}")
+
+        viewModelScope.launch {
+            suspendItem(currentItem)
+
+            // 提示
+            _uiState.update {
+                it.copy(error = "已暂停: ${currentItem.displayName}")
+            }
+        }
+    }
+
+    /**
+     * 今日暂缓此项 (Bury)
+     * 持久化到数据库，今日不再出现 (直到 resetHour)
+     */
+    private fun buryCurrentItem() {
+        val currentItem = getCurrentItem() ?: return
+        println("🙈 今日暂缓 (Bury): ${currentItem.displayName}")
+
+        viewModelScope.launch {
+            // 1. 持久化暂停状态 (buriedUntilDay)
+            val today = _sessionLockedDay ?: DateTimeUtils.getLearningDay(_resetHour)
+            try {
+                when (currentItem) {
+                    is LearningItem.WordItem -> {
+                        val updatedWord = currentItem.word.copy(buriedUntilDay = today)
+                        updateWordUseCase(updatedWord)
+                        println("🙈 [持久化] 单词已Bury: ${currentItem.displayName} (Until: $today)")
+                    }
+                    is LearningItem.GrammarItem -> {
+                        val updatedGrammar = currentItem.grammar.copy(buriedUntilDay = today)
+                        updateGrammarUseCase(updatedGrammar)
+                        println("🙈 [持久化] 语法已Bury: ${currentItem.displayName} (Until: $today)")
+                    }
+                }
+            } catch (e: Exception) {
+                println("❌ [持久化] Bury失败: ${e.message}")
+            }
+
+            // 2. 从各类内存状态中移除
+            _learningSteps.remove(currentItem.id)
+            _learningDueTimes.remove(currentItem.id)
+
+            // 3. 提示
+            _uiState.update {
+                it.copy(error = "已暂缓: ${currentItem.displayName} (今日不再出现)")
+            }
+
+            // 4. 移出队列并前进
+            removeCurrentAndMoveNext()
+        }
+    }
+
+    /**
+     * 执行暂停逻辑
+     * - 更新 DB 状态为 Suspended (isSkipped = true)
+     * - 移出当前会话队列
+     */
+    private suspend fun suspendItem(item: LearningItem) {
+        // 1. 持久化暂停状态
+        try {
+            when (item) {
+                is LearningItem.WordItem -> {
+                    val updatedWord = item.word.copy(isSkipped = true)
+                    updateWordUseCase(updatedWord)
+                    println("⏸️ [持久化] 单词已暂停: ${item.displayName}")
+                }
+                is LearningItem.GrammarItem -> {
+                    val updatedGrammar = item.grammar.copy(isSkipped = true)
+                    updateGrammarUseCase(updatedGrammar)
+                    println("⏸️ [持久化] 语法已暂停: ${item.displayName}")
+                }
+            }
+        } catch (e: Exception) {
+            println("❌ [持久化] 暂停失败: ${e.message}")
+            // 即使持久化失败，也继续在内存中移除，避免阻塞用户
+        }
+
+        // 2. 从各类状态中移除
+        _learningSteps.remove(item.id)
+        _learningDueTimes.remove(item.id)
+
+        // 3. 移出队列并前进
+        removeCurrentAndMoveNext()
+    }
+
+    private fun parseSteps(stepsStr: String): List<Int> {
+        return try {
+            stepsStr.trim().split(Regex("\\s+")).map { it.toInt() }
+        } catch (e: Exception) {
+            println("❌ 解析学习步进失败: $stepsStr, 使用默认值")
+            listOf(1, 10)
+        }
+    }
+
+    // ========== TTS 朗读方法 ==========
+
+    /**
+     * 朗读单词（日语）
+     */
+    private fun speakWord(text: String) {
+        audioRepository.stop()
+        audioRepository.playTts(text, "ja-JP", "word")
+    }
+
+    /**
+     * 朗读例句（日语 + 中文）
+     */
+    private fun speakExample(japanese: String, chinese: String, id: String) {
+        // 先播放日语。
+        // TODO: 后续音桥版本将支持日语+中文队列播放。
+        audioRepository.stop()
+        audioRepository.playTts(japanese, "ja-JP", id)
+    }
+
+    // ========== 生命周期 ==========
+
+    override fun onCleared() {
+        super.onCleared()
+        audioRepository.stop()
+    }
+}

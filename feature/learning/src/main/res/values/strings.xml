@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title_select_word_level">选择单词等级</string>
+    <string name="title_select_grammar_level">选择语法等级</string>
+    <string name="bg_text_word">単語</string>
+    <string name="bg_text_grammar">文法</string>
+    <string name="mode_word">单词</string>
+    <string name="mode_grammar">语法</string>
+    <string name="title_word_learning">单词学习</string>
+    <string name="title_grammar_learning">语法学习</string>
+    <string name="label_current_progress">当前进度</string>
+    <string name="label_items_due">待复习 %d</string>
+    <string name="btn_continue_learning">继续上次会话</string>
+    <string name="btn_start_learning">开始学习</string>
+    <string name="bg_text_nemo">ネモ</string>
+    <string name="app_name_nemo">Nemo</string>
+    <string name="app_subtitle">日语学习伴侣</string>
+    <string name="menu_word_book_title">单词本</string>
+    <string name="menu_word_book_subtitle">专属词库</string>
+    <string name="menu_grammar_book_title">语法点</string>
+    <string name="menu_grammar_book_subtitle">语法精讲</string>
+</resources>
