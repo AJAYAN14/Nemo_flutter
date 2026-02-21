@@ -40,9 +40,8 @@
 
 | | | |
 | :---: | :---: | :---: |
-| ![Preview 1](docs/screenshots/1.png) | ![Preview 2](docs/screenshots/2.png) | ![Preview 3](docs/screenshots/3.png) |
-| ![Preview 4](docs/screenshots/4.png) | ![Preview 5](docs/screenshots/5.png) | ![Preview 6](docs/screenshots/6.png) |
-| | ![Preview 7](docs/screenshots/7.png) | |
+| <img src="docs/screenshots/1.png" width="160"> | <img src="docs/screenshots/3.png" width="160"> | <img src="docs/screenshots/4.png" width="160"> |
+| <img src="docs/screenshots/5.png" width="160"> | <img src="docs/screenshots/6.png" width="160"> | <img src="docs/screenshots/7.png" width="160"> |
 
 ---
 
