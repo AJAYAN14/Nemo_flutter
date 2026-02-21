@@ -36,3 +36,9 @@ build/
 _reference/
 .idea/
 *.log
+
+# Keystore and Secrets
+keystore/
+*.jks
+*.keystore
+local.properties
