@@ -7,8 +7,19 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-val supabaseUrl: String = project.findProperty("SUPABASE_URL") as? String ?: "https://your-project.supabase.co"
-val supabaseAnonKey: String = project.findProperty("SUPABASE_ANON_KEY") as? String ?: "your-anon-key"
+val localProperties = java.util.Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
+
+val supabaseUrl: String = localProperties.getProperty("SUPABASE_URL") 
+    ?: project.findProperty("SUPABASE_URL") as? String 
+    ?: "https://your-project.supabase.co"
+
+val supabaseAnonKey: String = localProperties.getProperty("SUPABASE_ANON_KEY") 
+    ?: project.findProperty("SUPABASE_ANON_KEY") as? String 
+    ?: "your-anon-key"
 
 android {
     namespace = "com.jian.nemo"
