@@ -9,74 +9,113 @@
   <img src="https://img.shields.io/badge/Language-Japanese-red?style=flat-square" alt="Language">
   <img src="https://img.shields.io/badge/Kotlin-1.9+-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin">
   <img src="https://img.shields.io/badge/Jetpack%20Compose-latest-4285F4?logo=jetpackcompose&logoColor=white" alt="Compose">
+  <img src="https://img.shields.io/badge/Supabase-Database%20%26%20Auth-3ECF8E?logo=supabase&logoColor=white" alt="Supabase">
 </p>
 
 ---
 
-## 🤖 纯 AI 创作声明
+## 📖 目录
+- [✨ 项目简介](#-项目简介)
+- [🖼️ 预览展示](#-预览展示)
+- [🚀 核心特性](#-核心特性)
+- [🛠️ 技术栈](#-技术栈)
+- [📂 模块结构](#-模块结构)
+- [⚙️ 快速开始](#-快速开始)
+- [🤖 纯 AI 创作声明](#-纯 AI 创作声明)
+- [📄 开源协议](#-开源协议)
 
-> [!NOTE]
-> **这是一个几乎完全由 AI (Antigravity/Gemini) 驱动生成的项目。**
-> 从架构设计、代码编写、UI 交互到文档编写，本项目旨在展示 AI 在现代软件工程和移动开发中的卓越协作与生成能力。
+---
 
 ## ✨ 项目简介
 
 **Nemo** 是一款专为日语学习者设计的灵动词汇应用。它不仅提供了优雅的交互体验，更结合了日语学习的特点，通过沉浸式的设计和云端同步功能，助你高效攻克日语词汇难关。
 
-### 🚀 核心特性
+> [!TIP]
+> **灵动日语，即刻同步** —— Nemo 致力于在简洁与功能之间找到完美平衡。
 
-- 🇯🇵 **日语专属**：针对假名、汉字词汇学习优化，支持灵活的分类管理。
-- 📚 **灵动词库**：支持单词的分类管理、搜索与快速查看。
-- 🧠 **智能学习**：内置科学的复习算法，针对薄弱环节进行强化训练。
-- 📊 **学习统计**：可视化的学习轨迹，清晰记录你的每一点进步。
-- ☁️ **全量同步**：基于 Supabase 构建的云端存储，多设备数据实时无缝衔接。
-- 🎨 **现代 UI**：采用 Jetpack Compose 构建的全动态界面，支持深色模式与灵动交互。
+## 🖼️ 预览展示
+
+> [!NOTE]
+> 界面截图正在补充中...
+
+| 首页预览 | 词库管理 | 详细信息 |
+| :---: | :---: | :---: |
+| _[Image Placeholder]_ | _[Image Placeholder]_ | _[Image Placeholder]_ |
+
+---
+
+## 🚀 核心特性
+
+- 🇯🇵 **日语专属优化**：针对平假名、片假名、汉字词汇学习深度定制，支持全方位的假名检索。
+- 📚 **灵动词库系统**：卡片式管理，支持多维度分类、关键词搜索与快速预览。
+- 🧠 **AI 算法助学**：内置针对日语记忆曲线设计的复习算法，动态调整复习重点。
+- 📊 **可视化统计**：多维图表展示学习进度，清晰观测掌握程度。
+- ☁️ **云端数据中心**：基于 Supabase 构建，全平台登录即同步，数据安全无忧。
+- 🎨 **前沿视觉交互**：全面采用 Jetpack Compose 的 Material 3 设计语言，交互灵动，支持原生深色模式。
 
 ---
 
 ## 🛠️ 技术栈
 
-- **UI 框架**：Jetpack Compose (声明式 UI 最佳实践)
-- **网络层**：Ktor / Supabase Kotlin SDK
-- **依赖注入**：Hilt (Dagger)
-- **异步处理**：Kotlin Coroutines & Flow
-- **架构模式**：模块化架构 + MVI (Model-View-Intent)
-- **持久化**：Supabase Postgrest (云端) + Room (本地缓存/规划中)
+| 领域 | 技术选型 | 理由 / 说明 |
+| :--- | :--- | :--- |
+| **语言** | Kotlin 1.9+ | 现代、安全且 100% 互操作的 Android 标准语言 |
+| **UI 框架** | Jetpack Compose | 纯声明式 UI，实现高度复用与灵动动画 |
+| **架构系统** | 模块化 + MVI | 解耦逻辑，提升可维护性，确保一致的状态流转 |
+| **网络层** | Ktor / Supabase SDK | 轻量化、高效率，完美适配 Kotlin 协程 |
+| **持久化** | Room + Cloud DB | 本地缓存加速响应，云端数据永久保障 |
+| **依赖注入** | Hilt (Dagger) | 标准化的 DI 实现，降低组件耦合度 |
+| **异步流** | Coroutines & Flow | 优雅处理并发与响应式数据更新 |
+
+---
+
+## 📂 模块结构
+
+项目采用分层模块化架构，各个功能高度独立：
+
+```mermaid
+graph TD
+    App[":app (入口)"] --> Feature[":feature"]
+    Feature --> Library[":feature:library (词库)"]
+    Feature --> Learning[":feature:learning (学习)"]
+    Feature --> User[":feature:user (账户)"]
+    Feature --> Settings[":feature:settings (设置)"]
+    
+    Library --> Core[":core (核心库)"]
+    Learning --> Core
+    User --> Core
+    Settings --> Core
+    
+    Core --> CoreUI[":core:ui (基础组件)"]
+    Core --> CoreData[":core:data (数据层)"]
+    Core --> CoreDomain[":core:domain (逻辑层)"]
+```
 
 ---
 
 ## ⚙️ 快速开始
 
-为了保护敏感信息，项目采用了 **最佳安全实践**。在克隆项目后，你需要进行以下配置：
+### 1. 配置云端环境
+1. 在 [Supabase](https://supabase.com/) 创建新项目。
+2. 在 `Settings -> API` 中寻找 `URL` 和 `anon key`。
 
-### 1. 获取 Supabase 配置
-1. 注册并登录 [Supabase](https://supabase.com/)。
-2. 创建一个新项目，并在 `Project Settings -> API` 中获取你的 `URL` 和 `anon key`。
-
-### 2. 本地配置 (local.properties)
-在项目根目录的 `local.properties` 文件中添加以下信息（**注意：该文件已在 .gitignore 中忽略，不会被上传**）：
-
+### 2. 初始化本地配置
+在根目录 `local.properties` 添加：
 ```properties
 SUPABASE_URL=你的项目URL
 SUPABASE_ANON_KEY=你的项目ANON_KEY
 ```
 
-### 3. 运行项目
-完成上述配置后，直接使用 Android Studio 打开项目并运行即可。Gradle 脚本会自动读取变量并完成初始化。
+### 3. 编译运行
+使用 Android Studio 直接打开并 Build 即可。
 
 ---
 
-## 📂 模块结构说明
+## 🤖 纯 AI 创作声明
 
-项目采用严格的模块化设计，以提高可维护性和编译速度：
-
-- `:app`：主程序入口
-- `:core`：核心通用逻辑（数据层、领域层、基础 UI 组件）
-- `:feature`：功能模块化封装
-  - `:library`：词库管理
-  - `:learning`：学习训练
-  - `:user`：用户体系与注销逻辑
-  - `:settings`：个性化配置
+> [!IMPORTANT]
+> **这是一个几乎完全由 AI 驱动生成的实验性项目。**
+> 从最初的构思、架构选型、核心逻辑编写到目前的 UI 迭代与文档说明，均由 AI 与开发者协作完成。本项目旨在证明 AI 协同在复杂 Android 移动开发中的工程化落地能力。
 
 ---
 
