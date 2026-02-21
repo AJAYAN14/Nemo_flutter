@@ -28,3 +28,11 @@ build/
 
 # Kotlin
 .kotlin/
+
+# IDE and Tools
+.agent/
+.vscode/
+.lingma/
+_reference/
+.idea/
+*.log
