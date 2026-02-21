@@ -1,17 +1,23 @@
 # 🌊 Nemo
 
 <p align="center">
-  <strong>一款基于现代 Android 技术栈构建的灵动日语词法学习应用</strong>
+  <strong>一款由 AI 驱动、基于现代 Android 技术栈构建的灵动日语词法学习应用</strong>
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Powered%20by-AI-blueviolet?style=flat-square&logo=openai" alt="AI Powered">
   <img src="https://img.shields.io/badge/Language-Japanese-red?style=flat-square" alt="Language">
   <img src="https://img.shields.io/badge/Kotlin-1.9+-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin">
   <img src="https://img.shields.io/badge/Jetpack%20Compose-latest-4285F4?logo=jetpackcompose&logoColor=white" alt="Compose">
-  <img src="https://img.shields.io/badge/Supabase-Database%20%26%20Auth-3ECF8E?logo=supabase&logoColor=white" alt="Supabase">
 </p>
 
 ---
+
+## 🤖 纯 AI 创作声明
+
+> [!NOTE]
+> **这是一个几乎完全由 AI (Antigravity/Gemini) 驱动生成的项目。**
+> 从架构设计、代码编写、UI 交互到文档编写，本项目旨在展示 AI 在现代软件工程和移动开发中的卓越协作与生成能力。
 
 ## ✨ 项目简介
 
