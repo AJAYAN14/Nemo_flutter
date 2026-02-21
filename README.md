@@ -35,12 +35,14 @@
 
 ## 🖼️ 预览展示
 
-> [!NOTE]
-> 界面截图正在补充中...
+> [!TIP]
+> **多维视角，灵动交互** —— 通过以下截图快速了解 Nemo 的核心交互界面。
 
-| 首页预览 | 词库管理 | 详细信息 |
+| | | |
 | :---: | :---: | :---: |
-| _[Image Placeholder]_ | _[Image Placeholder]_ | _[Image Placeholder]_ |
+| ![Preview 1](docs/screenshots/1.png) | ![Preview 2](docs/screenshots/2.png) | ![Preview 3](docs/screenshots/3.png) |
+| ![Preview 4](docs/screenshots/4.png) | ![Preview 5](docs/screenshots/5.png) | ![Preview 6](docs/screenshots/6.png) |
+| | ![Preview 7](docs/screenshots/7.png) | |
 
 ---
 
