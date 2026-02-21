@@ -1,24 +1,25 @@
 # 🌊 Nemo
 
 <p align="center">
-  <strong>一款基于现代 Android 技术栈构建的灵动词汇学习应用</strong>
+  <strong>一款基于现代 Android 技术栈构建的灵动日语词法学习应用</strong>
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Language-Japanese-red?style=flat-square" alt="Language">
   <img src="https://img.shields.io/badge/Kotlin-1.9+-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin">
   <img src="https://img.shields.io/badge/Jetpack%20Compose-latest-4285F4?logo=jetpackcompose&logoColor=white" alt="Compose">
   <img src="https://img.shields.io/badge/Supabase-Database%20%26%20Auth-3ECF8E?logo=supabase&logoColor=white" alt="Supabase">
-  <img src="https://img.shields.io/badge/Architecture-MVI%20%2F%20MVVM-FFCA28?logo=android&logoColor=white" alt="Architecture">
 </p>
 
 ---
 
 ## ✨ 项目简介
 
-**Nemo** 旨在提供一种优雅、高效的单词学习体验。通过沉浸式的交互设计和云端同步功能，帮助用户在任何设备上都能轻松管理并掌握自己的词库。
+**Nemo** 是一款专为日语学习者设计的灵动词汇应用。它不仅提供了优雅的交互体验，更结合了日语学习的特点，通过沉浸式的设计和云端同步功能，助你高效攻克日语词汇难关。
 
 ### 🚀 核心特性
 
+- 🇯🇵 **日语专属**：针对假名、汉字词汇学习优化，支持灵活的分类管理。
 - 📚 **灵动词库**：支持单词的分类管理、搜索与快速查看。
 - 🧠 **智能学习**：内置科学的复习算法，针对薄弱环节进行强化训练。
 - 📊 **学习统计**：可视化的学习轨迹，清晰记录你的每一点进步。
