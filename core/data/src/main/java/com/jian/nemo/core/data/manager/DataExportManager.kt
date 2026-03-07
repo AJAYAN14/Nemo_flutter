@@ -119,7 +119,8 @@ class DataExportManager @Inject constructor(
                                 database.wordDao().getExportWordsCursor().use { cursor ->
                                     val idIdx = cursor.getColumnIndexOrThrow("id")
                                     val repIdx = cursor.getColumnIndexOrThrow("repetitionCount")
-                                    val efIdx = cursor.getColumnIndexOrThrow("easinessFactor")
+                                    val stabIdx = cursor.getColumnIndexOrThrow("stability")
+                                    val diffIdx = cursor.getColumnIndexOrThrow("difficulty")
                                     val intIdx = cursor.getColumnIndexOrThrow("interval")
                                     val nextReviewIdx = cursor.getColumnIndexOrThrow("nextReviewDate")
                                     val favIdx = cursor.getColumnIndexOrThrow("isFavorite")
@@ -140,7 +141,8 @@ class DataExportManager @Inject constructor(
                                         val word = WordProgress(
                                             wordId = cursor.getInt(idIdx),
                                             srsLevel = cursor.getInt(repIdx),
-                                            easinessFactor = cursor.getFloat(efIdx),
+                                            stability = cursor.getFloat(stabIdx),
+                                            difficulty = cursor.getFloat(diffIdx),
                                             interval = cursor.getInt(intIdx),
                                             nextReviewDate = cursor.getLong(nextReviewIdx),
                                             isFavorite = cursor.getInt(favIdx) == 1,
@@ -166,7 +168,8 @@ class DataExportManager @Inject constructor(
                                 database.grammarDao().getExportGrammarsCursor().use { cursor ->
                                     val idIdx = cursor.getColumnIndexOrThrow("id")
                                     val repIdx = cursor.getColumnIndexOrThrow("repetitionCount")
-                                    val efIdx = cursor.getColumnIndexOrThrow("easinessFactor")
+                                    val stabIdx = cursor.getColumnIndexOrThrow("stability")
+                                    val diffIdx = cursor.getColumnIndexOrThrow("difficulty")
                                     val intIdx = cursor.getColumnIndexOrThrow("interval")
                                     val nextReviewIdx = cursor.getColumnIndexOrThrow("nextReviewDate")
                                     val favIdx = cursor.getColumnIndexOrThrow("isFavorite")
@@ -184,7 +187,8 @@ class DataExportManager @Inject constructor(
                                         val grammar = GrammarProgress(
                                             grammarId = cursor.getInt(idIdx),
                                             srsLevel = cursor.getInt(repIdx),
-                                            easinessFactor = cursor.getFloat(efIdx),
+                                            stability = cursor.getFloat(stabIdx),
+                                            difficulty = cursor.getFloat(diffIdx),
                                             interval = cursor.getInt(intIdx),
                                             nextReviewDate = cursor.getLong(nextReviewIdx),
                                             isFavorite = cursor.getInt(favIdx) == 1,
@@ -379,7 +383,8 @@ class DataExportManager @Inject constructor(
                         wordStudyStateDao.insert(WordStudyStateEntity(
                             wordId = remoteWord.wordId,
                             repetitionCount = remoteWord.srsLevel,
-                            easinessFactor = remoteWord.easinessFactor,
+                            stability = remoteWord.stability,
+                            difficulty = remoteWord.difficulty,
                             interval = remoteWord.interval,
                             nextReviewDate = remoteWord.nextReviewDate,
                             isFavorite = remoteWord.isFavorite,
@@ -418,7 +423,8 @@ class DataExportManager @Inject constructor(
                          grammarStudyStateDao.insert(GrammarStudyStateEntity(
                              grammarId = remoteGrammar.grammarId,
                              repetitionCount = remoteGrammar.srsLevel,
-                             easinessFactor = remoteGrammar.easinessFactor,
+                             stability = remoteGrammar.stability,
+                             difficulty = remoteGrammar.difficulty,
                              interval = remoteGrammar.interval,
                              nextReviewDate = remoteGrammar.nextReviewDate,
                              isFavorite = remoteGrammar.isFavorite,

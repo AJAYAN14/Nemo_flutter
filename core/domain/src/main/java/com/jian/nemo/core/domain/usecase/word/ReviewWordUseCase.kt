@@ -59,7 +59,8 @@ class ReviewWordUseCase @Inject constructor(
             // 3. 更新单词状态
             val updatedWord = word.copy(
                 repetitionCount = srsResult.repetitionCount,
-                easinessFactor = srsResult.easinessFactor,
+                stability = srsResult.stability,
+                difficulty = srsResult.difficulty,
                 interval = srsResult.interval,
                 nextReviewDate = srsResult.nextReviewDate,
                 lastReviewedDate = srsResult.lastReviewedDate,

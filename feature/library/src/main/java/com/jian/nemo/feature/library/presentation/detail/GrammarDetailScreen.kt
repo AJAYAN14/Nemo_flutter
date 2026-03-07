@@ -144,14 +144,15 @@ private fun GrammarDetailContent(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Grammar Title
-                Text(
+                com.jian.nemo.core.ui.component.text.FuriganaText(
                     text = grammar.grammar ?: "",
-                    style = MaterialTheme.typography.displaySmall.copy(
+                    baseTextStyle = MaterialTheme.typography.displaySmall.copy(
                         fontWeight = FontWeight.Black,
-                        letterSpacing = 1.sp // Increased letter spacing
+                        letterSpacing = 1.sp
                     ),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center // Ensure center alignment for long titles
+                    baseTextColor = MaterialTheme.colorScheme.onBackground,
+                    furiganaTextColor = if (isDark) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                    furiganaTextSize = 12.sp
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -233,14 +234,16 @@ private fun GrammarDetailContent(
                                 )
                             }
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(
+                            com.jian.nemo.core.ui.component.text.FuriganaText(
                                 text = usage.explanation,
-                                style = MaterialTheme.typography.bodyLarge.copy(
+                                baseTextStyle = MaterialTheme.typography.bodyLarge.copy(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 17.sp,
                                     lineHeight = 26.sp
                                 ),
-                                color = MaterialTheme.colorScheme.onSurface
+                                baseTextColor = MaterialTheme.colorScheme.onSurface,
+                                furiganaTextColor = if (isDark) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                                furiganaTextSize = 10.sp
                             )
                         }
 
@@ -263,7 +266,7 @@ private fun GrammarDetailContent(
                             }
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            ConnectionPill(text = usage.connection.trim())
+                            ConnectionPill(text = usage.connection.trim(), isDark = isDark)
                         }
 
                         // Notes
@@ -275,11 +278,12 @@ private fun GrammarDetailContent(
                                 color = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
-                            Text(
+                            com.jian.nemo.core.ui.component.text.FuriganaText(
                                 text = usage.notes?.trim() ?: "",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
-                                modifier = Modifier.padding(bottom = 4.dp)
+                                baseTextStyle = MaterialTheme.typography.bodyMedium,
+                                baseTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
+                                furiganaTextColor = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                                furiganaTextSize = 9.sp
                             )
                         }
 
@@ -326,7 +330,7 @@ private fun GrammarDetailContent(
  * Visual Pill for Connection Rules
  */
 @Composable
-private fun ConnectionPill(text: String) {
+private fun ConnectionPill(text: String, isDark: Boolean) {
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
@@ -335,13 +339,15 @@ private fun ConnectionPill(text: String) {
             MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
         )
     ) {
-        Text(
+        com.jian.nemo.core.ui.component.text.FuriganaText(
             text = text,
-            style = MaterialTheme.typography.bodyMedium.copy(
+            baseTextStyle = MaterialTheme.typography.bodyMedium.copy(
                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                 fontWeight = FontWeight.Medium
             ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            baseTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            furiganaTextColor = if (isDark) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+            furiganaTextSize = 9.sp,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
         )
     }

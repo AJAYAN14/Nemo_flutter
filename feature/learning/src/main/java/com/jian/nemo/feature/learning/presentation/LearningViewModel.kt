@@ -50,8 +50,6 @@ import javax.inject.Inject
 
 /**
  * 学习项封装 (统一 Word 和 Grammar)
- *
- * 设计文档: 本系统同时支持"语法"学习，逻辑与单词类似
  */
 sealed class LearningItem {
     abstract val id: Int
@@ -59,7 +57,7 @@ sealed class LearningItem {
     abstract val displayName: String
     abstract val repetitionCount: Int
 
-    // Anki-Mode 必需字段
+    // 调度系统必需字段
     abstract val step: Int
     abstract val dueTime: Long
 
@@ -88,16 +86,11 @@ sealed class LearningItem {
 
 /**
  * 卡片状态标记
- *
- * 设计文档 4.2: 状态标记 (Card Badge)
- * - 新词 (New): 蓝标，今天第一次见
- * - 复习 (Review): 绿标，老朋友
- * - 重来 (Learning/Lapse): 红标，刚才忘了的
  */
 enum class CardBadge {
-    NEW,      // 新词 (蓝)
-    REVIEW,   // 复习 (绿)
-    RELEARN   // 重来 (红)
+    NEW,      // 新词
+    REVIEW,   // 复习
+    RELEARN   // 重来
 }
 
 /**
@@ -142,7 +135,6 @@ class LearningViewModel @Inject constructor(
     private val learningUndoHelper: LearningUndoHelper,
     private val audioRepository: AudioRepository
 ) : ViewModel() {
-    // ========== 常量 ==========
     companion object {
         /** 钉子户阈值：连续失败次数达到此值时暂停学习 */
         private const val LEECH_THRESHOLD = 5
@@ -154,19 +146,17 @@ class LearningViewModel @Inject constructor(
         private const val RATING_DEBOUNCE_MS = 300L
     }
 
-    // ========== 状态 ==========
     private val _uiState = MutableStateFlow(LearningUiState())
     val uiState: StateFlow<LearningUiState> = _uiState.asStateFlow()
 
-    // ========== 内部状态 ==========
     /** 学习阶段追踪 (ItemId -> StepIndex) */
     private val _learningSteps = mutableMapOf<Int, Int>()
 
     /** Anki-Mode: 到期时间记录 (ID -> DueTime Epoch Millis) */
     private val _learningDueTimes = mutableMapOf<Int, Long>()
 
-    /** 失败次数追踪 (用于钉子户检测) */
-    private var _lapseCounts = mapOf<Int, Int>()
+    /** 失败次数追踪 (用于钉子户检测)，使用 StateFlow 确保并发安全 */
+    private val _lapseCounts = MutableStateFlow<Map<Int, Int>>(emptyMap())
 
     /** 重入队标记 (用于红标显示) */
     private val _requeuedItems = mutableSetOf<Int>()
@@ -186,12 +176,10 @@ class LearningViewModel @Inject constructor(
     /** 提前学习限制 (毫秒) */
     private var _learnAheadLimitMs: Long = 20 * 60 * 1000L
 
-    // ========== 防抖 Job ==========
     private var ratingJob: Job? = null
     private var navigationJob: Job? = null
     private var loadingJob: Job? = null
 
-    // ========== 初始化 ==========
     init {
         // 1. 监听 TTS 事件以更新播放状态 (必须在 _uiState 初始化后)
         viewModelScope.launch {
@@ -219,7 +207,7 @@ class LearningViewModel @Inject constructor(
             }
         }
 
-        // 2. 监听设置变化
+        // 监听设置变化
         viewModelScope.launch {
             // 监听每日目标变化 - 豁免机制 (Hot-swap)
             // 设计文档 7.4: 学习中途改了每日目标会怎样？
@@ -246,7 +234,7 @@ class LearningViewModel @Inject constructor(
             launch {
                 settingsRepository.wordLapsesFlow.collect { lapses ->
                     if (_uiState.value.learningMode == LearningMode.Word) {
-                        _lapseCounts = lapses
+                        _lapseCounts.value = lapses
                     }
                 }
             }
@@ -254,7 +242,7 @@ class LearningViewModel @Inject constructor(
             launch {
                 settingsRepository.grammarLapsesFlow.collect { lapses ->
                     if (_uiState.value.learningMode == LearningMode.Grammar) {
-                        _lapseCounts = lapses
+                        _lapseCounts.value = lapses
                     }
                 }
             }
@@ -263,21 +251,21 @@ class LearningViewModel @Inject constructor(
             launch {
                 settingsRepository.learningStepsFlow.collect { stepsStr ->
                     _learningStepsConfig = parseSteps(stepsStr)
-                    println("⚙️ 学习步进更新: $_learningStepsConfig (mins)")
+                    println("学习步进更新: $_learningStepsConfig (mins)")
                 }
             }
 
             launch {
                 settingsRepository.relearningStepsFlow.collect { stepsStr ->
                     _relearningStepsConfig = parseSteps(stepsStr)
-                    println("⚙️ 重学步进更新: $_relearningStepsConfig (mins)")
+                    println("重学步进更新: $_relearningStepsConfig (mins)")
                 }
             }
 
             launch {
                 settingsRepository.learnAheadLimitFlow.collect { limit ->
                     _learnAheadLimitMs = limit * 60 * 1000L
-                    println("⚙️ 提前学习限制更新: $limit mins")
+                    println("提前学习限制更新: $limit mins")
                 }
             }
 
@@ -292,10 +280,6 @@ class LearningViewModel @Inject constructor(
 
     /**
      * 处理每日目标变化 - 豁免机制 (Hot-swap)
-     *
-     * 设计文档 7.4: 学习中途改了每日目标会怎样？
-     * - 如果已学超过新目标：提示"今日已达标"，但不强制结束
-     * - 用户可以选择继续学完，或者直接退出
      */
     private fun handleDailyGoalChange(newGoal: Int) {
         val state = _uiState.value
@@ -305,16 +289,14 @@ class LearningViewModel @Inject constructor(
 
         if (completedToday >= newGoal) {
             // 已达标，但不强制结束
-            println("🎯 豁免机制: 目标改为 $newGoal，已学 $completedToday，今日已达标")
+            println("豁免机制: 目标改为 $newGoal，已学 $completedToday，今日已达标")
             _uiState.update {
-                it.copy(error = "🎉 今日目标已达标！可继续学习或退出")
+                it.copy(error = "今日目标已达标！可继续学习或退出")
             }
         } else {
-            println("🎯 目标更新: $newGoal (已学 $completedToday)")
+            println("目标更新: $newGoal (已学 $completedToday)")
         }
     }
-
-    // ========== 事件处理 ==========
 
     /**
      * 处理所有 UI 事件
@@ -368,14 +350,8 @@ class LearningViewModel @Inject constructor(
         }
     }
 
-    // ========== 核心方法：启动学习 ==========
-
     /**
      * 启动学习会话
-     *
-     * 设计文档 1.3: 进入学习模式
-     * - 断点续学：完全恢复之前的现场
-     * - 新会话：抽取新词+复习词，穿插混合
      */
     private fun startLearning(level: String) {
         // 清空撤销快照
@@ -403,7 +379,7 @@ class LearningViewModel @Inject constructor(
                 // 获取学习日重置时间并锁定当前学习日 (零点跨天保护)
                 _resetHour = settingsRepository.learningDayResetHourFlow.first()
                 _sessionLockedDay = DateTimeUtils.getLearningDay(_resetHour)
-                println("🕐 会话锁定学习日: $_sessionLockedDay (重置时间: $_resetHour:00)")
+                println("会话锁定学习日: $_sessionLockedDay (重置时间: $_resetHour:00)")
 
                 val completedToday = when (mode) {
                     LearningMode.Word -> {
@@ -422,7 +398,7 @@ class LearningViewModel @Inject constructor(
                 val savedSession = loadSavedSession(mode, level)
 
                 // 加载失败计数
-                _lapseCounts = when (mode) {
+                _lapseCounts.value = when (mode) {
                     LearningMode.Word -> settingsRepository.wordLapsesFlow.first()
                     LearningMode.Grammar -> settingsRepository.grammarLapsesFlow.first()
                 }
@@ -438,7 +414,7 @@ class LearningViewModel @Inject constructor(
 
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
-                println("❌ 启动学习会话失败: ${e.message}")
+                println("启动学习会话失败: ${e.message}")
                 _uiState.update {
                     it.copy(
                         status = LearningStatus.Error,
@@ -556,7 +532,7 @@ class LearningViewModel @Inject constructor(
                     )
                 }
 
-            println("✅ 恢复学习会话: ${items.size} 个项目, 索引 ${result.index}")
+            println("恢复学习会话: ${items.size} 个项目, 索引 ${result.index}")
             }
 
             is SessionLoadResult.NewSession -> {
@@ -590,7 +566,7 @@ class LearningViewModel @Inject constructor(
                 // 保存初始会话
                 saveSessionState(items.map { it.id }, 0, level)
 
-                println("✅ 新学习会话: ${items.size} 个项目 (复习: ${result.dueCount}, 新: ${result.newCount})")
+                println("新学习会话: ${items.size} 个项目 (复习: ${result.dueCount}, 新: ${result.newCount})")
             }
 
             is SessionLoadResult.Completed -> {
@@ -607,7 +583,7 @@ class LearningViewModel @Inject constructor(
                     )
                 }
 
-                println("✅ 今日学习已完成")
+                println("今日学习已完成")
             }
         }
     }
@@ -623,12 +599,8 @@ class LearningViewModel @Inject constructor(
         }
     }
 
-    // ========== 核心方法：显示答案 ==========
-
     /**
      * 显示答案
-     *
-     * 设计文档 2.2: 第二阶段：验证 (背面)
      * 点击"显示答案"后，卡片翻转或展开
      */
     private fun showAnswer() {
@@ -655,11 +627,6 @@ class LearningViewModel @Inject constructor(
         }
     }
 
-    // ========== 撤销功能 ==========
-
-    /**
-     * 保存撤销快照
-     */
     /**
      * 保存撤销快照
      */
@@ -676,7 +643,7 @@ class LearningViewModel @Inject constructor(
             currentIndex = state.currentIndex,
             currentGrammarIndex = state.currentGrammarIndex,
             learningSteps = _learningSteps.toMap(),
-            lapseCounts = _lapseCounts.toMap(),
+            lapseCounts = _lapseCounts.value.toMap(),
             requeuedItems = _requeuedItems.toSet(),
             learningDueTimes = _learningDueTimes.toMap(),
             completedToday = state.completedToday,
@@ -687,7 +654,7 @@ class LearningViewModel @Inject constructor(
 
         learningUndoHelper.saveSnapshot(snapshot)
 
-        println("📸 快照已保存: ${currentItem.displayName}")
+        println("快照已保存: ${currentItem.displayName}")
     }
 
     /**
@@ -723,7 +690,7 @@ class LearningViewModel @Inject constructor(
                 // 恢复 ViewModel 内部状态
                 _learningSteps.clear()
                 _learningSteps.putAll(snapshot.learningSteps)
-                _lapseCounts = snapshot.lapseCounts
+                _lapseCounts.value = snapshot.lapseCounts
                 _requeuedItems.clear()
                 _requeuedItems.addAll(snapshot.requeuedItems)
                 _learningDueTimes.clear()
@@ -758,12 +725,10 @@ class LearningViewModel @Inject constructor(
                     snapshot.grammarList.map { it.id }
                 saveSessionState(ids, snapshot.currentIndex, _uiState.value.selectedLevel)
 
-
-
-                println("↩️ 撤销成功: ${snapshot.item.displayName}")
+                println("撤销成功: ${snapshot.item.displayName}")
 
             } catch (e: Exception) {
-                println("❌ 撤销失败: ${e.message}")
+                println("撤销失败: ${e.message}")
                 _uiState.update {
                     it.copy(
                         status = LearningStatus.Learning,
@@ -774,15 +739,8 @@ class LearningViewModel @Inject constructor(
         }
     }
 
-    // ========== 核心方法：评分 ==========
-
     /**
      * 评分 (统一处理 Word 和 Grammar)
-     *
-     * 设计文档 3: 评分与卡片流转机制
-     * - 评分 < 3: 忘记/不认识 → 重新入队到末尾
-     * - 评分 >= 3: 认识/掌握 → 移出队列，SRS 计算
-     * - 评分 = 5: 熟词速通 → 直接毕业
      *
      * @param quality 评分 (0-5)
      */
@@ -810,7 +768,7 @@ class LearningViewModel @Inject constructor(
                 when {
                     // 熟词速通 (评分 = 5)
                     quality == 5 -> {
-                        println("🚀 熟词速通: ${currentItem.displayName}")
+                        println("熟词速通: ${currentItem.displayName}")
                         _learningSteps.remove(currentItem.id)
                         processSrsUpdate(currentItem, quality, isLapse = false)
                     }
@@ -821,7 +779,7 @@ class LearningViewModel @Inject constructor(
                         val penalizedItem = applyLapsePenalty(currentItem, quality) ?: currentItem
 
                         // 2. 调度失败流程 (进入 Learning Queue)
-                         val currentLapseCount = _lapseCounts[currentItem.id] ?: 0
+                         val currentLapseCount = _lapseCounts.value[currentItem.id] ?: 0
                          val result = learningScheduler.scheduleFailure(
                              penalizedItem, // 使用更新后的 item
                              currentLapseCount,
@@ -852,7 +810,7 @@ class LearningViewModel @Inject constructor(
                 delay(RATING_DEBOUNCE_MS)
 
             } catch (e: Exception) {
-                println("❌ 评分异常: ${e.message}")
+                println("评分异常: ${e.message}")
                 _uiState.update {
                     it.copy(
                         status = LearningStatus.Error,
@@ -880,7 +838,8 @@ class LearningViewModel @Inject constructor(
                 val updatedWord = item.word.copy(
                     interval = srsResult.interval,
                     repetitionCount = srsResult.repetitionCount,
-                    easinessFactor = srsResult.easinessFactor,
+                    stability = srsResult.stability,
+                    difficulty = srsResult.difficulty,
                     nextReviewDate = srsResult.nextReviewDate,
                     lastReviewedDate = srsResult.lastReviewedDate,
                     firstLearnedDate = srsResult.firstLearnedDate,
@@ -896,7 +855,8 @@ class LearningViewModel @Inject constructor(
                 val updatedGrammar = item.grammar.copy(
                     interval = srsResult.interval,
                     repetitionCount = srsResult.repetitionCount,
-                    easinessFactor = srsResult.easinessFactor,
+                    stability = srsResult.stability,
+                    difficulty = srsResult.difficulty,
                     nextReviewDate = srsResult.nextReviewDate,
                     lastReviewedDate = srsResult.lastReviewedDate,
                     firstLearnedDate = srsResult.firstLearnedDate,
@@ -920,41 +880,38 @@ class LearningViewModel @Inject constructor(
      */
     private suspend fun processRelearningGraduation(item: LearningItem) {
         val today = _sessionLockedDay ?: DateTimeUtils.getLearningDay(_resetHour)
-        val isNew = item.isNew // Should be false here
-
-        // Fuzzing factor: 0.95 ~ 1.05
-        val fuzz = kotlin.random.Random.nextDouble(0.95, 1.05)
+        val isNew = item.isNew
 
         when (item) {
             is LearningItem.WordItem -> {
                 val word = item.word
-                // 应用 Fuzzing
-                val fuzzedInterval = kotlin.math.max(1, (word.interval * fuzz).roundToInt())
+                // 说明：此时 word.interval 已经在 applyLapsePenalty 时由 FSRS 算法计算并更新过了。
+                // 毕业时只需将其“激活”为下一次复习日期，不再进行二次 Fuzz 或手动计算。
+                val interval = word.interval.coerceAtLeast(1)
 
-                // 仅更新日期和次数，保持 Interval (经过 Fuzz) 和 EF 不变
                 val updatedWord = word.copy(
-                    interval = fuzzedInterval,
+                    interval = interval,
                     repetitionCount = word.repetitionCount + 1,
                     lastReviewedDate = today,
-                    nextReviewDate = today + fuzzedInterval,
+                    nextReviewDate = today + interval,
                     lastModifiedTime = com.jian.nemo.core.common.util.DateTimeUtils.getCurrentCompensatedMillis()
                 )
-                println("🎓 重学恢复: id=${updatedWord.id}, interval=${updatedWord.interval}d (原 ${word.interval}d)")
+                println("重学毕业: id=${updatedWord.id}, stability=${updatedWord.stability}, next_interval=${updatedWord.interval}d")
                 val result = updateWordUseCase(updatedWord)
                 handleSrsUpdateResult(result, isNew, isLapse = false)
             }
             is LearningItem.GrammarItem -> {
                 val grammar = item.grammar
-                val fuzzedInterval = kotlin.math.max(1, (grammar.interval * fuzz).roundToInt())
+                val interval = grammar.interval.coerceAtLeast(1)
 
                 val updatedGrammar = grammar.copy(
-                    interval = fuzzedInterval,
+                    interval = interval,
                     repetitionCount = grammar.repetitionCount + 1,
                     lastReviewedDate = today,
-                    nextReviewDate = today + fuzzedInterval,
+                    nextReviewDate = today + interval,
                     lastModifiedTime = com.jian.nemo.core.common.util.DateTimeUtils.getCurrentCompensatedMillis()
                 )
-                println("🎓 重学恢复: id=${updatedGrammar.id}, interval=${updatedGrammar.interval}d (原 ${grammar.interval}d)")
+                println("重学毕业: id=${updatedGrammar.id}, stability=${updatedGrammar.stability}, next_interval=${updatedGrammar.interval}d")
                 val result = updateGrammarUseCase(updatedGrammar)
                 handleSrsUpdateResult(result, isNew, isLapse = false)
             }
@@ -968,7 +925,7 @@ class LearningViewModel @Inject constructor(
         when (result) {
             is ScheduleResult.Leech -> handleLeech(result.item, result.totalLapses)
             is ScheduleResult.Graduate -> {
-                println("🎓 毕业 (Graduated): ${result.item.displayName}")
+                println("毕业 (Graduated): ${result.item.displayName}")
                 _learningSteps.remove(result.item.id)
 
                 // 区分: 新卡毕业 vs 重学毕业 (Re-learning Graduation)
@@ -985,7 +942,7 @@ class LearningViewModel @Inject constructor(
 
                 // Keep due time logic consistent with Requeue
                 if (result.isLapse) {
-                    println("❌ 失败 (Again): ${item.displayName}, Step ${result.nextStepIndex}, Due in ${(result.dueTime - System.currentTimeMillis())/1000}s")
+                    println("失败 (Again): ${item.displayName}, Step ${result.nextStepIndex}, Due in ${(result.dueTime - System.currentTimeMillis())/1000}s")
                     // Increase lapse count in DB
                      val mode = _uiState.value.learningMode
                      when (mode) {
@@ -994,9 +951,9 @@ class LearningViewModel @Inject constructor(
                     }
                 } else {
                      if (result.nextStepIndex == _learningSteps[item.id]) {
-                          println("🟠 困难 (Hard): ${item.displayName}, Keep Step ${result.nextStepIndex}, Due in ${(result.dueTime - System.currentTimeMillis())/1000/60}m")
+                          println("困难 (Hard): ${item.displayName}, Keep Step ${result.nextStepIndex}, Due in ${(result.dueTime - System.currentTimeMillis())/1000/60}m")
                      } else {
-                          println("🆙 进阶 (Good): ${item.displayName} (Step -> ${result.nextStepIndex}), Due in ${(result.dueTime - System.currentTimeMillis())/1000/60}m")
+                          println("进阶 (Good): ${item.displayName} (Step -> ${result.nextStepIndex}), Due in ${(result.dueTime - System.currentTimeMillis())/1000/60}m")
                      }
                 }
 
@@ -1022,14 +979,15 @@ class LearningViewModel @Inject constructor(
                 val updatedWord = word.copy(
                     interval = srsResult.interval,
                     repetitionCount = srsResult.repetitionCount,
-                    easinessFactor = srsResult.easinessFactor,
+                    stability = srsResult.stability,
+                    difficulty = srsResult.difficulty,
                     nextReviewDate = srsResult.nextReviewDate,
                     lastReviewedDate = srsResult.lastReviewedDate,
                     firstLearnedDate = srsResult.firstLearnedDate,
                     lastModifiedTime = com.jian.nemo.core.common.util.DateTimeUtils.getCurrentCompensatedMillis()
                 )
 
-                println("📝 更新单词: id=${updatedWord.id}, rep=${updatedWord.repetitionCount}, interval=${updatedWord.interval}d")
+                println("更新单词: id=${updatedWord.id}, rep=${updatedWord.repetitionCount}, interval=${updatedWord.interval}d")
                 val result = updateWordUseCase(updatedWord)
                 handleSrsUpdateResult(result, isNew, isLapse)
             }
@@ -1040,14 +998,15 @@ class LearningViewModel @Inject constructor(
                 val updatedGrammar = grammar.copy(
                     interval = srsResult.interval,
                     repetitionCount = srsResult.repetitionCount,
-                    easinessFactor = srsResult.easinessFactor,
+                    stability = srsResult.stability,
+                    difficulty = srsResult.difficulty,
                     nextReviewDate = srsResult.nextReviewDate,
                     lastReviewedDate = srsResult.lastReviewedDate,
-                    firstLearnedDate = if (grammar.firstLearnedDate == null && grammar.repetitionCount == 0) today else grammar.firstLearnedDate,
+                    firstLearnedDate = srsResult.firstLearnedDate,
                     lastModifiedTime = com.jian.nemo.core.common.util.DateTimeUtils.getCurrentCompensatedMillis()
                 )
 
-                println("📝 更新语法: id=${updatedGrammar.id}, rep=${updatedGrammar.repetitionCount}, interval=${updatedGrammar.interval}d")
+                println("更新语法: id=${updatedGrammar.id}, rep=${updatedGrammar.repetitionCount}, interval=${updatedGrammar.interval}d")
                 val result = updateGrammarUseCase(updatedGrammar)
                 handleSrsUpdateResult(result, isNew, isLapse)
             }
@@ -1098,12 +1057,8 @@ class LearningViewModel @Inject constructor(
         }
     }
 
-    // ========== 核心方法：队列操作 ==========
-
     /**
      * 重新入队到末尾
-     *
-     * 设计文档 3.1: 卡片重新插回队列末尾
      */
     private fun reQueueToEnd(item: LearningItem) {
         val state = _uiState.value
@@ -1113,8 +1068,10 @@ class LearningViewModel @Inject constructor(
         _learningSteps[item.id] = item.step
         _learningDueTimes[item.id] = item.dueTime
 
-        println("♻️ 重入队: ${item.displayName}, Step=${item.step}")
+        println("重入队: ${item.displayName}, Step=${item.step}")
 
+        // 注意: Requeue 不增加 sessionProcessedCount，
+        // 因为卡片尚未完成学习，后续毕业时才计数 (在 handleSrsUpdateResult 中)
         when (mode) {
             LearningMode.Word -> {
                 if (item is LearningItem.WordItem) {
@@ -1122,10 +1079,7 @@ class LearningViewModel @Inject constructor(
                         add(item.word)
                     }
                     _uiState.update {
-                        it.copy(
-                            wordList = newList,
-                            sessionProcessedCount = it.sessionProcessedCount + 1
-                        )
+                        it.copy(wordList = newList)
                     }
                 }
             }
@@ -1135,10 +1089,7 @@ class LearningViewModel @Inject constructor(
                         add(item.grammar)
                     }
                     _uiState.update {
-                        it.copy(
-                            grammarList = newList,
-                            sessionProcessedCount = it.sessionProcessedCount + 1
-                        )
+                        it.copy(grammarList = newList)
                     }
                 }
             }
@@ -1166,7 +1117,8 @@ class LearningViewModel @Inject constructor(
                     items = state.wordList,
                     getDueTime = { _learningDueTimes[it.id] ?: 0L },
                     now = now,
-                    learnAheadLimitMs = Long.MAX_VALUE // 强制恢复，忽略限制
+                    learnAheadLimitMs = Long.MAX_VALUE, // 强制恢复，忽略限制
+                    preferredIndex = if (mode == LearningMode.Word) state.currentIndex else state.currentGrammarIndex
                 )
             }
             LearningMode.Grammar -> {
@@ -1174,7 +1126,8 @@ class LearningViewModel @Inject constructor(
                     items = state.grammarList,
                     getDueTime = { _learningDueTimes[it.id] ?: 0L },
                     now = now,
-                    learnAheadLimitMs = Long.MAX_VALUE
+                    learnAheadLimitMs = Long.MAX_VALUE,
+                    preferredIndex = state.currentGrammarIndex
                 )
             }
         }
@@ -1212,7 +1165,8 @@ class LearningViewModel @Inject constructor(
                     items = newList,
                     getDueTime = { _learningDueTimes[it.id] ?: 0L },
                     now = now,
-                    learnAheadLimitMs = _learnAheadLimitMs
+                    learnAheadLimitMs = _learnAheadLimitMs,
+                    preferredIndex = currentIndex
                 )
 
                 handleSelectionResult(selection, newList, state.selectedLevel, isWord = true)
@@ -1228,7 +1182,8 @@ class LearningViewModel @Inject constructor(
                     items = newList,
                     getDueTime = { _learningDueTimes[it.id] ?: 0L },
                     now = now,
-                    learnAheadLimitMs = _learnAheadLimitMs
+                    learnAheadLimitMs = _learnAheadLimitMs,
+                    preferredIndex = currentIndex
                 )
 
                 handleSelectionResult(selection, newList, state.selectedLevel, isWord = false)
@@ -1247,7 +1202,7 @@ class LearningViewModel @Inject constructor(
                 completeSession()
             }
             is QueueSelectionResult.Wait -> {
-                println("⏳ 等待中: Waiting until ${result.waitingUntil}")
+                println("等待中: Waiting until ${result.waitingUntil}")
                 _uiState.update {
                     if (isWord) {
                         @Suppress("UNCHECKED_CAST")
@@ -1265,10 +1220,12 @@ class LearningViewModel @Inject constructor(
                         )
                     }
                 }
-                // Save state (using 0 as index since we are waiting)
+                // 保存当前进度位置，而非硬编码为 0
+                // 恢复会话时会从此位置开始寻找下一个可用的卡片
+                val currentIdx = if (isWord) _uiState.value.currentIndex else _uiState.value.currentGrammarIndex
                 @Suppress("UNCHECKED_CAST")
                 val ids = if (isWord) (newList as List<Word>).map { it.id } else (newList as List<Grammar>).map { it.id }
-                saveSessionState(ids, 0, level)
+                saveSessionState(ids, currentIdx, level)
             }
             is QueueSelectionResult.Next -> {
                 val nextIndex = result.index
@@ -1279,7 +1236,7 @@ class LearningViewModel @Inject constructor(
                     // Anki Learn Ahead check was already done in manager
                     val due = _learningDueTimes[nextWord.id] ?: 0L
                     if (due > System.currentTimeMillis()) {
-                         println("⚡ 提前学习 (Learn Ahead)")
+                         println("提前学习 (Learn Ahead)")
                     }
 
                     val nextItem = LearningItem.WordItem(
@@ -1307,7 +1264,7 @@ class LearningViewModel @Inject constructor(
                     val nextGrammar = nextItemObj as Grammar
                     val due = _learningDueTimes[nextGrammar.id] ?: 0L
                     if (due > System.currentTimeMillis()) {
-                         println("⚡ 提前学习 (Learn Ahead)")
+                         println("提前学习 (Learn Ahead)")
                     }
 
                     val nextItem = LearningItem.GrammarItem(
@@ -1338,8 +1295,6 @@ class LearningViewModel @Inject constructor(
 
     /**
      * 完成会话
-     *
-     * 设计文档 6: 学习结算
      */
     private fun completeSession() {
         // 清空撤销快照
@@ -1360,15 +1315,11 @@ class LearningViewModel @Inject constructor(
         clearSession()
         syncService.onLearningCompleted()
 
-        println("🎉 会话完成！")
+        println("会话完成！")
     }
-
-    // ========== 核心方法：自由导航 ==========
 
     /**
      * 导航到下一个
-     *
-     * 设计文档 5.1: 自由浏览 + 自由评分
      */
     private fun navigateNext() {
         val state = _uiState.value
@@ -1391,8 +1342,6 @@ class LearningViewModel @Inject constructor(
 
     /**
      * 导航到上一个
-     *
-     * 设计文档 5.1: 自由浏览 - 允许查看前一张
      */
     private fun navigatePrev() {
         val state = _uiState.value
@@ -1411,9 +1360,6 @@ class LearningViewModel @Inject constructor(
 
     /**
      * 导航到指定索引
-     *
-     * 设计文档 5.1: 自由浏览 + 自由选择
-     * 可在任意位置查看答案并评分
      */
     private fun navigateTo(index: Int) {
         val state = _uiState.value
@@ -1477,8 +1423,6 @@ class LearningViewModel @Inject constructor(
             _uiState.update { it.copy(isNavigating = false) }
         }
     }
-
-    // ========== 辅助方法 ==========
 
     private fun getCurrentItem(): LearningItem? {
         val state = _uiState.value
@@ -1556,13 +1500,9 @@ class LearningViewModel @Inject constructor(
 
     /**
      * 处理钉子户 (Leech)
-     *
-     * 设计文档 3.1: 连续5次失败 (Again)
-     * - 自动暂停 (Suspend) 该卡片
-     * - 从当前学习队列中移除
      */
     private suspend fun handleLeech(item: LearningItem, totalLapses: Int) {
-        println("🩸 钉子户 (Leech): ${item.displayName} (Lapses: $totalLapses)")
+        println("钉子户 (Leech): ${item.displayName} (Lapses: $totalLapses)")
 
         // 提示用户
         _uiState.update {
@@ -1578,7 +1518,7 @@ class LearningViewModel @Inject constructor(
      */
     private fun suspendCurrentItem() {
         val currentItem = getCurrentItem() ?: return
-        println("⏸️ 手动暂停: ${currentItem.displayName}")
+        println("手动暂停: ${currentItem.displayName}")
 
         viewModelScope.launch {
             suspendItem(currentItem)
@@ -1596,7 +1536,7 @@ class LearningViewModel @Inject constructor(
      */
     private fun buryCurrentItem() {
         val currentItem = getCurrentItem() ?: return
-        println("🙈 今日暂缓 (Bury): ${currentItem.displayName}")
+        println("今日暂缓 (Bury): ${currentItem.displayName}")
 
         viewModelScope.launch {
             // 1. 持久化暂停状态 (buriedUntilDay)
@@ -1606,16 +1546,16 @@ class LearningViewModel @Inject constructor(
                     is LearningItem.WordItem -> {
                         val updatedWord = currentItem.word.copy(buriedUntilDay = today)
                         updateWordUseCase(updatedWord)
-                        println("🙈 [持久化] 单词已Bury: ${currentItem.displayName} (Until: $today)")
+                        println("[持久化] 单词已Bury: ${currentItem.displayName} (Until: $today)")
                     }
                     is LearningItem.GrammarItem -> {
                         val updatedGrammar = currentItem.grammar.copy(buriedUntilDay = today)
                         updateGrammarUseCase(updatedGrammar)
-                        println("🙈 [持久化] 语法已Bury: ${currentItem.displayName} (Until: $today)")
+                        println("[持久化] 语法已Bury: ${currentItem.displayName} (Until: $today)")
                     }
                 }
             } catch (e: Exception) {
-                println("❌ [持久化] Bury失败: ${e.message}")
+                println("[持久化] Bury失败: ${e.message}")
             }
 
             // 2. 从各类内存状态中移除
@@ -1644,16 +1584,16 @@ class LearningViewModel @Inject constructor(
                 is LearningItem.WordItem -> {
                     val updatedWord = item.word.copy(isSkipped = true)
                     updateWordUseCase(updatedWord)
-                    println("⏸️ [持久化] 单词已暂停: ${item.displayName}")
+                    println("[持久化] 单词已暂停: ${item.displayName}")
                 }
                 is LearningItem.GrammarItem -> {
                     val updatedGrammar = item.grammar.copy(isSkipped = true)
                     updateGrammarUseCase(updatedGrammar)
-                    println("⏸️ [持久化] 语法已暂停: ${item.displayName}")
+                    println("[持久化] 语法已暂停: ${item.displayName}")
                 }
             }
         } catch (e: Exception) {
-            println("❌ [持久化] 暂停失败: ${e.message}")
+            println("[持久化] 暂停失败: ${e.message}")
             // 即使持久化失败，也继续在内存中移除，避免阻塞用户
         }
 
@@ -1669,12 +1609,10 @@ class LearningViewModel @Inject constructor(
         return try {
             stepsStr.trim().split(Regex("\\s+")).map { it.toInt() }
         } catch (e: Exception) {
-            println("❌ 解析学习步进失败: $stepsStr, 使用默认值")
+            println("解析学习步进失败: $stepsStr, 使用默认值")
             listOf(1, 10)
         }
     }
-
-    // ========== TTS 朗读方法 ==========
 
     /**
      * 朗读单词（日语）
@@ -1693,8 +1631,6 @@ class LearningViewModel @Inject constructor(
         audioRepository.stop()
         audioRepository.playTts(japanese, "ja-JP", id)
     }
-
-    // ========== 生命周期 ==========
 
     override fun onCleared() {
         super.onCleared()

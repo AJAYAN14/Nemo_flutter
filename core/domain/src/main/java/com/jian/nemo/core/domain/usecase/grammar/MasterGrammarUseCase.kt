@@ -43,7 +43,8 @@ class MasterGrammarUseCase @Inject constructor(
 
             val updatedGrammar = grammar.copy(
                 repetitionCount = srsResult.repetitionCount,
-                easinessFactor = srsResult.easinessFactor,
+                stability = srsResult.stability,
+                difficulty = srsResult.difficulty,
                 interval = srsResult.interval,
                 nextReviewDate = srsResult.nextReviewDate,
                 lastReviewedDate = srsResult.lastReviewedDate,

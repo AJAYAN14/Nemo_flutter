@@ -35,10 +35,11 @@ data class Grammar(
      */
     val usages: List<GrammarUsage>,
 
-    // ========== SRS 复习字段 ==========
+    // ========== SRS 复习字段 (FSRS 6) ==========
     override val repetitionCount: Int = 0,
     override val interval: Int = 0,
-    override val easinessFactor: Float = 2.5f,
+    override val stability: Float = 0f,
+    override val difficulty: Float = 0f,
     override val nextReviewDate: Long = 0,
     override val lastReviewedDate: Long? = null,
     override val firstLearnedDate: Long? = null,

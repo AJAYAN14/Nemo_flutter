@@ -39,7 +39,8 @@ class LearningQueueManager @Inject constructor() {
         items: List<T>,
         getDueTime: (T) -> Long,
         now: Long,
-        learnAheadLimitMs: Long
+        learnAheadLimitMs: Long,
+        preferredIndex: Int = 0
     ): QueueSelectionResult<T> {
         if (items.isEmpty()) {
             return QueueSelectionResult.Empty
@@ -51,9 +52,19 @@ class LearningQueueManager @Inject constructor() {
 
         items.forEachIndexed { index, item ->
             val due = getDueTime(item)
+            
+            // 核心逻辑：
+            // 1. 如果找到更小的 dueTime，无条件更新
+            // 2. 如果 dueTime 相同（或都为 0L），则根据 preferredIndex 决定：
+            //    - 如果当前 index >= preferredIndex 且目前的 bestIndex < preferredIndex，说明当前项是“更自然”的下一项
             if (due < minDueTime) {
                 minDueTime = due
                 bestIndex = index
+            } else if (due == minDueTime) {
+                // 当分值相等时，优先选取在游标位置及其之后的项，防止跳回开头
+                if (index >= preferredIndex && bestIndex < preferredIndex) {
+                    bestIndex = index
+                }
             }
         }
 

@@ -67,7 +67,8 @@ data class AppSettings(
 data class WordProgress(
     val wordId: Int,
     val srsLevel: Int,
-    val easinessFactor: Float,
+    val stability: Float = 0f,
+    val difficulty: Float = 0f,
     val interval: Int,
     val nextReviewDate: Long,
     val isFavorite: Boolean,
@@ -91,7 +92,8 @@ data class WordProgress(
 data class GrammarProgress(
     val grammarId: Int,
     val srsLevel: Int,
-    val easinessFactor: Float,
+    val stability: Float = 0f,
+    val difficulty: Float = 0f,
     val interval: Int,
     val nextReviewDate: Long,
     val isFavorite: Boolean,

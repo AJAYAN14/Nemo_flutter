@@ -17,8 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,7 +24,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.jian.nemo.core.designsystem.theme.*
 import com.jian.nemo.core.ui.component.AvatarImage
-import com.jian.nemo.core.ui.component.LocalThemeTransitionTrigger
 import com.jian.nemo.feature.settings.components.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -196,8 +193,8 @@ fun SettingsScreen(
                              // 这里为了更好交互，直接把 ThemeSelector 嵌入
                              ThemeSelectorRow(
                                 selectedTheme = uiState.darkMode,
-                                onThemeSelected = { option, x, y ->
-                                    viewModel.onEvent(SettingsEvent.SetDarkMode(option, x, y))
+                                onThemeSelected = { option ->
+                                    viewModel.onEvent(SettingsEvent.SetDarkMode(option, 0f, 0f))
                                 }
                              )
                         }
@@ -591,18 +588,13 @@ private fun UserProfileRow(
 @Composable
 private fun ThemeSelectorRow(
     selectedTheme: DarkModeOption,
-    onThemeSelected: (DarkModeOption, Float, Float) -> Unit
+    onThemeSelected: (DarkModeOption) -> Unit
 ) {
-    val themeTransitionTrigger = LocalThemeTransitionTrigger.current
-
     val options = listOf(
         DarkModeOption.LIGHT to "浅色",
         DarkModeOption.DARK to "深色",
         DarkModeOption.FOLLOW_SYSTEM to "系统"
     )
-
-    // 记录每个按钮的全局坐标，用于动画中心点
-    val buttonBounds = remember { mutableStateMapOf<Int, androidx.compose.ui.geometry.Rect>() }
 
     SingleChoiceSegmentedButtonRow(
         modifier = Modifier.height(32.dp)
@@ -612,16 +604,7 @@ private fun ThemeSelectorRow(
                 shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                 onClick = {
                     if (selectedTheme != themeOption) {
-                        // 获取按钮中心的全局坐标
-                        val bounds = buttonBounds[index]
-                        val cx = bounds?.center?.x ?: 0f
-                        val cy = bounds?.center?.y ?: 0f
-
-                        // 先触发截图动画
-                        themeTransitionTrigger?.invoke(cx, cy)
-
-                        // 再执行主题切换
-                        onThemeSelected(themeOption, cx, cy)
+                        onThemeSelected(themeOption)
                     }
                 },
                 selected = (selectedTheme == themeOption),
@@ -630,10 +613,7 @@ private fun ThemeSelectorRow(
                     activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     inactiveContainerColor = Color.Transparent,
                     inactiveContentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                modifier = Modifier.onGloballyPositioned { coordinates ->
-                    buttonBounds[index] = coordinates.boundsInWindow()
-                }
+                )
             ) {
                 Text(
                     text = label,

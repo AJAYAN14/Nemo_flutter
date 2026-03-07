@@ -31,14 +31,18 @@ data class WordStudyStateEntity(
     @ColumnInfo(name = "word_id")
     val wordId: Int,
 
-    // ========== SRS 复习字段 ==========
+    // ========== SRS 复习字段 (FSRS 6) ==========
     /** 重复次数 (0表示未学习) */
     @ColumnInfo(name = "repetition_count")
     val repetitionCount: Int = 0,
 
-    /** 易度系数 (默认2.5) */
-    @ColumnInfo(name = "easiness_factor")
-    val easinessFactor: Float = 2.5f,
+    /** 记忆稳定性 (FSRS) */
+    @ColumnInfo(name = "stability")
+    val stability: Float = 0f,
+
+    /** 难度 (FSRS, 1-10) */
+    @ColumnInfo(name = "difficulty")
+    val difficulty: Float = 0f,
 
     /** 间隔天数 */
     @ColumnInfo(name = "interval")

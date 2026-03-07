@@ -247,7 +247,7 @@ class GenerateTestQuestionsUseCase @Inject constructor(
                     if (words.isNotEmpty()) {
                         val sortedPool = when {
                             prioritizeNew -> words.sortedBy { it.repetitionCount }
-                            prioritizeWrong -> words.sortedBy { it.easinessFactor }
+                            prioritizeWrong -> words.sortedByDescending { it.difficulty }
                             else -> words.shuffled()
                         }
                         questions.addAll(sortedPool.take(wordMcCount).map {
@@ -263,7 +263,7 @@ class GenerateTestQuestionsUseCase @Inject constructor(
                                  val g = grammarEntityMap[id]
                                  if (g != null) {
                                      if (prioritizeNew) g.repetitionCount.toDouble()
-                                     else g.easinessFactor.toDouble()
+                                     else g.difficulty.toDouble()
                                  } else 0.0
                              }
                           } else jsonGrammarQuestions.shuffled()
@@ -280,7 +280,7 @@ class GenerateTestQuestionsUseCase @Inject constructor(
                 } else if (contentType == "words" && words.isNotEmpty()) {
                     val sortedPool = when {
                         prioritizeNew -> words.sortedBy { it.repetitionCount }
-                        prioritizeWrong -> words.sortedBy { it.easinessFactor }
+                        prioritizeWrong -> words.sortedByDescending { it.difficulty }
                         else -> words.shuffled()
                     }
                     questions.addAll(sortedPool.take(mcCount).map {
@@ -295,7 +295,7 @@ class GenerateTestQuestionsUseCase @Inject constructor(
                     } else if (grammars.isNotEmpty()) {
                         val sortedPool = when {
                             prioritizeNew -> grammars.sortedBy { it.repetitionCount }
-                            prioritizeWrong -> grammars.sortedBy { it.easinessFactor }
+                            prioritizeWrong -> grammars.sortedByDescending { it.difficulty }
                             else -> grammars.shuffled()
                         }
                         questions.addAll(sortedPool.take(mcCount).map {
@@ -358,7 +358,7 @@ class GenerateTestQuestionsUseCase @Inject constructor(
             // Note: Data is already fetched.
             val sortedWords = when {
                 prioritizeNew -> words.sortedBy { it.repetitionCount } // 0 is new
-                prioritizeWrong -> words.sortedBy { it.easinessFactor } // Low EF is hard/wrong
+                prioritizeWrong -> words.sortedByDescending { it.difficulty } // High difficulty = hard/wrong
                 else -> words.shuffled() // Default random if no priority (or if shuffle is on? Wait. If shuffleQuestions is off, we should keep order? But words came from Repo maybe ordered by ID).
                 // Actually, if priority is OFF, we usually shuffle properties unless shuffleQuestions is off?
                 // The words list from Repo might be ID ordered.
@@ -405,7 +405,7 @@ class GenerateTestQuestionsUseCase @Inject constructor(
             // Prioritize Grammars
             val sortedGrammars = when {
                 prioritizeNew -> grammars.sortedBy { it.repetitionCount }
-                prioritizeWrong -> grammars.sortedBy { it.easinessFactor }
+                prioritizeWrong -> grammars.sortedByDescending { it.difficulty }
                 else -> grammars.shuffled()
             }
              val selectedGrammars = if (prioritizeNew || prioritizeWrong) {
@@ -429,7 +429,7 @@ class GenerateTestQuestionsUseCase @Inject constructor(
                               val g = grammarEntityMap[id]
                               if (g != null) {
                                   if (prioritizeNew) g.repetitionCount.toDouble()
-                                  else g.easinessFactor.toDouble()
+                                  else g.difficulty.toDouble()
                               } else 0.0
                           }
                       } else jsonGrammarQuestions.shuffled()

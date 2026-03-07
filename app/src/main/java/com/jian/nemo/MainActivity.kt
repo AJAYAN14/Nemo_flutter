@@ -30,10 +30,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.jian.nemo.core.ui.component.LocalThemeTransitionTrigger
 import com.jian.nemo.core.ui.component.NemoBottomBar
-import com.jian.nemo.core.ui.component.ThemeTransitionOverlay
-import com.jian.nemo.core.ui.component.ThemeTransitionTrigger
 import com.jian.nemo.core.data.util.DatabaseInitializer
 import com.jian.nemo.core.designsystem.theme.NemoTheme
 import com.jian.nemo.core.domain.repository.SettingsRepository
@@ -49,11 +46,7 @@ import com.jian.nemo.core.ui.component.update.UpdateDialog
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.jian.nemo.core.ui.component.dialog.GoogleTtsInstallDialog
-import androidx.compose.foundation.layout.Box
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 
 /**
  * Nemo 2.0 应用程序入口
@@ -100,74 +93,13 @@ class MainActivity : ComponentActivity() {
             val darkMode by settingsRepository.isDarkModeFlow.collectAsState(initial = null)
             val dynamicColor by settingsRepository.isDynamicColorEnabledFlow.collectAsState(initial = false)
 
-            // 目标主题（期望最终渲染的主题）
-            val targetDarkTheme = darkMode ?: isSystemInDarkTheme()
-
-            // 实际渲染的主题（动画期间可能滞后于 target）
-            var renderedDarkTheme by remember { mutableStateOf(targetDarkTheme) }
-
-            // 主题切换动画触发状态
-            var themeTransitionTrigger by remember { mutableStateOf<ThemeTransitionTrigger?>(null) }
-
-            // 截图完成标记：截图拿到旧主题后，才允许切换底层主题
-            var pendingThemeSwitch by remember { mutableStateOf(false) }
-
-            // 跳过首次初始化（避免冷启动时 DataStore 初始值触发动画）
-            var hasInitialized by remember { mutableStateOf(false) }
-
-            val view = LocalView.current
-
-            // 监听目标主题变化 → 自动触发动画（非手动场景）
-            LaunchedEffect(targetDarkTheme) {
-                if (!hasInitialized) {
-                    // 首次：直接同步，不播放动画
-                    renderedDarkTheme = targetDarkTheme
-                    hasInitialized = true
-                    return@LaunchedEffect
-                }
-                if (targetDarkTheme != renderedDarkTheme && themeTransitionTrigger == null) {
-                    // 非手动触发 → 从右上角自动展开
-                    themeTransitionTrigger = ThemeTransitionTrigger(
-                        centerX = view.width.toFloat(),
-                        centerY = 0f
-                    )
-                }
-            }
-
-            // 截图完成 + 目标已变化 → 切换底层渲染主题
-            LaunchedEffect(targetDarkTheme, pendingThemeSwitch) {
-                if (pendingThemeSwitch && targetDarkTheme != renderedDarkTheme) {
-                    renderedDarkTheme = targetDarkTheme
-                }
-            }
+            val isDarkTheme = darkMode ?: isSystemInDarkTheme()
 
             NemoTheme(
-                darkTheme = renderedDarkTheme,
+                darkTheme = isDarkTheme,
                 dynamicColor = false // 禁用动态取色以强制使用品牌色 #0E68FF
             ) {
-                // 提供主题切换动画触发回调给子组件（如 SettingsScreen）
-                CompositionLocalProvider(
-                    LocalThemeTransitionTrigger provides { x, y ->
-                        themeTransitionTrigger = ThemeTransitionTrigger(x, y)
-                    }
-                ) {
-                    Box {
-                        NemoApp()
-                        ThemeTransitionOverlay(
-                            trigger = themeTransitionTrigger,
-                            onScreenshotCaptured = {
-                                // 截图已捕获旧主题，可以切换底层
-                                pendingThemeSwitch = true
-                            },
-                            onTransitionComplete = {
-                                themeTransitionTrigger = null
-                                pendingThemeSwitch = false
-                                // 确保最终同步
-                                renderedDarkTheme = targetDarkTheme
-                            }
-                        )
-                    }
-                }
+                NemoApp()
             }
         }
     }

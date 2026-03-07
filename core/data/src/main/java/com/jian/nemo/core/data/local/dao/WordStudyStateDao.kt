@@ -46,7 +46,7 @@ interface WordStudyStateDao {
     @Query("UPDATE word_study_states SET is_skipped = :isSkipped, last_modified_time = :time WHERE word_id = :wordId")
     suspend fun updateSkipStatus(wordId: Int, isSkipped: Boolean, time: Long)
 
-    @Query("UPDATE word_study_states SET repetition_count = 0, easiness_factor = 2.5, interval = 0, next_review_date = 0, last_reviewed_date = NULL, first_learned_date = NULL, last_modified_time = :time")
+    @Query("UPDATE word_study_states SET repetition_count = 0, stability = 0, difficulty = 0, interval = 0, next_review_date = 0, last_reviewed_date = NULL, first_learned_date = NULL, last_modified_time = :time")
     suspend fun resetAllProgress(time: Long)
 
     @Query("UPDATE word_study_states SET is_favorite = 0, last_modified_time = :time WHERE is_favorite = 1")

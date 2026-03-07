@@ -26,7 +26,7 @@ import com.jian.nemo.core.data.local.entity.*
         GrammarStudyStateEntity::class,
         FavoriteQuestionEntity::class
     ],
-    version = 14,  // v14: WordEntity 增加 Unique Index (japanese, level)
+    version = 15,  // v15: FSRS 6 - 添加 stability/difficulty 替代 easiness_factor
     exportSchema = true
 )
 abstract class NemoDatabase : RoomDatabase() {

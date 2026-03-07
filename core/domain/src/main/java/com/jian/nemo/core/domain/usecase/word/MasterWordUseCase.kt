@@ -59,7 +59,8 @@ class MasterWordUseCase @Inject constructor(
             // 参考: 旧项目 MasterWordUseCase.kt 第29-32行 - 移除跳过标记
             val updatedWord = word.copy(
                 repetitionCount = srsResult.repetitionCount,
-                easinessFactor = srsResult.easinessFactor,
+                stability = srsResult.stability,
+                difficulty = srsResult.difficulty,
                 interval = srsResult.interval,
                 nextReviewDate = srsResult.nextReviewDate,
                 lastReviewedDate = srsResult.lastReviewedDate,

@@ -13,8 +13,11 @@ data class WordStudyStateUpdate(
     @ColumnInfo(name = "repetition_count")
     val repetitionCount: Int,
 
-    @ColumnInfo(name = "easiness_factor")
-    val easinessFactor: Float,
+    @ColumnInfo(name = "stability")
+    val stability: Float,
+
+    @ColumnInfo(name = "difficulty")
+    val difficulty: Float,
 
     @ColumnInfo(name = "interval")
     val interval: Int,
@@ -55,8 +58,11 @@ data class GrammarStudyStateUpdate(
     @ColumnInfo(name = "repetition_count")
     val repetitionCount: Int,
 
-    @ColumnInfo(name = "easiness_factor")
-    val easinessFactor: Float,
+    @ColumnInfo(name = "stability")
+    val stability: Float,
+
+    @ColumnInfo(name = "difficulty")
+    val difficulty: Float,
 
     @ColumnInfo(name = "interval")
     val interval: Int,

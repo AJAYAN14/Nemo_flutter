@@ -276,7 +276,8 @@ interface GrammarDao {
         SELECT
             g.id, g.grammar, g.grammar_level,
             s.repetition_count AS repetitionCount,
-            s.easiness_factor AS easinessFactor,
+            s.stability AS stability,
+            s.difficulty AS difficulty,
             s.interval AS interval,
             s.next_review_date AS nextReviewDate,
             s.is_favorite AS isFavorite,
@@ -501,6 +502,12 @@ interface GrammarDao {
      */
     @Query("SELECT COUNT(*) FROM grammars WHERE is_delisted = 0")
     suspend fun getGrammarCount(): Int
+
+    /**
+     * 获取语法等级数（用于判断数据是否完整）
+     */
+    @Query("SELECT COUNT(DISTINCT grammar_level) FROM grammars WHERE is_delisted = 0")
+    suspend fun getGrammarLevelCount(): Int
 
     // ========== 数据修复 ==========
 

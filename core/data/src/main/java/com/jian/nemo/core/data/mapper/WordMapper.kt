@@ -36,7 +36,8 @@ object WordMapper {
             isDelisted = entity.isDelisted,
             // 进度信息从 StudyState 获取，若无则使用默认值
             repetitionCount = state?.repetitionCount ?: 0,
-            easinessFactor = state?.easinessFactor ?: 2.5f,
+            stability = state?.stability ?: 0f,
+            difficulty = state?.difficulty ?: 0f,
             interval = state?.interval ?: 0,
             nextReviewDate = state?.nextReviewDate ?: 0,
             lastReviewedDate = state?.lastReviewedDate,
@@ -85,7 +86,8 @@ object WordMapper {
         return WordStudyStateEntity(
             wordId = id,
             repetitionCount = repetitionCount,
-            easinessFactor = easinessFactor,
+            stability = stability,
+            difficulty = difficulty,
             interval = interval,
             nextReviewDate = nextReviewDate,
             lastReviewedDate = lastReviewedDate,

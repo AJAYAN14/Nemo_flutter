@@ -8,6 +8,7 @@ import com.jian.nemo.core.data.local.dao.*
 import com.jian.nemo.core.data.local.migration.MIGRATION_2_3
 import com.jian.nemo.core.data.local.migration.MIGRATION_11_12
 import com.jian.nemo.core.data.local.migration.MIGRATION_12_13
+import com.jian.nemo.core.data.local.migration.MIGRATION_14_15
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -58,7 +59,7 @@ object DatabaseModule {
             NemoDatabase.DATABASE_NAME
         )
             .addCallback(databaseCallback)  // 添加回调
-            .addMigrations(MIGRATION_2_3, MIGRATION_11_12, MIGRATION_12_13)
+            .addMigrations(MIGRATION_2_3, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_14_15)
             .fallbackToDestructiveMigration()
             .build()
     }

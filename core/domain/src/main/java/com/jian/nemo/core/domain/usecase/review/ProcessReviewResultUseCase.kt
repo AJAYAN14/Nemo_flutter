@@ -63,7 +63,8 @@ class ProcessReviewResultUseCase @Inject constructor(
         val result = srsCalculator.calculate(word, quality, today)
         val updatedWord = word.copy(
             repetitionCount = result.repetitionCount,
-            easinessFactor = result.easinessFactor,
+            stability = result.stability,
+            difficulty = result.difficulty,
             interval = result.interval,
             nextReviewDate = result.nextReviewDate,
             lastReviewedDate = result.lastReviewedDate,
@@ -118,7 +119,8 @@ class ProcessReviewResultUseCase @Inject constructor(
         val result = srsCalculator.calculate(grammar, quality, today)
         val updatedGrammar = grammar.copy(
             repetitionCount = result.repetitionCount,
-            easinessFactor = result.easinessFactor,
+            stability = result.stability,
+            difficulty = result.difficulty,
             interval = result.interval,
             nextReviewDate = result.nextReviewDate,
             lastReviewedDate = result.lastReviewedDate,

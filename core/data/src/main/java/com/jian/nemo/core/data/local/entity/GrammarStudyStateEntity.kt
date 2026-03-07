@@ -30,12 +30,15 @@ data class GrammarStudyStateEntity(
     @ColumnInfo(name = "grammar_id")
     val grammarId: Int,
 
-    // ========== SRS 复习字段 ==========
+    // ========== SRS 复习字段 (FSRS 6) ==========
     @ColumnInfo(name = "repetition_count")
     val repetitionCount: Int = 0,
 
-    @ColumnInfo(name = "easiness_factor")
-    val easinessFactor: Float = 2.5f,
+    @ColumnInfo(name = "stability")
+    val stability: Float = 0f,
+
+    @ColumnInfo(name = "difficulty")
+    val difficulty: Float = 0f,
 
     @ColumnInfo(name = "interval")
     val interval: Int = 0,

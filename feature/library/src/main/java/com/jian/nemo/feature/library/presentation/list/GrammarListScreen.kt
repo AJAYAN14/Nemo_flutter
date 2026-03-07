@@ -41,6 +41,7 @@ import com.jian.nemo.core.designsystem.theme.*
 import com.jian.nemo.core.domain.model.Grammar
 import com.jian.nemo.core.ui.component.common.CommonHeader
 import com.jian.nemo.core.ui.navigation.NavDestination
+import com.jian.nemo.core.common.util.GrammarSearchUtils
 
 /**
  * 语法列表界面 (UI/UX Pro Max)
@@ -327,7 +328,7 @@ private fun GrammarListItemPremium(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = grammar.grammar,
+                    text = GrammarSearchUtils.cleanRubi(grammar.grammar),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -336,7 +337,7 @@ private fun GrammarListItemPremium(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = grammar.getFirstExplanation(),
+                    text = GrammarSearchUtils.cleanRubi(grammar.getFirstExplanation()),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,

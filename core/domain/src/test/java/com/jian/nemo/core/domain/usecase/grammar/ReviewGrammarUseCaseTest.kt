@@ -41,12 +41,13 @@ class ReviewGrammarUseCaseTest {
     @Test
     fun `should update grammar with SRS calculation result`() = runTest {
         // Given: 已学习的语法
-        val grammar = createTestGrammar(repetitionCount = 2, easinessFactor = 2.5f)
+        val grammar = createTestGrammar(repetitionCount = 2, stability = 2.5f)
         every { grammarRepository.getGrammarById(1) } returns flowOf(grammar)
 
         val srsResult = SrsUpdateResult(
             repetitionCount = 3,
-            easinessFactor = 2.6f,
+            stability = 2.6f,
+            difficulty = 5.0f,
             interval = 7,
             nextReviewDate = 107L,
             lastReviewedDate = 100L,
@@ -65,7 +66,8 @@ class ReviewGrammarUseCaseTest {
         assertTrue(result is Result.Success)
         val updatedGrammar = updatedGrammarSlot.captured
         assertEquals(3, updatedGrammar.repetitionCount)
-        assertEquals(2.6f, updatedGrammar.easinessFactor, 0.01f)
+        assertEquals(2.6f, updatedGrammar.stability, 0.01f)
+        assertEquals(5.0f, updatedGrammar.difficulty, 0.01f)
         assertEquals(7, updatedGrammar.interval)
         assertEquals(107L, updatedGrammar.nextReviewDate)
     }
@@ -78,7 +80,8 @@ class ReviewGrammarUseCaseTest {
 
         val srsResult = SrsUpdateResult(
             repetitionCount = 2,
-            easinessFactor = 2.5f,
+            stability = 2.5f,
+            difficulty = 5.0f,
             interval = 3,
             nextReviewDate = 103L,
             lastReviewedDate = 100L,
@@ -119,7 +122,8 @@ class ReviewGrammarUseCaseTest {
         val qualitySlot = slot<Int>()
         val srsResult = SrsUpdateResult(
             repetitionCount = 2,
-            easinessFactor = 2.7f,
+            stability = 2.7f,
+            difficulty = 4.0f,
             interval = 3,
             nextReviewDate = 103L,
             lastReviewedDate = 100L,
@@ -140,7 +144,8 @@ class ReviewGrammarUseCaseTest {
     private fun createTestGrammar(
         id: Int = 1,
         repetitionCount: Int = 1,
-        easinessFactor: Float = 2.5f
+        stability: Float = 2.5f,
+        difficulty: Float = 5.0f
     ) = Grammar(
         id = id,
         grammar = "～について",
@@ -158,7 +163,8 @@ class ReviewGrammarUseCaseTest {
         example3 = null,
         translation3 = null,
         repetitionCount = repetitionCount,
-        easinessFactor = easinessFactor,
+        stability = stability,
+        difficulty = difficulty,
         interval = 1,
         nextReviewDate = 100L,
         lastReviewedDate = 95L,

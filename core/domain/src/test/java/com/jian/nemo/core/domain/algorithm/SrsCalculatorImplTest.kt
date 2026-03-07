@@ -14,135 +14,123 @@ class SrsCalculatorImplTest {
         calculator = SrsCalculatorImpl()
     }
 
-    // ========== 基础功能测试 ==========
+    // ========== FSRS 基础功能测试 ==========
 
     @Test
-    fun `首次学习 质量4(Good) 应该毕业并设置间隔1天`() {
+    fun `首次学习 质量4(Good) 应该毕业并设置间隔`() {
         // Given: 未学习的单词
         val item = createNewItem()
 
-        // When: 第一次毕业，质量为4 (Good)
+        // When: 第一次毕业，质量为4 (Good -> FSRS Rating 3)
         val result = calculator.calculate(item, quality = 4, today = 100)
 
-        // Then: 毕业间隔为1天
+        // Then:
         assertEquals(1, result.repetitionCount)
-        assertEquals(1, result.interval)
-        assertEquals(101L, result.nextReviewDate)
+        assertTrue("Interval ${result.interval} should be > 0", result.interval > 0)
+        assertEquals(100L + result.interval, result.nextReviewDate)
+        assertTrue("Stability should be initialized > 0", result.stability > 0f)
+        assertTrue("Difficulty should be initialized > 0", result.difficulty > 0f)
     }
 
     @Test
-    fun `首次学习 质量5(Easy) 应该毕业并设置间隔4天`() {
+    fun `首次学习 质量5(Easy) 应该给更长的间隔`() {
         // Given: 未学习的单词
-        val item = createNewItem()
+        val item1 = createNewItem()
+        val item2 = createNewItem()
 
-        // When: 第一次毕业，质量为5 (Easy)
-        val result = calculator.calculate(item, quality = 5, today = 100)
+        // When:
+        val resultGood = calculator.calculate(item1, quality = 4, today = 100)
+        val resultEasy = calculator.calculate(item2, quality = 5, today = 100)
 
-        // Then: 毕业间隔为4天，EF 增加 0.15
-        assertEquals(1, result.repetitionCount)
-        assertEquals(4, result.interval)
-        assertEquals(2.65f, result.easinessFactor)
+        // Then:
+        assertTrue("Easy interval > Good interval", resultEasy.interval > resultGood.interval)
+        assertTrue("Easy stability > Good stability", resultEasy.stability > resultGood.stability)
     }
 
     @Test
-    fun `复习阶段 使用EF计算间隔`() {
-        // Given: 已毕业1次的单词，间隔1天，EF 2.5
-        val item = createItemWithRepetition(1, interval = 1, easinessFactor = 2.5f)
+    fun `首次学习 质量2(Again) 应该失败且重复次数不增加`() {
+        val item = createNewItem()
+        
+        // When: quality = 2 (Again -> FSRS Rating 1)
+        val result = calculator.calculate(item, quality = 2, today = 100)
+
+        // Then:
+        assertEquals(0, result.repetitionCount)
+        assertEquals(0L, result.nextReviewDate) // 新卡失败不设置下次复习日期
+        assertTrue(result.stability > 0f)
+    }
+
+    @Test
+    fun `复习阶段_质量4_间隔应该增加`() {
+        // Given: 已毕业1次的单词
+        val item = createItemWithRepetition(
+            repetitionCount = 1,
+            stability = 3.0f,
+            difficulty = 5.0f,
+            interval = 3,
+            nextReviewDate = 100
+        )
 
         // When: 复习，质量4 (Good)
         val result = calculator.calculate(item, quality = 4, today = 100)
 
-        // Then: 1 * 2.5 = 2.5 -> 3
+        // Then:
         assertEquals(2, result.repetitionCount)
-        assertTrue("Interval ${result.interval} out of range [2, 4]", result.interval in 2..4)
+        assertTrue("New interval ${result.interval} should be > 3", result.interval > 3)
+        assertTrue("Stability should increase", result.stability > 3.0f)
     }
 
     @Test
-    fun `复习阶段 评分Hard应使用固定倍率1点2倍`() {
-        // Given: 已复习3次，间隔10天，易度系数2.5
-        val item = createItemWithRepetition(3, interval = 10, easinessFactor = 2.5f)
-
-        // When: 复习评分 Hard (3)
-        val result = calculator.calculate(item, quality = 3, today = 100)
-
-        // Then:
-        // 1. EF calc: Q=3 -> EF change = -0.15 -> New EF = 2.35
-        // 2. Base Interval: 10 * 1.2 = 12
-        // 3. Fuzzing: 12 * [0.95, 1.05] = [11.4, 12.6] -> [11, 13]
-
-        assertEquals(4, result.repetitionCount)
-        assertEquals(2.35f, result.easinessFactor)
-        assertTrue("Interval ${result.interval} out of range [11, 13]", result.interval in 11..13)
-    }
-
-    // ========== 延迟奖励测试 (关键优化) ==========
-
-    @Test
-    fun `延迟且记得(Q=4) 应该给予奖励而不是惩罚`() {
-        // Given: 间隔10天，但延迟了10天（总共20天没复习）
+    fun `复习阶段_质量2忘记_应该重新适应`() {
+        // Given: 已复习3次，间隔10天
         val item = createItemWithRepetition(
-            repetitionCount = 4,
+            repetitionCount = 3,
+            stability = 10.0f,
+            difficulty = 5.0f,
             interval = 10,
-            easinessFactor = 2.5f,
-            nextReviewDate = 90 // Today is 100, so delay = 10
+            nextReviewDate = 100,
+            lastReviewedDate = 90
         )
 
-        // When: 延迟复习，质量4（记得不错）
-        val result = calculator.calculate(item, quality = 4, today = 100)
-
-        // Then:
-        // 1. EF calc: Q=4 -> EF change = 0 (Standard SM2: 5-4=1. 0.08+0.02=0.1. 0.1-0.1=0.) -> EF = 2.5
-        // 2. Delay Reward: effectivePrevInterval = 10 + (10 * 0.5) = 15
-        // 3. Base Interval: 15 * 2.5 = 37.5 -> 38
-        // 4. Fuzzing: 38 * [0.95, 1.05] = [36.1, 39.9] -> [36, 40]
-
-        // Compare with NO delay: 10 * 2.5 = 25.
-        // Expect result > 25.
-
-        assertTrue("Interval ${result.interval} should be rewarded (> 30)", result.interval > 30)
-        assertTrue("Interval ${result.interval} < 42", result.interval < 42)
-    }
-
-    @Test
-    fun `延迟但忘记(Q=2) 应该惩罚`() {
-        // Given: 延迟10天
-        val item = createItemWithRepetition(
-            repetitionCount = 4,
-            interval = 10,
-            easinessFactor = 2.5f,
-            nextReviewDate = 90
-        )
-
-        // When: 延迟复习，且忘记了
+        // When: 忘记 (Quality = 2 -> Again)
         val result = calculator.calculate(item, quality = 2, today = 100)
 
-        // Then: Logic for Q<3
-        // EF = max(1.3, 2.5 - 0.20) = 2.3
-        // Interval = 10 * 0.45 = 4.5 -> 5
-        // Fuzzing not applied for Q<3? Let's check code.
-        // Code: if (quality < 3) ... newInterval = (item.interval * 0.45f).roundToInt()
-        // No fuzzing block is inside `else` (quality >= 3).
-
-        assertEquals(5, result.interval)
-        assertEquals(3, result.repetitionCount) // 4 - 1
+        // Then:
+        assertEquals(3, result.repetitionCount) // 失败不增加次数
+        assertEquals(100L + result.interval, result.nextReviewDate)
+        assertTrue("Interval should be reduced after forgetting", result.interval < 10)
+        assertTrue("Stability should decrease", result.stability < 10.0f)
     }
 
-    // ========== 最大间隔测试 ==========
+    // ========== 延迟复习测试 ==========
 
     @Test
-    fun `间隔不应超过最大限制`() {
-        // Given: 间隔已经很大
-        val item = createItemWithRepetition(
-            repetitionCount = 10,
-            interval = 10000,
-            easinessFactor = 2.5f
+    fun `延迟且记得(Q=4) 应该给予稳定性奖励`() {
+        // Given: 间隔10天，但延迟了10天（总共20天没复习）
+        val itemDelayed = createItemWithRepetition(
+            repetitionCount = 4,
+            stability = 10.0f,
+            difficulty = 5.0f,
+            interval = 10,
+            nextReviewDate = 90, // Today is 100, so delay = 10
+            lastReviewedDate = 80 // elapsed = 20
+        )
+        
+        val itemOnTime = createItemWithRepetition(
+            repetitionCount = 4,
+            stability = 10.0f,
+            difficulty = 5.0f,
+            interval = 10,
+            nextReviewDate = 100, // No delay
+            lastReviewedDate = 90 // elapsed = 10
         )
 
-        // When: 再次复习
-        val result = calculator.calculate(item, quality = 5, today = 100)
+        // When
+        val resultDelayed = calculator.calculate(itemDelayed, quality = 4, today = 100)
+        val resultOnTime = calculator.calculate(itemOnTime, quality = 4, today = 100)
 
-        // Then: Should be capped at 3650
-        assertEquals(3650, result.interval)
+        // Then: FSRS 延迟且记得会增加更多 stability
+        assertTrue("Delayed review should boost stability more", resultDelayed.stability > resultOnTime.stability)
     }
 
     // ========== 辅助方法 ==========
@@ -150,7 +138,8 @@ class SrsCalculatorImplTest {
     private fun createNewItem(): TestSrsItem {
         return TestSrsItem(
             repetitionCount = 0,
-            easinessFactor = 2.5f,
+            stability = 0f,
+            difficulty = 0f,
             interval = 0,
             nextReviewDate = 0,
             lastReviewedDate = null,
@@ -160,23 +149,27 @@ class SrsCalculatorImplTest {
 
     private fun createItemWithRepetition(
         repetitionCount: Int,
+        stability: Float,
+        difficulty: Float,
         interval: Int = 1,
-        easinessFactor: Float = 2.5f,
-        nextReviewDate: Long = 100
+        nextReviewDate: Long = 100,
+        lastReviewedDate: Long = 90
     ): TestSrsItem {
         return TestSrsItem(
             repetitionCount = repetitionCount,
-            easinessFactor = easinessFactor,
+            stability = stability,
+            difficulty = difficulty,
             interval = interval,
             nextReviewDate = nextReviewDate,
-            lastReviewedDate = 90,
+            lastReviewedDate = lastReviewedDate,
             firstLearnedDate = 80
         )
     }
 
     private data class TestSrsItem(
         override val repetitionCount: Int,
-        override val easinessFactor: Float,
+        override val stability: Float,
+        override val difficulty: Float,
         override val interval: Int,
         override val nextReviewDate: Long,
         override val lastReviewedDate: Long?,

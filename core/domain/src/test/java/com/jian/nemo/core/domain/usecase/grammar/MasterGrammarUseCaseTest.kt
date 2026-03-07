@@ -49,7 +49,8 @@ class MasterGrammarUseCaseTest {
 
         val srsResult = SrsUpdateResult(
             repetitionCount = 1,
-            easinessFactor = 2.5f,
+            stability = 2.5f,
+            difficulty = 5.0f,
             interval = 1,
             nextReviewDate = 101L,
             lastReviewedDate = 100L,
@@ -79,7 +80,8 @@ class MasterGrammarUseCaseTest {
 
         val srsResult = SrsUpdateResult(
             repetitionCount = 3,
-            easinessFactor = 2.6f,
+            stability = 2.6f,
+            difficulty = 5.0f,
             interval = 7,
             nextReviewDate = 107L,
             lastReviewedDate = 100L,
@@ -109,7 +111,8 @@ class MasterGrammarUseCaseTest {
 
         val srsResult = SrsUpdateResult(
             repetitionCount = 1,
-            easinessFactor = 2.5f,
+            stability = 2.5f,
+            difficulty = 5.0f,
             interval = 1,
             nextReviewDate = 101L,
             lastReviewedDate = 100L,
@@ -149,7 +152,8 @@ class MasterGrammarUseCaseTest {
 
         val srsResult = SrsUpdateResult(
             repetitionCount = 1,
-            easinessFactor = 2.7f, // higher quality
+            stability = 2.7f,
+            difficulty = 4.0f,
             interval = 1,
             nextReviewDate = 101L,
             lastReviewedDate = 100L,
@@ -192,7 +196,8 @@ class MasterGrammarUseCaseTest {
         example3 = null,
         translation3 = null,
         repetitionCount = repetitionCount,
-        easinessFactor = 2.5f,
+        stability = 2.5f,
+        difficulty = 5.0f,
         interval = 0,
         nextReviewDate = 0,
         lastReviewedDate = null,

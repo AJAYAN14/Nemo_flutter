@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
+import com.jian.nemo.core.common.util.GrammarSearchUtils
 import javax.inject.Inject
 
 /**
@@ -44,8 +45,20 @@ class GrammarListViewModel @Inject constructor(
             allGrammars
         } else {
             allGrammars.filter { g ->
-                g.grammar.contains(query, ignoreCase = true) ||
-                g.getFirstExplanation().contains(query, ignoreCase = true)
+                // 1. 匹配语法标题
+                if (GrammarSearchUtils.isMatch(g.grammar, query)) return@filter true
+                
+                // 2. 匹配用法详情 (解释、接续、笔记)
+                g.usages.any { usage ->
+                    GrammarSearchUtils.isMatch(usage.explanation, query) ||
+                    GrammarSearchUtils.isMatch(usage.connection, query) ||
+                    (usage.notes?.let { GrammarSearchUtils.isMatch(it, query) } ?: false) ||
+                    // 3. 匹配例句 (文本、翻译)
+                    usage.examples.any { ex ->
+                        GrammarSearchUtils.isMatch(ex.sentence, query) ||
+                        ex.translation.contains(query, ignoreCase = true)
+                    }
+                }
             }
         }
 

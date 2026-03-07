@@ -57,16 +57,21 @@ data class Word(
      */
     val isDelisted: Boolean = false,
 
-    // ========== SRS 复习字段 ==========
+    // ========== SRS 复习字段 (FSRS 6) ==========
     /**
      * 重复次数 (0表示未学习)
      */
     override val repetitionCount: Int = 0,
 
     /**
-     * 易度系数
+     * 记忆稳定性 (FSRS) — 多少天后回忆概率降至90%
      */
-    override val easinessFactor: Float = 2.5f,
+    override val stability: Float = 0f,
+
+    /**
+     * 难度 (FSRS, 1-10)
+     */
+    override val difficulty: Float = 0f,
 
     /**
      * 间隔天数

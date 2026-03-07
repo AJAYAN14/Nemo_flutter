@@ -519,7 +519,8 @@ interface WordDao {
         SELECT
             w.id, w.japanese, w.hiragana, w.chinese, w.level,
             s.repetition_count AS repetitionCount,
-            s.easiness_factor AS easinessFactor,
+            s.stability AS stability,
+            s.difficulty AS difficulty,
             s.interval AS interval,
             s.next_review_date AS nextReviewDate,
             s.is_favorite AS isFavorite,
@@ -593,6 +594,14 @@ interface WordDao {
 
     @Query("SELECT DISTINCT T2.level FROM wrong_answers T1 JOIN words T2 ON T1.word_id = T2.id")
     fun getWrongAnswerLevels(): Flow<List<String>>
+
+    // ========== 数据统计 ==========
+
+    /**
+     * 获取单词总数
+     */
+    @Query("SELECT COUNT(*) FROM words")
+    suspend fun getWordCount(): Int
 
     // ========== 数据修复 ==========
 

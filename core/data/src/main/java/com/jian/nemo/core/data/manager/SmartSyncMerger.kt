@@ -34,7 +34,8 @@ object SmartSyncMerger {
         return if (remoteTime > localTime) {
             MergeResult.RemoteUpdated(local.copy(
                 repetitionCount = remote.srsLevel,
-                easinessFactor = remote.easinessFactor,
+                stability = remote.stability,
+                difficulty = remote.difficulty,
                 interval = remote.interval,
                 nextReviewDate = remote.nextReviewDate,
                 firstLearnedDate = remote.firstLearnedDate,
@@ -65,7 +66,8 @@ object SmartSyncMerger {
         return if (remoteTime > localTime) {
             MergeResult.RemoteUpdated(local.copy(
                 repetitionCount = remote.srsLevel,
-                easinessFactor = remote.easinessFactor,
+                stability = remote.stability,
+                difficulty = remote.difficulty,
                 interval = remote.interval,
                 nextReviewDate = remote.nextReviewDate,
                 firstLearnedDate = remote.firstLearnedDate,
