@@ -20,7 +20,6 @@ val PartOfSpeech.displayName: String
         PartOfSpeech.SUFFIX -> "接尾词"
         PartOfSpeech.INTERJECTION -> "感叹词"
         PartOfSpeech.FIXED_EXPRESSION -> "固定表达"
-        PartOfSpeech.HONORIFIC -> "敬语"
         PartOfSpeech.LOAN_WORD -> "外来语"
     }
 
@@ -40,6 +39,5 @@ val PartOfSpeech.description: String
         PartOfSpeech.SUFFIX -> "接尾語"
         PartOfSpeech.INTERJECTION -> "感動詞"
         PartOfSpeech.FIXED_EXPRESSION -> "慣用句・連語"
-        PartOfSpeech.HONORIFIC -> "敬語"
         PartOfSpeech.LOAN_WORD -> "カタカナ語"
     }

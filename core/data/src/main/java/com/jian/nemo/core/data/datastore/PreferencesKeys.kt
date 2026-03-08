@@ -232,7 +232,7 @@ object PreferencesKeys {
     /** 朗读语音名称 (Locale + Name) 默认: null (system default) */
     val TTS_VOICE_NAME = stringPreferencesKey("tts_voice_name")
 
-    /** 翻面自动朗读开关 默认: false */
+    /** 翻面自动朗读开关 默认: true */
     val IS_AUTO_PLAY_AUDIO_ENABLED = booleanPreferencesKey("is_auto_play_audio_enabled")
 
     // ========== 恢复断点续传 ==========

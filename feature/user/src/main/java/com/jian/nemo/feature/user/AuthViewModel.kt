@@ -40,6 +40,9 @@ class AuthViewModel @Inject constructor(
     private val getUserAvatarPathUseCase: GetUserAvatarPathUseCase,
     private val authRepository: AuthRepository
 ) : ViewModel() {
+    
+    // 用于隔离登录/注册期间产生的全局状态扰动，防止过早跳转
+    private var isAuthActionInProgress = false
 
     private val _uiState = MutableStateFlow(AuthUiState(isLoading = true))
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
@@ -81,6 +84,9 @@ class AuthViewModel @Inject constructor(
         // 持续观察登录用户状态
         viewModelScope.launch {
             getUserFlowUseCase().collect { user ->
+                // 如果正在执行登录/注册操作，忽略流中的快照，由操作自身处理
+                if (isAuthActionInProgress) return@collect
+                
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -227,22 +233,31 @@ class AuthViewModel @Inject constructor(
                     restoreMessage = null
                 )
             }
-            when (val result = loginUseCase(email, password)) {
-                is Result.Success -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            isLoggedIn = true,
-                            user = result.data
-                        )
+            isAuthActionInProgress = true
+            try {
+                when (val result = loginUseCase(email, password)) {
+                    is Result.Success -> {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                isLoggedIn = true,
+                                user = result.data,
+                                // [Optimization] Set sync loading state immediately to let UI show indicator
+                                isRestoreLoading = true,
+                                restoreStatus = "正在准备同步...",
+                                restoreProgress = 0f
+                            )
+                        }
+                        // 登录成功后启动后台同步 (Smart Sync)
+                        syncRepository.startBackgroundSync(result.data.id)
                     }
-                    // 登录成功后启动后台同步 (Smart Sync)
-                    syncRepository.startBackgroundSync(result.data.id)
+                    is Result.Error -> {
+                        handleAuthError(result.exception, "登录失败")
+                    }
+                    else -> {}
                 }
-                is Result.Error -> {
-                    handleAuthError(result.exception, "登录失败")
-                }
-                else -> {}
+            } finally {
+                isAuthActionInProgress = false
             }
         }
     }
@@ -250,20 +265,25 @@ class AuthViewModel @Inject constructor(
     fun register(username: String, email: String, password: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            when (val result = registerUseCase(username, email, password)) {
-                is Result.Success -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            isLoggedIn = true,
-                            user = result.data
-                        )
+            isAuthActionInProgress = true
+            try {
+                when (val result = registerUseCase(username, email, password)) {
+                    is Result.Success -> {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                isLoggedIn = true,
+                                user = result.data
+                            )
+                        }
                     }
+                    is Result.Error -> {
+                        handleAuthError(result.exception, "注册失败")
+                    }
+                    else -> {}
                 }
-                is Result.Error -> {
-                    handleAuthError(result.exception, "注册失败")
-                }
-                else -> {}
+            } finally {
+                isAuthActionInProgress = false
             }
         }
     }

@@ -28,8 +28,6 @@ enum class PartOfSpeech {
     INTERJECTION,
     /** 固定表达 */
     FIXED_EXPRESSION,
-    /** 敬语 */
-    HONORIFIC,
     /** 外来语 */
     LOAN_WORD
 }

@@ -257,7 +257,30 @@ class WordRepositoryImpl @Inject constructor(
     override suspend fun getLoanWords(): List<Word> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         try {
             val allWords = wordDao.getAllWords().toDomainModels()
-            allWords.filter { it.pos == "外来語" || it.pos?.contains("外来", ignoreCase = true) == true }
+            allWords.filter { word ->
+                val japanese = word.japanese
+                val hiragana = word.hiragana
+                
+                // 1. expression (japanese) 包含英文字母
+                val hasEnglish = japanese.contains(Regex("[a-zA-Z]"))
+                
+                // 用于去除干扰符号的正则
+                val symbolRegex = Regex("[・〜ー\\s\\-()（）/]")
+                
+                // 2. expression (japanese) 去除符号后全为片假名
+                val jCleaned = japanese.replace(symbolRegex, "")
+                val isKatakanaJapanese = jCleaned.isNotEmpty() && jCleaned.all { ch ->
+                    Character.UnicodeBlock.of(ch) == Character.UnicodeBlock.KATAKANA
+                }
+                
+                // 3. kana (hiragana) 去除符号后全为片假名
+                val hCleaned = hiragana.replace(symbolRegex, "")
+                val isKatakanaKana = hCleaned.isNotEmpty() && hCleaned.all { ch ->
+                    Character.UnicodeBlock.of(ch) == Character.UnicodeBlock.KATAKANA
+                }
+                
+                hasEnglish || isKatakanaJapanese || isKatakanaKana
+            }
         } catch (e: Exception) {
             emptyList()
         }
@@ -281,7 +304,6 @@ class WordRepositoryImpl @Inject constructor(
                 PartOfSpeech.SUFFIX -> wordDao.getSuffixes()
                 PartOfSpeech.INTERJECTION -> wordDao.getInterjections()
                 PartOfSpeech.FIXED_EXPRESSION -> wordDao.getFixedExpressions()
-                PartOfSpeech.HONORIFIC -> wordDao.getHonorifics()
                 else -> emptyList()
             }
             entities.toDomainModels()

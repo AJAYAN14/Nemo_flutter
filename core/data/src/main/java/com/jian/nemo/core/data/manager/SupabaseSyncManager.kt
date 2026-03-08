@@ -93,7 +93,25 @@ class SupabaseSyncManager @Inject constructor(
             emit(SyncProgress.Running("准备开始同步...", 0, 0))
 
             // 1. 获取上次同步时间
-            val lastSyncTime = if (force) 0L else settingsRepository.lastSyncTimeFlow.first()
+            var lastSyncTime = if (force) 0L else settingsRepository.lastSyncTimeFlow.first()
+            var isAutoRestoring = false
+            
+            // [Optimization] Check if local database is empty even if lastSyncTime > 0
+            // This happens when Android Auto Backup restores preferences but not the Room database.
+            if (!force && lastSyncTime > 0) {
+                val localCount = wordStudyStateDao.getAllSync().size
+                if (localCount == 0) {
+                    Log.i(TAG, "检测到本地核心数据为空但同步时间戳 > 0，疑为重装恢复，强制开启全量拉取模式")
+                    lastSyncTime = 0L
+                    isAutoRestoring = true
+                }
+            }
+
+            if (isAutoRestoring) {
+                emit(SyncProgress.Running("正在恢复云端数据...", 0, 0))
+                kotlinx.coroutines.delay(200) // 给 UI 一些反应时间
+            }
+
             val startTime = DateTimeUtils.getCurrentCompensatedMillis()
             val queryTime = if (lastSyncTime > 0) lastSyncTime - 60_000 else 0L
 

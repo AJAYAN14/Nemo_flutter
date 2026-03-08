@@ -23,8 +23,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
  * 设置 Repository 实现
  *
  * 管理用户配置和学习统计（连续学习天数等）
- *
- * 参考: 实施计划 04-DataStore配置管理.md 第122-265行
  */
 import com.jian.nemo.core.data.local.NemoDatabase
 import com.jian.nemo.core.data.local.dao.WordDao
@@ -1329,7 +1327,7 @@ class SettingsRepositoryImpl @Inject constructor(
             ttsSpeechRate = prefs[PreferencesKeys.TTS_SPEECH_RATE] ?: 1.0f,
             ttsPitch = prefs[PreferencesKeys.TTS_PITCH] ?: 1.0f,
             ttsVoiceName = prefs[PreferencesKeys.TTS_VOICE_NAME],
-            isAutoPlayAudioEnabled = prefs[PreferencesKeys.IS_AUTO_PLAY_AUDIO_ENABLED] ?: false
+            isAutoPlayAudioEnabled = prefs[PreferencesKeys.IS_AUTO_PLAY_AUDIO_ENABLED] ?: true
         )
     }
 

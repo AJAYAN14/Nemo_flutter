@@ -319,17 +319,15 @@ interface WordDao {
     """)
     suspend fun getWordsSortedByNextReviewDate(levels: List<String>, limit: Int): List<WordEntity>
 
-    // ========== 词性分类查询（12种分类）==========
+    // ========== 词性分类查询（12种分类，首成分匹配）==========
 
     /**
      * 获取所有动词
-     * 包括：自動1/2/3, 他動1/2/3, 自他動1/2/3
+     * 首成分为：他動 / 自動 / 自他動
      */
     @Query("""
         SELECT * FROM words
-        WHERE (pos LIKE '%自動1%' OR pos LIKE '%自動2%' OR pos LIKE '%自動3%'
-        OR pos LIKE '%他動1%' OR pos LIKE '%他動2%' OR pos LIKE '%他動3%'
-        OR pos LIKE '%自他動1%' OR pos LIKE '%自他動2%' OR pos LIKE '%自他動3%')
+        WHERE (pos LIKE '他動%' OR pos LIKE '自動%' OR pos LIKE '自他動%')
         AND is_delisted = 0
         ORDER BY id ASC
     """)
@@ -337,26 +335,23 @@ interface WordDao {
 
     /**
      * 获取所有名词
-     * 包括：名*, 代* 等，但排除组合词性（如 名*他動3）
+     * 首成分为：名 / 代
      */
     @Query("""
-        SELECT * FROM words WHERE
-        (
-            (pos LIKE '名%' AND pos NOT LIKE '%自動%' AND pos NOT LIKE '%他動%'
-             AND pos NOT LIKE '%副%' AND pos NOT LIKE '%イ形%' AND pos NOT LIKE '%ナ形%')
-            OR
-            (pos LIKE '%代%' AND pos NOT LIKE '%自動%' AND pos NOT LIKE '%他動%' AND pos NOT LIKE '%副%')
-        )
+        SELECT * FROM words
+        WHERE (pos LIKE '名%' OR pos LIKE '代%')
+        AND is_delisted = 0
         ORDER BY id ASC
     """)
     suspend fun getNouns(): List<WordEntity>
 
     /**
-     * 获取所有形容词（イ形+ナ形）
+     * 获取所有形容词
+     * 首成分为：イ形 / ナ形
      */
     @Query("""
         SELECT * FROM words
-        WHERE (pos LIKE '%イ形%' OR pos LIKE '%ィ形%' OR (pos LIKE '%ナ形%' AND pos NOT LIKE '%副%'))
+        WHERE (pos LIKE 'イ形%' OR pos LIKE 'ナ形%')
         AND is_delisted = 0
         ORDER BY id ASC
     """)
@@ -364,86 +359,64 @@ interface WordDao {
 
     /**
      * 获取所有副词
+     * 首成分为：副
      */
-    @Query("SELECT * FROM words WHERE pos LIKE '%副%' AND is_delisted = 0 ORDER BY id ASC")
+    @Query("SELECT * FROM words WHERE pos LIKE '副%' AND is_delisted = 0 ORDER BY id ASC")
     suspend fun getAdverbs(): List<WordEntity>
 
     /**
-     * 获取所有连体词
-     */
-    @Query("SELECT * FROM words WHERE pos LIKE '%連体%' ORDER BY id ASC")
-    suspend fun getRentai(): List<WordEntity>
-
-    /**
      * 获取所有助词
+     * 首成分为：助
      */
-    @Query("SELECT * FROM words WHERE pos LIKE '%助%' ORDER BY id ASC")
+    @Query("SELECT * FROM words WHERE pos LIKE '助%' AND is_delisted = 0 ORDER BY id ASC")
     suspend fun getParticles(): List<WordEntity>
 
     /**
      * 获取所有接续词
-     * 包括"接"但排除"接頭"和"接尾"
+     * 首成分为：接 / 接続（排除接尾、接頭）
      */
     @Query("""
         SELECT * FROM words
-        WHERE pos LIKE '%接%' AND pos NOT LIKE '%接頭%' AND pos NOT LIKE '%接尾%'
+        WHERE pos LIKE '接%' AND pos NOT LIKE '接尾%' AND pos NOT LIKE '接頭%'
+        AND is_delisted = 0
         ORDER BY id ASC
     """)
     suspend fun getConjunctions(): List<WordEntity>
 
     /**
-     * 获取所有接头词（前缀）
+     * 获取所有连体词
+     * 首成分为：連体
      */
-    @Query("SELECT * FROM words WHERE pos LIKE '%接頭%' OR pos LIKE '%御〜%' ORDER BY id ASC")
+    @Query("SELECT * FROM words WHERE pos = '連体' AND is_delisted = 0 ORDER BY id ASC")
+    suspend fun getRentai(): List<WordEntity>
+
+    /**
+     * 获取所有接头词（前缀）
+     * 首成分为：接頭
+     */
+    @Query("SELECT * FROM words WHERE pos LIKE '接頭%' AND is_delisted = 0 ORDER BY id ASC")
     suspend fun getPrefixes(): List<WordEntity>
 
     /**
      * 获取所有接尾词（后缀）
+     * 首成分为：接尾
      */
-    @Query("SELECT * FROM words WHERE pos LIKE '%接尾%' ORDER BY id ASC")
+    @Query("SELECT * FROM words WHERE pos LIKE '接尾%' AND is_delisted = 0 ORDER BY id ASC")
     suspend fun getSuffixes(): List<WordEntity>
 
     /**
      * 获取所有感叹词
+     * 首成分为：嘆
      */
-    @Query("SELECT * FROM words WHERE pos LIKE '%嘆%' OR pos LIKE '%喫%' ORDER BY id ASC")
+    @Query("SELECT * FROM words WHERE pos LIKE '嘆%' AND is_delisted = 0 ORDER BY id ASC")
     suspend fun getInterjections(): List<WordEntity>
 
     /**
      * 获取所有固定表达（惯用语/连语）
-     * 连語但不包含名词型连語
+     * 首成分为：連語
      */
-    @Query("""
-        SELECT * FROM words
-        WHERE pos LIKE '%連語%' AND pos NOT LIKE '%名%' AND pos NOT LIKE '%代%'
-        ORDER BY id ASC
-    """)
+    @Query("SELECT * FROM words WHERE pos LIKE '連語%' AND is_delisted = 0 ORDER BY id ASC")
     suspend fun getFixedExpressions(): List<WordEntity>
-
-    /**
-     * 获取所有敬语
-     * 通过关键词匹配识别
-     */
-    @Query("""
-        SELECT * FROM words WHERE
-        japanese LIKE 'お%' OR
-        japanese LIKE 'ご%' OR
-        japanese LIKE '%申す%' OR
-        japanese LIKE '%参る%' OR
-        japanese LIKE '%致す%' OR
-        japanese LIKE '%いたす%' OR
-        japanese LIKE '%存じ%' OR
-        japanese LIKE '%伺う%' OR
-        japanese LIKE '%頂く%' OR
-        japanese LIKE '%いただく%' OR
-        japanese LIKE '%拝見%' OR
-        japanese LIKE '%差し上げ%' OR
-        japanese LIKE '%くださる%' OR
-        japanese LIKE '%下さる%' OR
-        japanese LIKE '%なさる%'
-        ORDER BY id ASC
-    """)
-    suspend fun getHonorifics(): List<WordEntity>
 
     // ========== 批量操作 ==========
 

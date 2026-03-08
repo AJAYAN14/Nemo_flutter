@@ -156,7 +156,6 @@ private fun getIconForPartOfSpeech(pos: PartOfSpeech): ImageVector {
         PartOfSpeech.SUFFIX -> Icons.Default.FormatQuote
         PartOfSpeech.INTERJECTION -> Icons.Default.Campaign
         PartOfSpeech.FIXED_EXPRESSION -> Icons.Default.Star
-        PartOfSpeech.HONORIFIC -> Icons.Default.Diamond
         PartOfSpeech.LOAN_WORD -> Icons.Default.Language
     }
 }

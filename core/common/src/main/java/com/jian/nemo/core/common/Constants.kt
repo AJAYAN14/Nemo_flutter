@@ -52,7 +52,6 @@ object Constants {
         const val SUFFIX = "suffix"
         const val INTERJECTION = "interjection"
         const val FIXED_EXPRESSION = "fixed_expr"
-        const val HONORIFIC = "honorific"
     }
 
     @Deprecated("Use domain constants")
