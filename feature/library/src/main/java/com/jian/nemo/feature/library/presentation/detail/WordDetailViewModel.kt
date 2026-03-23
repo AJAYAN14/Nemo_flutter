@@ -28,6 +28,10 @@ class WordDetailViewModel @Inject constructor(
     private val audioRepository: AudioRepository
 ) : ViewModel() {
 
+    // Audio Status
+    private val _playingAudioId = MutableStateFlow<String?>(null)
+    val playingAudioId = _playingAudioId.asStateFlow()
+
     private val startWordId: Int = checkNotNull(savedStateHandle["wordId"])
 
     // Context IDs for Swipe Navigation
@@ -77,10 +81,6 @@ class WordDetailViewModel @Inject constructor(
     fun getWordFlow(id: Int): kotlinx.coroutines.flow.Flow<Word?> {
         return wordRepository.getWordById(id)
     }
-
-    // Audio Status
-    private val _playingAudioId = MutableStateFlow<String?>(null)
-    val playingAudioId = _playingAudioId.asStateFlow()
 
     private fun observeTtsEvents() {
         viewModelScope.launch {

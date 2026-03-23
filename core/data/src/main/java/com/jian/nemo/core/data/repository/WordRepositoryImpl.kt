@@ -3,7 +3,9 @@ package com.jian.nemo.core.data.repository
 import com.jian.nemo.core.common.Result
 import com.jian.nemo.core.data.local.dao.*
 import com.jian.nemo.core.data.local.entity.TestRecordEntity
+import com.jian.nemo.core.data.local.entity.WordEntity
 import com.jian.nemo.core.data.local.entity.WordStudyStateEntity
+import com.jian.nemo.core.data.mapper.WordMapper
 import com.jian.nemo.core.data.mapper.WordMapper.toDomainModel
 import com.jian.nemo.core.data.mapper.WordMapper.toDomainModels
 import com.jian.nemo.core.data.mapper.WordMapper.toStudyStateEntity
@@ -14,6 +16,7 @@ import com.jian.nemo.core.domain.model.ReviewForecast
 import com.jian.nemo.core.domain.repository.WordRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.flowOn
 import javax.inject.Inject
@@ -35,11 +38,27 @@ class WordRepositoryImpl @Inject constructor(
     private val testRecordDao: TestRecordDao
 ) : WordRepository {
 
+    private suspend fun mapWithStudyState(entities: List<WordEntity>): List<Word> {
+        if (entities.isEmpty()) return emptyList()
+
+        val statesById = wordStudyStateDao
+            .getStatesByIds(entities.map { it.id })
+            .associateBy { it.wordId }
+
+        return entities.map { entity ->
+            WordMapper.toDomainModel(entity, statesById[entity.id])
+        }
+    }
+
     // ========== 查询实现 ==========
 
     override fun getWordById(id: Int): Flow<Word?> {
-        return wordDao.getById(id)
-            .map { it?.toDomainModel() }
+        return combine(
+            wordDao.getById(id),
+            wordStudyStateDao.getByWordIdFlow(id)
+        ) { entity, state ->
+            entity?.let { WordMapper.toDomainModel(it, state) }
+        }
             .catch { e ->
                 emit(null)
             }.flowOn(kotlinx.coroutines.Dispatchers.IO)
@@ -53,7 +72,9 @@ class WordRepositoryImpl @Inject constructor(
         }
 
         return flow
-            .map { it.toDomainModels().filter { w -> !w.isDelisted() } }
+            .map { entities ->
+                mapWithStudyState(entities).filter { w -> !w.isDelisted() }
+            }
             .catch { e ->
                 emit(emptyList())
             }.flowOn(kotlinx.coroutines.Dispatchers.IO)
@@ -61,7 +82,9 @@ class WordRepositoryImpl @Inject constructor(
 
     override fun getDueWords(today: Long): Flow<List<Word>> {
         return wordDao.getDueWords(today)
-            .map { it.toDomainModels().filter { w -> !w.isDelisted() } }
+            .map { entities ->
+                mapWithStudyState(entities).filter { w -> !w.isDelisted() }
+            }
             .catch { e ->
                 emit(emptyList())
             }.flowOn(kotlinx.coroutines.Dispatchers.IO)
@@ -73,6 +96,16 @@ class WordRepositoryImpl @Inject constructor(
 
     override fun getTodayLearnedWords(today: Long): Flow<List<Word>> {
         return wordDao.getTodayLearnedWords(today)
+            .map { entities ->
+                entities.toDomainModels()
+            }
+            .catch { e ->
+                emit(emptyList())
+            }.flowOn(kotlinx.coroutines.Dispatchers.IO)
+    }
+
+    override fun getTodayReviewedWords(today: Long): Flow<List<Word>> {
+        return wordDao.getTodayReviewedWords(today)
             .map { entities ->
                 entities.toDomainModels()
             }
@@ -317,7 +350,7 @@ class WordRepositoryImpl @Inject constructor(
             if (ids.isEmpty()) {
                 emptyList()
             } else {
-                wordDao.getWordsByIds(ids).toDomainModels()
+                mapWithStudyState(wordDao.getWordsByIds(ids))
             }
         } catch (e: Exception) {
             emptyList()

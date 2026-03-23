@@ -42,17 +42,10 @@ fun PremiumGroupCard(
     val shadowColor = if (isDark) Color.Black.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.03f)
 
     Surface(
-        shape = RoundedCornerShape(26.dp),
+        shape = RoundedCornerShape(24.dp),
         color = containerColor,
         border = BorderStroke(0.5.dp, borderColor),
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = shadowElevation,
-                shape = RoundedCornerShape(26.dp),
-                spotColor = shadowColor,
-                ambientColor = shadowColor
-            )
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier.padding(vertical = 8.dp),

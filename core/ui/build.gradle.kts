@@ -56,6 +56,9 @@ dependencies {
 
     debugImplementation(libs.androidx.compose.ui.tooling)
 
+    // Image Loading
+    implementation(libs.coil.compose)
+
     // Testing
     testImplementation(libs.junit)
 }

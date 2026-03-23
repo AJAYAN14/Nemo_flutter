@@ -8,5 +8,11 @@ data class StatisticDisplayItem(
     val japanese: String,
     val hiragana: String,
     val chinese: String,
-    val level: String
+    val level: String,
+    val source: StatisticSource = StatisticSource.LEARNED
 )
+
+enum class StatisticSource {
+    LEARNED,
+    REVIEWED
+}

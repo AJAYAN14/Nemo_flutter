@@ -27,11 +27,23 @@ sealed class TestQuestion {
         override val isAnswered: Boolean = false,
         override val isCorrect: Boolean = false,
         val userAnswerIndex: Int? = null,
-        val explanation: String? = null
+        val explanation: String? = null,
+        val explanationPayload: ExplanationPayload? = null
     ) : TestQuestion() {
         /** 用户的答案文本 */
         val userAnswer: String?
             get() = userAnswerIndex?.let { options.getOrNull(it) }
+
+        /**
+         * 解析统一入口。
+         *
+         * 优先使用显式 payload，保留对旧字段的兼容回退。
+         */
+        val resolvedExplanationPayload: ExplanationPayload?
+            get() = explanationPayload
+                ?: word?.toWordExplanationPayload()
+                ?: explanation?.takeIf { it.isNotBlank() }?.let { ExplanationPayload.GrammarText(it) }
+                ?: grammar?.getFirstExplanation()?.takeIf { it.isNotBlank() }?.let { ExplanationPayload.GrammarText(it) }
     }
 
     /**
@@ -95,6 +107,29 @@ sealed class TestQuestion {
         override val correctAnswer: String
             get() = word.hiragana
     }
+}
+
+/**
+ * 选择题解析的统一载体。
+ */
+sealed interface ExplanationPayload {
+    data class WordSummary(
+        val japanese: String,
+        val hiragana: String,
+        val meaning: String
+    ) : ExplanationPayload
+
+    data class GrammarText(
+        val text: String
+    ) : ExplanationPayload
+}
+
+fun Word.toWordExplanationPayload(): ExplanationPayload.WordSummary {
+    return ExplanationPayload.WordSummary(
+        japanese = japanese,
+        hiragana = hiragana,
+        meaning = chinese
+    )
 }
 
 /**

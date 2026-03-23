@@ -915,8 +915,14 @@ class SupabaseSyncManager @Inject constructor(
             }.decodeSingleOrNull<com.jian.nemo.core.data.manager.SyncAppSettingsDto>()
 
             if (remoteDto != null) {
-                settingsRepository.applyAppSettingsSnapshot(remoteDto.settings)
-                return 1
+                // [MOD] 增加时间戳校验：只有当云端设置更新时才应用
+                val localModifiedTime = settingsRepository.lastSettingsModifiedTimeFlow.first()
+                if (remoteDto.updatedAt > localModifiedTime) {
+                    settingsRepository.applyAppSettingsSnapshot(remoteDto.settings)
+                    return 1
+                } else {
+                    Log.d(TAG, "云端设置较旧或与本地一致 (Remote: ${remoteDto.updatedAt}, Local: $localModifiedTime)，跳过应用")
+                }
             }
         } catch (e: Exception) {
              Log.e(TAG, "Pull settings failed: ${e.message}")

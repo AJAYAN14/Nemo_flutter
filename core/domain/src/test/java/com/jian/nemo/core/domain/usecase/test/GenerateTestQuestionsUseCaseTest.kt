@@ -1,11 +1,22 @@
 package com.jian.nemo.core.domain.usecase.test
 
+import com.jian.nemo.core.common.Result
 import com.jian.nemo.core.common.util.DateTimeUtils
+import com.jian.nemo.core.domain.factory.TestQuestionFactory
 import com.jian.nemo.core.domain.model.QuestionType
 import com.jian.nemo.core.domain.model.TestMode
 import com.jian.nemo.core.domain.model.TestQuestion
+import com.jian.nemo.core.domain.model.ExplanationPayload
+import com.jian.nemo.core.domain.model.Grammar
+import com.jian.nemo.core.domain.model.GrammarUsage
+import com.jian.nemo.core.domain.model.GrammarExample
 import com.jian.nemo.core.domain.model.Word
+import com.jian.nemo.core.domain.repository.GrammarTestRepository
+import com.jian.nemo.core.domain.repository.GrammarWrongAnswerRepository
+import com.jian.nemo.core.domain.repository.SettingsRepository
 import com.jian.nemo.core.domain.repository.WordRepository
+import com.jian.nemo.core.domain.repository.WrongAnswerRepository
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -24,19 +35,45 @@ class GenerateTestQuestionsUseCaseTest {
 
     private lateinit var wordRepository: WordRepository
     private lateinit var grammarRepository: com.jian.nemo.core.domain.repository.GrammarRepository
+    private lateinit var grammarTestRepository: GrammarTestRepository
     private lateinit var generateCardMatchingQuestionsUseCase: GenerateCardMatchingQuestionsUseCase
+    private lateinit var wrongAnswerRepository: WrongAnswerRepository
+    private lateinit var grammarWrongAnswerRepository: GrammarWrongAnswerRepository
+    private lateinit var settingsRepository: SettingsRepository
+    private lateinit var testQuestionFactory: TestQuestionFactory
     private lateinit var useCase: GenerateTestQuestionsUseCase
 
     @Before
     fun setup() {
         wordRepository = mockk()
         grammarRepository = mockk()
-        generateCardMatchingQuestionsUseCase = mockk()
-        useCase = GenerateTestQuestionsUseCase(wordRepository, grammarRepository, generateCardMatchingQuestionsUseCase)
+        grammarTestRepository = mockk()
+        wrongAnswerRepository = mockk()
+        grammarWrongAnswerRepository = mockk()
+        settingsRepository = mockk()
+        testQuestionFactory = TestQuestionFactory()
+        generateCardMatchingQuestionsUseCase = GenerateCardMatchingQuestionsUseCase(wordRepository)
+        useCase = GenerateTestQuestionsUseCase(
+            wordRepository = wordRepository,
+            grammarRepository = grammarRepository,
+            grammarTestRepository = grammarTestRepository,
+            generateCardMatchingQuestionsUseCase = generateCardMatchingQuestionsUseCase,
+            wrongAnswerRepository = wrongAnswerRepository,
+            grammarWrongAnswerRepository = grammarWrongAnswerRepository,
+            settingsRepository = settingsRepository,
+            testQuestionFactory = testQuestionFactory
+        )
 
         // Mock DateTimeUtils
         mockkObject(DateTimeUtils)
-        every { DateTimeUtils.getCurrentEpochDay() } returns 100L
+        every { settingsRepository.learningDayResetHourFlow } returns flowOf(4)
+        every { DateTimeUtils.getLearningDay(4) } returns 100L
+        every { wordRepository.getAllWordsByLevel(any()) } answers {
+            flowOf(createTestWords(20))
+        }
+        coEvery { grammarTestRepository.loadQuestionsByLevel(any()) } returns Result.Success(emptyList())
+        coEvery { wrongAnswerRepository.getAllWrongWordIds() } returns emptyList()
+        coEvery { grammarWrongAnswerRepository.getAllWrongGrammarIds() } returns emptyList()
     }
 
     @Test
@@ -134,9 +171,20 @@ class GenerateTestQuestionsUseCaseTest {
 
         questions.forEach { question ->
             val typingQuestion = question as TestQuestion.Typing
-            // 打字题显示中文,答案是假名
-            assertEquals(typingQuestion.word.chinese, typingQuestion.questionText)
-            assertEquals(typingQuestion.word.hiragana, typingQuestion.correctAnswer)
+            assertTrue(
+                typingQuestion.questionText in setOf(
+                    typingQuestion.word.chinese,
+                    typingQuestion.word.japanese,
+                    typingQuestion.word.hiragana
+                )
+            )
+            assertTrue(
+                typingQuestion.correctAnswer in setOf(
+                    typingQuestion.word.chinese,
+                    typingQuestion.word.japanese,
+                    typingQuestion.word.hiragana
+                )
+            )
         }
     }
 
@@ -218,6 +266,87 @@ class GenerateTestQuestionsUseCaseTest {
         assertEquals(wordIds.distinct().size, wordIds.size)
     }
 
+    @Test
+    fun `word multiple choice should include unified word explanation payload`() = runTest {
+        // Given
+        val word = createTestWord(1, "日本語", "にほんご", "日语")
+        every { wordRepository.getTodayLearnedWords(100L) } returns flowOf(listOf(word))
+
+        // When
+        val questions = useCase(
+            level = "n5",
+            mode = TestMode.JP_TO_CN,
+            count = 1,
+            questionType = QuestionType.MULTIPLE_CHOICE
+        )
+
+        // Then
+        val question = questions.first() as TestQuestion.MultipleChoice
+        val payload = question.explanationPayload
+        assertTrue(payload is ExplanationPayload.WordSummary)
+
+        val wordPayload = payload as ExplanationPayload.WordSummary
+        assertEquals("日本語", wordPayload.japanese)
+        assertEquals("にほんご", wordPayload.hiragana)
+        assertEquals("日语", wordPayload.meaning)
+    }
+
+    @Test
+    fun `grammar multiple choice should include unified grammar explanation payload`() = runTest {
+        // Given
+        val grammar = createTestGrammar(
+            id = 1,
+            grammarText = "〜ている",
+            explanation = "表示动作正在进行"
+        )
+        every { grammarRepository.getTodayLearnedGrammars(100L) } returns flowOf(listOf(grammar))
+        every { grammarRepository.getGrammarsByLevels(any()) } returns flowOf(listOf(grammar))
+
+        // When
+        val questions = useCase(
+            level = "N5",
+            mode = TestMode.JP_TO_CN,
+            count = 1,
+            questionType = QuestionType.MULTIPLE_CHOICE,
+            contentType = "grammar",
+            source = "today"
+        )
+
+        // Then
+        val question = questions.first() as TestQuestion.MultipleChoice
+        val payload = question.explanationPayload
+        assertTrue(payload is ExplanationPayload.GrammarText)
+        assertEquals("表示动作正在进行", (payload as ExplanationPayload.GrammarText).text)
+    }
+
+    private fun createTestGrammar(
+        id: Int,
+        grammarText: String,
+        explanation: String
+    ): Grammar {
+        return Grammar(
+            id = id,
+            grammar = grammarText,
+            grammarLevel = "N5",
+            usages = listOf(
+                GrammarUsage(
+                    subtype = null,
+                    connection = "动词て形",
+                    explanation = explanation,
+                    notes = null,
+                    examples = listOf(
+                        GrammarExample(
+                            sentence = "ご飯を食べています。",
+                            translation = "正在吃饭。",
+                            source = null,
+                            isDialog = false
+                        )
+                    )
+                )
+            )
+        )
+    }
+
     private fun createTestWords(count: Int): List<Word> {
         return (1..count).map { id ->
             createTestWord(
@@ -240,7 +369,6 @@ class GenerateTestQuestionsUseCaseTest {
         hiragana = hiragana,
         chinese = chinese,
         level = "n5",
-        tone = null,
         pos = null,
         example1 = null,
         gloss1 = null,

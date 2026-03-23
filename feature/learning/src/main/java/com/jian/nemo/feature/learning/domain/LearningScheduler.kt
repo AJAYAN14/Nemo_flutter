@@ -58,12 +58,13 @@ class LearningScheduler @Inject constructor() {
     fun scheduleFailure(
         item: LearningItem,
         currentLapseCount: Int,
-        stepConfig: List<Int>
+        stepConfig: List<Int>,
+        leechThreshold: Int = LEECH_THRESHOLD
     ): ScheduleResult {
         val newLapseCount = currentLapseCount + 1
 
         // 1. 钉子户检测
-        if (newLapseCount >= LEECH_THRESHOLD) {
+        if (newLapseCount >= leechThreshold.coerceAtLeast(1)) {
             return ScheduleResult.Leech(item, newLapseCount)
         }
 

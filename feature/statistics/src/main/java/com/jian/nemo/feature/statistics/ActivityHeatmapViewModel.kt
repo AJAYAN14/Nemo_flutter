@@ -2,6 +2,7 @@ package com.jian.nemo.feature.statistics
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jian.nemo.core.common.util.DateTimeUtils
 import com.jian.nemo.core.domain.usecase.statistics.GetHeatmapDataUseCase
 import com.jian.nemo.core.domain.usecase.statistics.HeatmapDay
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -10,7 +11,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 import javax.inject.Inject
 
 data class ActivityHeatmapUiState(
@@ -72,7 +72,7 @@ class ActivityHeatmapViewModel @Inject constructor(
                 maxStreak = maxOf(maxStreak, tempStreak)
 
                 // Check if current streak is active
-                val todayEpoch = LocalDate.now().toEpochDay()
+                val todayEpoch = DateTimeUtils.timestampToEpochDay(DateTimeUtils.getCurrentCompensatedMillis())
                 val todayCount = heatmap.find { it.date == todayEpoch }?.count ?: 0
                 val isTodayActive = sortedActiveDates.contains(todayEpoch)
                 val isYesterdayActive = sortedActiveDates.contains(todayEpoch - 1)

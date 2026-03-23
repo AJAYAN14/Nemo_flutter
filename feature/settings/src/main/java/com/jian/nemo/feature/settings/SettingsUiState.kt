@@ -16,6 +16,8 @@ data class SettingsUiState(
     val learningSteps: String = "1 10", // 学习步进
     val relearningSteps: String = "1 10", // 重学步进
     val learnAheadLimit: Int = 20, // 提前学习限制 (分钟)
+    val leechThreshold: Int = 5, // Leech 判定阈值（累计失败次数）
+    val leechAction: String = "skip", // Leech 行为: skip | bury_today
 
     // 弹窗状态
     val showDailyGoalDialog: Boolean = false,
@@ -91,6 +93,8 @@ sealed interface SettingsEvent {
     data class SetLearningSteps(val steps: String) : SettingsEvent
     data class SetRelearningSteps(val steps: String) : SettingsEvent
     data class SetLearnAheadLimit(val limit: Int) : SettingsEvent
+    data class SetLeechThreshold(val threshold: Int) : SettingsEvent
+    data class SetLeechAction(val action: String) : SettingsEvent
 
     // TTS 设置
     data class SetTtsSpeechRate(val rate: Float) : SettingsEvent

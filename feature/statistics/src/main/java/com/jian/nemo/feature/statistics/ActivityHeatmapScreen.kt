@@ -23,8 +23,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.jian.nemo.core.designsystem.theme.*
 import com.jian.nemo.core.ui.component.common.CommonHeader
 import com.jian.nemo.feature.statistics.presentation.components.LearningHeatmapCard
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 /**
@@ -168,7 +168,8 @@ private fun RichStatsGrid(
         ) {
             // Best Day
             val dateStr = if (bestDayDate > 0) {
-                 LocalDate.ofEpochDay(bestDayDate).format(DateTimeFormatter.ofPattern("MM/dd", Locale.CHINA))
+                 val formatter = SimpleDateFormat("MM/dd", Locale.CHINA)
+                 formatter.format(Date(bestDayDate * 86_400_000L))
             } else "--/--"
 
             RichStatItem(

@@ -46,7 +46,8 @@ class GetLearningStatsUseCaseTest {
 
         // Mock DateTimeUtils
         mockkObject(DateTimeUtils)
-        every { DateTimeUtils.getCurrentEpochDay() } returns 100L
+        every { settingsRepository.learningDayResetHourFlow } returns flowOf(4)
+        every { DateTimeUtils.getLearningDay(4) } returns 100L
     }
 
     private fun setupDefaultMocks(
@@ -55,6 +56,7 @@ class GetLearningStatsUseCaseTest {
         totalStudyDays: Int = 0,
         dueWords: Int = 0,
         dueGrammars: Int = 0,
+        allRecords: List<StudyRecord> = emptyList(),
         todayLearnedWords: List<Word> = emptyList(),
         todayLearnedGrammars: List<Grammar> = emptyList(),
         allLearnedWords: List<Word> = emptyList(),
@@ -67,12 +69,21 @@ class GetLearningStatsUseCaseTest {
         every { settingsRepository.totalStudyDaysFlow } returns flowOf(totalStudyDays)
         every { settingsRepository.dailyGoalFlow } returns flowOf(wordDailyGoal)
         every { settingsRepository.grammarDailyGoalFlow } returns flowOf(grammarDailyGoal)
+        every { studyRecordRepository.getAllRecords() } returns flowOf(allRecords)
+        every { studyRecordRepository.getTotalStudyDays() } returns flowOf(totalStudyDays)
+        every { studyRecordRepository.getRecordsBetween(any(), any()) } returns flowOf(emptyList())
         every { wordRepository.getDueWordsCount(100L) } returns flowOf(dueWords)
         every { grammarRepository.getDueGrammarsCount(100L) } returns flowOf(dueGrammars)
         every { wordRepository.getTodayLearnedWords(100L) } returns flowOf(todayLearnedWords)
         every { grammarRepository.getTodayLearnedGrammars(100L) } returns flowOf(todayLearnedGrammars)
         every { wordRepository.getAllLearnedWords() } returns flowOf(allLearnedWords)
         every { grammarRepository.getAllLearnedGrammars() } returns flowOf(allLearnedGrammars)
+        every { wordRepository.getAllWordsByLevel("N1") } returns flowOf(emptyList())
+        every { wordRepository.getAllWordsByLevel("N2") } returns flowOf(emptyList())
+        every { wordRepository.getAllWordsByLevel("N3") } returns flowOf(emptyList())
+        every { wordRepository.getAllWordsByLevel("N4") } returns flowOf(emptyList())
+        every { wordRepository.getAllWordsByLevel("N5") } returns flowOf(emptyList())
+        every { grammarRepository.getAllGrammars() } returns flowOf(emptyList())
     }
 
     @Test
@@ -98,6 +109,9 @@ class GetLearningStatsUseCaseTest {
             totalStudyDays = 30,
             dueWords = 25,
             dueGrammars = 12,
+            allRecords = (94L..100L).map { date ->
+                StudyRecord(date, 1, 0, 0, 0, 0)
+            },
             todayLearnedWords = mockWords,
             todayLearnedGrammars = mockGrammars,
             allLearnedWords = allLearnedWords,
@@ -197,6 +211,9 @@ class GetLearningStatsUseCaseTest {
             totalStudyDays = 500,
             dueWords = 100,
             dueGrammars = 50,
+            allRecords = (100L - 364L..100L).map { date ->
+                StudyRecord(date, 1, 0, 0, 0, 0)
+            },
             todayLearnedWords = mockWords,
             todayLearnedGrammars = mockGrammars
         )

@@ -2,6 +2,7 @@ package com.jian.nemo.feature.test.presentation.cardmatching
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.os.VibrationEffect
@@ -35,6 +36,7 @@ import com.jian.nemo.core.domain.model.MatchableCard
 import com.jian.nemo.core.ui.util.SoundEffectPlayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import java.util.Locale
 
 /**
  * 可翻转卡片组件
@@ -46,6 +48,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
  * Refactored to Flat UI
  */
 @OptIn(ExperimentalFoundationApi::class)
+@SuppressLint("MissingPermission")
 @Composable
 fun FlippableCard(
     card: MatchableCard,
@@ -378,7 +381,7 @@ fun CardMatchingTestHeader(
             val minutes = timeRemainingSeconds / 60
             val seconds = timeRemainingSeconds % 60
             Text(
-                text = String.format("%02d:%02d", minutes, seconds),
+                text = String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds),
                 style = MaterialTheme.typography.titleMedium,
                 color = if (timeRemainingSeconds < 60) {
                     MaterialTheme.colorScheme.error

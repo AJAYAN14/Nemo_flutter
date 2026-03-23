@@ -15,13 +15,13 @@ if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
-val supabaseUrl: String = localProperties.getProperty("SUPABASE_URL") 
+val supabaseUrl: String? = localProperties.getProperty("SUPABASE_URL") 
     ?: project.findProperty("SUPABASE_URL") as? String 
-    ?: "https://your-project.supabase.co"
+    ?: System.getenv("SUPABASE_URL")
 
-val supabaseAnonKey: String = localProperties.getProperty("SUPABASE_ANON_KEY") 
+val supabaseAnonKey: String? = localProperties.getProperty("SUPABASE_ANON_KEY") 
     ?: project.findProperty("SUPABASE_ANON_KEY") as? String 
-    ?: "your-anon-key"
+    ?: System.getenv("SUPABASE_ANON_KEY")
 
 android {
     namespace = "com.jian.nemo"
@@ -38,17 +38,45 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
+        buildConfigField("String", "SUPABASE_URL", "\"${supabaseUrl ?: "https://your-project.supabase.co"}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${supabaseAnonKey ?: "your-anon-key"}\"")
+    }
+
+    signingConfigs {
+        create("release") {
+            // 优先从环境变量读取（GitHub Actions），否则尝试从 local.properties 或 默认本地相对路径读取
+            val ksPath = System.getenv("KEYSTORE_FILE") 
+                ?: localProperties.getProperty("KEYSTORE_FILE") 
+                ?: "../keystore/nemo.jks"
+            
+            val ksFile = file(ksPath)
+            if (ksFile.exists()) {
+                storeFile = ksFile
+            }
+            
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: localProperties.getProperty("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS") ?: localProperties.getProperty("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD") ?: localProperties.getProperty("KEY_PASSWORD")
+        }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
+    applicationVariants.all {
+        if (buildType.name == "release") {
+            if (supabaseUrl.isNullOrBlank() || supabaseAnonKey.isNullOrBlank()) {
+                throw GradleException("FATAL: SUPABASE_URL and SUPABASE_ANON_KEY must be provided for a release build. Cannot build release variant without valid network credentials.")
+            }
         }
     }
 
@@ -70,6 +98,11 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+
+    lint {
+        // Workaround: lint crashes while analyzing app test sources in this environment.
+        checkTestSources = false
     }
 }
 
@@ -98,6 +131,8 @@ dependencies {
     implementation(libs.supabase.postgrest)
     implementation(libs.supabase.functions)
     implementation(libs.ktor.client.android)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
 
     // AndroidX Core
     implementation(libs.androidx.core.ktx)

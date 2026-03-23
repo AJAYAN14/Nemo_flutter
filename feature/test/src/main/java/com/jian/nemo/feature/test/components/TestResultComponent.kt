@@ -4,7 +4,6 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +25,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit
 import android.annotation.SuppressLint
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import com.jian.nemo.core.domain.model.TestQuestion
+import com.jian.nemo.core.designsystem.theme.TestResultPalette
 import nl.dionsegijn.konfetti.compose.KonfettiView
 import nl.dionsegijn.konfetti.core.Party
 import nl.dionsegijn.konfetti.core.Position
@@ -67,6 +68,7 @@ fun TestResultComponent(
     onRetakeTest: () -> Unit,
     onExitTest: () -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val accuracy = if (totalQuestions > 0) (correctAnswers * 100) / totalQuestions else 0
     val wrongAnswersCount = totalQuestions - correctAnswers
     val timeElapsedMillis = kotlin.math.max(0L, endTimeMillis - startTimeMillis)
@@ -75,7 +77,8 @@ fun TestResultComponent(
     val seconds = timeElapsedSeconds % 60
     val timeFormatted = String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
     val accuracyColor = getAccuracyColor(accuracy)
-    val isDark = isSystemInDarkTheme()
+    val isDark = colorScheme.background.luminance() < 0.5f
+    val textSub = if (isDark) TestResultPalette.SecondaryTextDark else TestResultPalette.SecondaryTextLight
     val context = LocalContext.current
     var showConfetti by remember { mutableStateOf(false) }
 
@@ -198,7 +201,7 @@ fun TestResultComponent(
                         Text(
                             text = getMotivationalQuote(accuracy),
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = textSub,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(top = 8.dp)
                         )
@@ -239,7 +242,7 @@ fun TestResultComponent(
                             Text(
                                 text = "正确率",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = textSub
                             )
                         }
                     }
@@ -251,15 +254,13 @@ fun TestResultComponent(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        val isDark = isSystemInDarkTheme()
-
                         // 答对卡片 - 采用清新的亮绿色系
                         StatCard(
                             icon = Icons.Default.Check,
                             value = correctAnswers.toString(),
                             label = "答对",
-                            backgroundColor = if (isDark) Color(0xFF064E3B) else Color(0xFFE8F5E9),
-                            contentColor = if (isDark) Color(0xFF34D399) else Color(0xFF2E7D32),
+                            backgroundColor = if (isDark) TestResultPalette.CorrectCardBgDark else TestResultPalette.CorrectCardBgLight,
+                            contentColor = if (isDark) TestResultPalette.CorrectCardContentDark else TestResultPalette.CorrectCardContentLight,
                             modifier = Modifier.weight(1f)
                         )
 
@@ -268,8 +269,8 @@ fun TestResultComponent(
                             icon = Icons.Default.Close,
                             value = wrongAnswersCount.toString(),
                             label = "答错",
-                            backgroundColor = if (isDark) Color(0xFF7F1D1D) else Color(0xFFFEE2E2),
-                            contentColor = if (isDark) Color(0xFFF87171) else Color(0xFFB91C1C),
+                            backgroundColor = if (isDark) TestResultPalette.WrongCardBgDark else TestResultPalette.WrongCardBgLight,
+                            contentColor = if (isDark) TestResultPalette.WrongCardContentDark else TestResultPalette.WrongCardContentLight,
                             modifier = Modifier.weight(1f)
                         )
 
@@ -278,8 +279,8 @@ fun TestResultComponent(
                             icon = Icons.Default.AccessTime,
                             value = timeFormatted,
                             label = "用时",
-                            backgroundColor = if (isDark) Color(0xFF78350F) else Color(0xFFFFF8E1),
-                            contentColor = if (isDark) Color(0xFFFBBF24) else Color(0xFFF57F17),
+                            backgroundColor = if (isDark) TestResultPalette.TimeCardBgDark else TestResultPalette.TimeCardBgLight,
+                            contentColor = if (isDark) TestResultPalette.TimeCardContentDark else TestResultPalette.TimeCardContentLight,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -291,13 +292,11 @@ fun TestResultComponent(
                         val totalUsed = actualWordCount + actualGrammarCount
                         val wordPercent = if (totalUsed > 0) (actualWordCount * 100) / totalUsed else 0
                         val grammarPercent = if (totalUsed > 0) (actualGrammarCount * 100) / totalUsed else 0
-
-                        val isDark = isSystemInDarkTheme()
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            color = if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9), // Slate-800(Dark) / Slate-100(Light)
-                            shadowElevation = 2.dp // 增加微阴影提升层次
+                            shape = RoundedCornerShape(24.dp),
+                            color = if (isDark) TestResultPalette.DistributionCardBgDark else TestResultPalette.DistributionCardBgLight,
+                            shadowElevation = 0.dp
                         ) {
                             Column(
                                 modifier = Modifier
@@ -309,7 +308,7 @@ fun TestResultComponent(
                                     text = "测试内容分布",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF1E293B)
+                                    color = if (isDark) TestResultPalette.DistributionTitleDark else TestResultPalette.DistributionTitleLight
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Row(
@@ -326,19 +325,19 @@ fun TestResultComponent(
                                             text = "$wordPercent%",
                                             style = MaterialTheme.typography.headlineSmall,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (isDark) Color(0xFF60A5FA) else Color(0xFF3B82F6) // 现代明媚蓝
+                                            color = if (isDark) TestResultPalette.WordAccentDark else TestResultPalette.WordAccentLight
                                         )
                                         Text(
                                             text = "单词 ($actualWordCount)",
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                                            color = textSub
                                         )
                                     }
 
                                     // 分隔线
                                     VerticalDivider(
                                         modifier = Modifier.height(40.dp),
-                                        color = if (isDark) Color(0xFF334155) else Color(0xFFCBD5E1)
+                                        color = if (isDark) TestResultPalette.DividerDark else TestResultPalette.DividerLight
                                     )
 
                                     // 语法比例
@@ -350,12 +349,12 @@ fun TestResultComponent(
                                             text = "$grammarPercent%",
                                             style = MaterialTheme.typography.headlineSmall,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (isDark) Color(0xFFA78BFA) else Color(0xFF8B5CF6) // 现代魅力紫
+                                            color = if (isDark) TestResultPalette.GrammarAccentDark else TestResultPalette.GrammarAccentLight
                                         )
                                         Text(
                                             text = "语法 ($actualGrammarCount)",
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                                            color = textSub
                                         )
                                     }
                                 }
@@ -366,7 +365,7 @@ fun TestResultComponent(
                                         horizontalArrangement = Arrangement.Center,
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        val tintColor = if (isDark) Color(0xFF60A5FA) else Color(0xFF3B82F6)
+                                        val tintColor = if (isDark) TestResultPalette.WordAccentDark else TestResultPalette.WordAccentLight
                                         Icon(
                                             imageVector = Icons.Default.Info,
                                             contentDescription = "提示",
@@ -508,7 +507,7 @@ fun StatCard(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
         color = backgroundColor,
-        shadowElevation = 2.dp
+        shadowElevation = 0.dp
     ) {
         Column(
             modifier = Modifier
@@ -557,7 +556,7 @@ fun getAccuracyColor(accuracy: Int): Color {
  */
 fun getMotivationalQuote(accuracy: Int): String {
     return when {
-        accuracy == 100 -> "完美！你是单词大师！"
+        accuracy == 100 -> "完美！你是学习大师！"
         accuracy >= 80 -> "太棒了！继续保持！"
         accuracy >= 60 -> "不错！离成功又近了一步！"
         else -> "别灰心，温故而知新！"

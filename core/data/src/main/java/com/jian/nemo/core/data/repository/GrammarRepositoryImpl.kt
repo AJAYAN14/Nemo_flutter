@@ -98,6 +98,15 @@ class GrammarRepositoryImpl @Inject constructor(
             }
     }
 
+    override fun getTodayReviewedGrammars(today: Long): Flow<List<Grammar>> {
+        return grammarDao.getTodayReviewedGrammarsWithUsages(today)
+            .map { it.toDomainModels() }
+            .catch { e ->
+                println("❌ 获取今日复习语法失败: error=${e.message}")
+                emit(emptyList())
+            }
+    }
+
     override fun getFavoriteGrammars(): Flow<List<Grammar>> {
         return grammarDao.getFavoriteGrammarsWithUsages()
             .map { it.toDomainModels() }

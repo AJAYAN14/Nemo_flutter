@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 15,
-    "identityHash": "049785d5427ef3671d4ddeae961c39e2",
+    "identityHash": "838f7829f1d239fa9fbe82d10caa9a4b",
     "entities": [
       {
         "tableName": "words",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `japanese` TEXT NOT NULL, `hiragana` TEXT NOT NULL, `chinese` TEXT NOT NULL, `level` TEXT NOT NULL, `tone` TEXT, `pos` TEXT, `example_1` TEXT, `gloss_1` TEXT, `example_2` TEXT, `gloss_2` TEXT, `example_3` TEXT, `gloss_3` TEXT, `is_delisted` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `japanese` TEXT NOT NULL, `hiragana` TEXT NOT NULL, `chinese` TEXT NOT NULL, `level` TEXT NOT NULL, `pos` TEXT, `example_1` TEXT, `gloss_1` TEXT, `example_2` TEXT, `gloss_2` TEXT, `example_3` TEXT, `gloss_3` TEXT, `is_delisted` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -37,12 +37,6 @@
             "columnName": "level",
             "affinity": "TEXT",
             "notNull": true
-          },
-          {
-            "fieldPath": "tone",
-            "columnName": "tone",
-            "affinity": "TEXT",
-            "notNull": false
           },
           {
             "fieldPath": "pos",
@@ -1215,7 +1209,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '049785d5427ef3671d4ddeae961c39e2')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '838f7829f1d239fa9fbe82d10caa9a4b')"
     ]
   }
 }

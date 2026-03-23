@@ -275,9 +275,8 @@ private fun WordCardBack(word: Word, onFlip: () -> Unit, onSpeak: () -> Unit, on
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        val toneText = word.tone ?: ""
         Text(
-            text = "${word.hiragana} ($toneText)",
+            text = word.hiragana,
             style = MaterialTheme.typography.titleMedium,
             color = NemoTextLight
         )

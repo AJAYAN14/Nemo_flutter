@@ -1,21 +1,47 @@
 # Add project specific ProGuard rules here.
 # You can control the set of applied configuration files using the
 # proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Keep Room annotations
+-keep class * extends androidx.room.RoomDatabase
+-dontwarn androidx.room.paging.**
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Keep Supabase & Ktor model classes (for Serialization)
+-keepattributes *Annotation*, Signature, Exception
+-keep class kotlinx.serialization.** { *; }
+-keepclassmembers class * {
+    @kotlinx.serialization.Serializable *;
+}
+-keep class com.jian.nemo.core.data.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# WorkManager
+-keep class androidx.work.Worker { *; }
+-keep class * extends androidx.work.Worker { *; }
+
+# Hilt & Dagger
+-keep class dagger.hilt.** { *; }
+-keep class com.jian.nemo.** {
+    @javax.inject.Inject *;
+    @dagger.hilt.android.AndroidEntryPoint *;
+}
+
+# Preserve stack traces
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
+# Remove Android Logging and StackTraces in Release build
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int i(...);
+    public static int w(...);
+    public static int d(...);
+    public static int e(...);
+    public static int wtf(...);
+}
+
+-assumenosideeffects class java.lang.Throwable {
+    public void printStackTrace();
+    public void printStackTrace(java.io.PrintStream);
+    public void printStackTrace(java.io.PrintWriter);
+}

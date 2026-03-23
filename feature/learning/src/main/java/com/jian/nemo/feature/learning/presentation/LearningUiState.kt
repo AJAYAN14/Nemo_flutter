@@ -79,8 +79,20 @@ data class LearningUiState(
     val playingAudioId: String? = null,  // 当前正在朗读的 ID (null 表示未朗读)
 
     // 自定义开关
-    val isAutoAudioEnabled: Boolean = false  // 是否开启翻面自动朗读
-)
+    val isAutoAudioEnabled: Boolean = false,  // 是否开启翻面自动朗读
+    val isShowAnswerDelayEnabled: Boolean = false,
+    val showAnswerDelayMs: Long = 5000L,
+    val showAnswerAvailableAt: Long = 0L
+) {
+    val hasPendingItems: Boolean
+        get() = when (learningMode) {
+            LearningMode.Word -> currentWord != null || wordList.isNotEmpty()
+            LearningMode.Grammar -> currentGrammar != null || grammarList.isNotEmpty()
+        }
+
+    val shouldShowDailyGoalMet: Boolean
+        get() = completedToday >= dailyGoal && !hasPendingItems
+}
 
 /**
  * 学习状态

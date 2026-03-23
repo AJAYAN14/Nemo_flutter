@@ -35,11 +35,6 @@ data class Word(
     val level: String,
 
     /**
-     * 音调标记 (如：①、②、③)
-     */
-    val tone: String? = null,
-
-    /**
      * 词性 (Part of Speech)
      */
     val pos: String? = null,

@@ -154,9 +154,9 @@ private fun WordDetailContent(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Hiragana & Tone
+                // Hiragana
                 Text(
-                    text = word.hiragana + (word.tone?.let { " [$it]" } ?: ""),
+                    text = word.hiragana,
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Medium
                     ),

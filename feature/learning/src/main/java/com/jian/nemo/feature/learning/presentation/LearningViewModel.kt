@@ -144,6 +144,9 @@ class LearningViewModel @Inject constructor(
 
         /** 评分防抖延迟 (ms) */
         private const val RATING_DEBOUNCE_MS = 300L
+
+        /** 点击边界容差，避免倒计时到点仍被拦截 */
+        private const val SHOW_ANSWER_GRACE_MS = 150L
     }
 
     private val _uiState = MutableStateFlow(LearningUiState())
@@ -175,6 +178,9 @@ class LearningViewModel @Inject constructor(
 
     /** 提前学习限制 (毫秒) */
     private var _learnAheadLimitMs: Long = 20 * 60 * 1000L
+
+    /** 显示答案等待时长 (毫秒) */
+    private var _showAnswerDelayMs: Long = 5000L
 
     private var ratingJob: Job? = null
     private var navigationJob: Job? = null
@@ -275,6 +281,23 @@ class LearningViewModel @Inject constructor(
                     _uiState.update { it.copy(isAutoAudioEnabled = enabled) }
                 }
             }
+
+            // 监听显示答案等待开关
+            launch {
+                settingsRepository.isShowAnswerDelayEnabledFlow.collect { enabled ->
+                    _uiState.update { it.copy(isShowAnswerDelayEnabled = enabled) }
+                    armShowAnswerDelay()
+                }
+            }
+
+            // 监听显示答案等待时长
+            launch {
+                settingsRepository.showAnswerDelayMsFlow.collect { delayMs ->
+                    _showAnswerDelayMs = delayMs
+                    _uiState.update { it.copy(showAnswerDelayMs = delayMs) }
+                    armShowAnswerDelay()
+                }
+            }
         }
     }
 
@@ -329,8 +352,8 @@ class LearningViewModel @Inject constructor(
             is LearningEvent.Retry -> startLearning(_uiState.value.selectedLevel)
             is LearningEvent.Undo -> undo()
             is LearningEvent.DismissUndo -> {
-                learningUndoHelper.clear()
-                _uiState.update { it.copy(canUndo = false) }
+                // 仅关闭提示，不清空撤销快照。
+                // 这样用户即使错过 Snackbar，也能从菜单继续撤销上一次评分。
             }
             is LearningEvent.ResumeFromWaiting -> resumeFromWaiting()
             is LearningEvent.SuspendCurrent -> suspendCurrentItem()
@@ -347,6 +370,8 @@ class LearningViewModel @Inject constructor(
             is LearningEvent.SpeakWord -> speakWord(event.text)
             is LearningEvent.SpeakExample -> speakExample(event.japanese, event.chinese, event.id)
             is LearningEvent.ToggleAutoPlayAudio -> toggleAutoPlayAudio(event.enabled)
+            is LearningEvent.ToggleShowAnswerDelay -> toggleShowAnswerDelay(event.enabled)
+            is LearningEvent.CycleShowAnswerDelayDuration -> cycleShowAnswerDelayDuration()
         }
     }
 
@@ -355,7 +380,8 @@ class LearningViewModel @Inject constructor(
      */
     private fun startLearning(level: String) {
         // 清空撤销快照
-                learningUndoHelper.clear()
+        learningUndoHelper.clear()
+        syncUndoAvailability()
 
         loadingJob?.cancel()
         loadingJob = viewModelScope.launch {
@@ -531,6 +557,7 @@ class LearningViewModel @Inject constructor(
                         waitingUntil = result.waitingUntil
                     )
                 }
+                armShowAnswerDelay()
 
             println("恢复学习会话: ${items.size} 个项目, 索引 ${result.index}")
             }
@@ -562,6 +589,7 @@ class LearningViewModel @Inject constructor(
                         sessionProcessedCount = 0
                     )
                 }
+                armShowAnswerDelay()
 
                 // 保存初始会话
                 saveSessionState(items.map { it.id }, 0, level)
@@ -579,7 +607,8 @@ class LearningViewModel @Inject constructor(
                         wordList = emptyList(),
                         grammarList = emptyList(),
                         currentWord = null,
-                        currentGrammar = null
+                        currentGrammar = null,
+                        showAnswerAvailableAt = 0L
                     )
                 }
 
@@ -605,7 +634,13 @@ class LearningViewModel @Inject constructor(
      */
     private fun showAnswer() {
         if (_uiState.value.status == LearningStatus.Processing) return
-        _uiState.update { it.copy(isAnswerShown = true, isCardFlipped = true) }
+
+        val state = _uiState.value
+        if (state.isShowAnswerDelayEnabled && System.currentTimeMillis() + SHOW_ANSWER_GRACE_MS < state.showAnswerAvailableAt) {
+            return
+        }
+
+        _uiState.update { it.copy(isAnswerShown = true, isCardFlipped = true, showAnswerAvailableAt = 0L) }
 
         // 自动朗读逻辑
         if (_uiState.value.isAutoAudioEnabled) {
@@ -625,6 +660,34 @@ class LearningViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.setAutoPlayAudioEnabled(enabled)
         }
+    }
+
+    private fun toggleShowAnswerDelay(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setShowAnswerDelayEnabled(enabled)
+        }
+    }
+
+    private fun cycleShowAnswerDelayDuration() {
+        val next = when (_showAnswerDelayMs) {
+            3000L -> 5000L
+            5000L -> 7000L
+            7000L -> 10000L
+            else -> 3000L
+        }
+        viewModelScope.launch {
+            settingsRepository.setShowAnswerDelayMs(next)
+        }
+    }
+
+    private fun armShowAnswerDelay() {
+        val state = _uiState.value
+        if (!state.isShowAnswerDelayEnabled || state.isAnswerShown || !state.hasPendingItems || state.status != LearningStatus.Learning) {
+            _uiState.update { it.copy(showAnswerAvailableAt = 0L) }
+            return
+        }
+
+        _uiState.update { it.copy(showAnswerAvailableAt = System.currentTimeMillis() + _showAnswerDelayMs) }
     }
 
     /**
@@ -653,15 +716,31 @@ class LearningViewModel @Inject constructor(
         )
 
         learningUndoHelper.saveSnapshot(snapshot)
+        syncUndoAvailability()
 
         println("快照已保存: ${currentItem.displayName}")
+    }
+
+    /**
+     * 同步撤销可用性 (单一真相源: LearningUndoHelper)
+     */
+    private fun syncUndoAvailability() {
+        val canUndo = learningUndoHelper.canUndo()
+        _uiState.update { it.copy(canUndo = canUndo) }
     }
 
     /**
      * 撤销上一次评分
      */
     private fun undo() {
-        val snapshot = learningUndoHelper.popSnapshot() ?: return
+        if (_uiState.value.status == LearningStatus.Processing) return
+
+        val snapshot = learningUndoHelper.popSnapshot() ?: run {
+            syncUndoAvailability()
+            return
+        }
+        // 快照已被消费，立即刷新可撤销状态，避免快速重复点击。
+        syncUndoAvailability()
 
         viewModelScope.launch {
             try {
@@ -712,11 +791,11 @@ class LearningViewModel @Inject constructor(
                         sessionProcessedCount = snapshot.sessionProcessedCount,
                         isAnswerShown = true,  // 撤销后显示答案面
                         isCardFlipped = true,
-                        canUndo = false,  // 撤销后不能再撤销
                         ratingIntervals = calculateRatingIntervals(snapshot.item),
                         slideDirection = SlideDirection.BACKWARD
                     )
                 }
+                syncUndoAvailability()
 
                 // 保存会话状态
                 val ids = if (mode == LearningMode.Word)
@@ -735,6 +814,7 @@ class LearningViewModel @Inject constructor(
                         error = "撤销失败: ${e.message}"
                     )
                 }
+                syncUndoAvailability()
             }
         }
     }
@@ -773,20 +853,24 @@ class LearningViewModel @Inject constructor(
                         processSrsUpdate(currentItem, quality, isLapse = false)
                     }
 
-                     // 忘记 (评分 < 3)
-                    quality < 3 -> {
-                        // 1. 先应用惩罚 (更新数据库中的 Interval/EF)，确保下次毕业时基于惩罚后的值计算
-                        val penalizedItem = applyLapsePenalty(currentItem, quality) ?: currentItem
+                        // 忘记 (评分 < 3)
+                        quality < 3 -> {
+                            // 1. 先应用惩罚 (更新数据库中的 Interval/EF)，确保下次毕业时基于惩罚后的值计算
+                            val penalizedItem = applyLapsePenalty(currentItem, quality) ?: currentItem
 
-                        // 2. 调度失败流程 (进入 Learning Queue)
-                         val currentLapseCount = _lapseCounts.value[currentItem.id] ?: 0
-                         val result = learningScheduler.scheduleFailure(
-                             penalizedItem, // 使用更新后的 item
-                             currentLapseCount,
-                             _relearningStepsConfig
-                         )
-                         handleScheduleResult(result)
-                    }
+                            // 2. 调度失败流程 (进入 Learning Queue)
+                            val currentLapseCount = _lapseCounts.value[currentItem.id] ?: 0
+                            
+                            // 新卡 Again 应该使用学习步长，复习卡 Again 使用重学步长
+                            val config = if (currentItem.isNew) _learningStepsConfig else _relearningStepsConfig
+                            
+                            val result = learningScheduler.scheduleFailure(
+                                penalizedItem, // 使用更新后的 item
+                                currentLapseCount,
+                                config
+                            )
+                            handleScheduleResult(result)
+                        }
 
                     // 掌握 (评分 3-4)
                     else -> {
@@ -1036,8 +1120,7 @@ class LearningViewModel @Inject constructor(
                         it.copy(
                             completedThisSession = it.completedThisSession + 1,
                             completedToday = if (isNew) it.completedToday + 1 else it.completedToday,
-                            sessionProcessedCount = it.sessionProcessedCount + 1,
-                            canUndo = true  // 评分成功后可撤销
+                            sessionProcessedCount = it.sessionProcessedCount + 1
                         )
                     }
 
@@ -1258,6 +1341,7 @@ class LearningViewModel @Inject constructor(
                             slideDirection = SlideDirection.FORWARD
                         )
                     }
+                    armShowAnswerDelay()
                     @Suppress("UNCHECKED_CAST")
                     saveSessionState((newList as List<Word>).map { it.id }, nextIndex, level)
                 } else {
@@ -1286,6 +1370,7 @@ class LearningViewModel @Inject constructor(
                             slideDirection = SlideDirection.FORWARD
                         )
                     }
+                    armShowAnswerDelay()
                     @Suppress("UNCHECKED_CAST")
                     saveSessionState((newList as List<Grammar>).map { it.id }, nextIndex, level)
                 }
@@ -1297,9 +1382,6 @@ class LearningViewModel @Inject constructor(
      * 完成会话
      */
     private fun completeSession() {
-        // 清空撤销快照
-        learningUndoHelper.clear()
-
         _uiState.update {
             it.copy(
                 status = LearningStatus.SessionCompleted,
@@ -1308,12 +1390,14 @@ class LearningViewModel @Inject constructor(
                 wordList = emptyList(),
                 grammarList = emptyList(),
                 currentIndex = 0,
-                currentGrammarIndex = 0
+                currentGrammarIndex = 0,
+                showAnswerAvailableAt = 0L
             )
         }
 
         clearSession()
         syncService.onLearningCompleted()
+        syncUndoAvailability()
 
         println("会话完成！")
     }
@@ -1390,6 +1474,7 @@ class LearningViewModel @Inject constructor(
                             slideDirection = direction
                         )
                     }
+                    armShowAnswerDelay()
 
                     saveSessionState(state.wordList.map { it.id }, index, state.selectedLevel)
                 }
@@ -1414,6 +1499,7 @@ class LearningViewModel @Inject constructor(
                             slideDirection = direction
                         )
                     }
+                    armShowAnswerDelay()
 
                     saveSessionState(state.grammarList.map { it.id }, index, state.selectedLevel)
                 }
@@ -1492,6 +1578,7 @@ class LearningViewModel @Inject constructor(
     private fun exitLearning() {
         // 清空撤销快照
         learningUndoHelper.clear()
+        syncUndoAvailability()
 
         _uiState.value = LearningUiState()
     }

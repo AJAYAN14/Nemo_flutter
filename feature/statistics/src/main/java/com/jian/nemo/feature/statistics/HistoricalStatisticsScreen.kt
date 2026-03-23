@@ -45,10 +45,12 @@ fun HistoricalStatisticsScreen(
 
     Scaffold(
         topBar = {
-            CommonHeader(
-                title = "历史统计",
-                onBack = onBack
-            )
+            Column(modifier = Modifier.background(backgroundColor)) {
+                CommonHeader(
+                    title = "历史统计",
+                    onBack = onBack
+                )
+            }
         },
         containerColor = backgroundColor
     ) { innerPadding ->
@@ -83,7 +85,8 @@ fun HistoricalStatisticsScreen(
                     StatisticsListCard(
                         items = words,
                         onItemClick = onNavigateToWordDetail,
-                        isWord = true
+                        isWord = true,
+                        showSourceBadge = false
                     )
                 }
             } else {
@@ -102,7 +105,8 @@ fun HistoricalStatisticsScreen(
                     StatisticsListCard(
                         items = grammars,
                         onItemClick = onNavigateToGrammarDetail,
-                        isWord = false
+                        isWord = false,
+                        showSourceBadge = false
                     )
                 }
             } else {

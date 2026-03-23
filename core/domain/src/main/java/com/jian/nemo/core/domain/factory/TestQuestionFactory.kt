@@ -31,7 +31,8 @@ class TestQuestionFactory @Inject constructor() {
             mode = mode,
             questionText = getQuestionText(word, mode),
             correctAnswer = correctAnswer,
-            options = if (shuffleOptions) options.shuffled() else options
+            options = if (shuffleOptions) options.shuffled() else options,
+            explanationPayload = word.toWordExplanationPayload()
         )
     }
 
@@ -51,7 +52,8 @@ class TestQuestionFactory @Inject constructor() {
             mode = mode,
             questionText = grammar.grammar,
             correctAnswer = correctAnswer,
-            options = if (shuffleOptions) options.shuffled() else options
+            options = if (shuffleOptions) options.shuffled() else options,
+            explanationPayload = ExplanationPayload.GrammarText(correctAnswer)
         )
     }
 
@@ -73,7 +75,8 @@ class TestQuestionFactory @Inject constructor() {
             questionText = jsonQ.question,
             correctAnswer = jsonQ.options[jsonQ.correctIndex],
             options = jsonQ.options,
-            explanation = jsonQ.explanation
+            explanation = jsonQ.explanation,
+            explanationPayload = resolveJsonGrammarExplanationPayload(jsonQ.explanation, grammar)
         ).let { if (shuffleOptions) it.copy(options = it.options.shuffled()) else it }
     }
 
@@ -187,5 +190,14 @@ class TestQuestionFactory @Inject constructor() {
         } catch (_: Exception) {
             0
         }
+    }
+
+    private fun resolveJsonGrammarExplanationPayload(
+        jsonExplanation: String?,
+        grammar: Grammar?
+    ): ExplanationPayload? {
+        val text = jsonExplanation?.takeIf { it.isNotBlank() }
+            ?: grammar?.getFirstExplanation()?.takeIf { it.isNotBlank() }
+        return text?.let { ExplanationPayload.GrammarText(it) }
     }
 }

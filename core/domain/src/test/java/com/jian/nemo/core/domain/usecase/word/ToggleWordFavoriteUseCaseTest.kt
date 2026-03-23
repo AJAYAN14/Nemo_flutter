@@ -80,7 +80,6 @@ class ToggleWordFavoriteUseCaseTest {
         hiragana = "てすと",
         chinese = "测试",
         level = "n5",
-        tone = null,
         pos = null,
         example1 = null,
         gloss1 = null,

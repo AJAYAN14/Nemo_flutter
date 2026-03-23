@@ -88,8 +88,7 @@ class LearningCalendarViewModel @Inject constructor(
         viewModelScope.launch {
             _selectedDate
                 .flatMapLatest { date ->
-                    val localDate = date.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate()
-                    val epochDay = localDate.toEpochDay()
+                    val epochDay = DateTimeUtils.timestampToEpochDay(date.time)
 
                     val resetHour = settingsRepository.learningDayResetHourFlow.first()
                     val todayEpochDay = DateTimeUtils.getLearningDay(resetHour)

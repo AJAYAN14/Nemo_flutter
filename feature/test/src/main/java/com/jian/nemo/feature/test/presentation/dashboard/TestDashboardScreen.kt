@@ -3,40 +3,49 @@ package com.jian.nemo.feature.test.presentation.dashboard
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.jian.nemo.core.designsystem.theme.BentoColors
+import com.jian.nemo.core.designsystem.theme.NemoDanger
+import com.jian.nemo.core.designsystem.theme.NemoIndigo
+import com.jian.nemo.core.designsystem.theme.NemoOrange
+import com.jian.nemo.core.designsystem.theme.NemoPrimary
+import com.jian.nemo.core.designsystem.theme.NemoPurple
+import com.jian.nemo.core.designsystem.theme.NemoSecondary
+import com.jian.nemo.core.designsystem.theme.NemoTeal
 import com.jian.nemo.core.ui.component.SlidingDotIndicator
-import com.jian.nemo.core.designsystem.theme.*
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
+private const val CAROUSEL_AUTO_SCROLL_MS = 5000L
+
 /**
- * 测试选择主界面 (V3 Grid & Dashboard Style)
- *
- * 采用 Grid 布局和 Banner 样式，打破列表的单调感，提升视觉丰富度。
+ * 测试选择主界面
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -50,9 +59,11 @@ fun TestDashboardScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    val backgroundColor = MaterialTheme.colorScheme.background
+    val colorScheme = MaterialTheme.colorScheme
+    val isDark = colorScheme.background.luminance() < 0.5f
 
-    // Edge-to-Edge
+    val backgroundColor = if (isDark) colorScheme.background else BentoColors.BgBase
+
     val density = LocalDensity.current
     val statusBarHeight = with(density) { WindowInsets.statusBars.getTop(density).toDp() }
     val navigationBarHeight = with(density) { WindowInsets.navigationBars.getBottom(density).toDp() }
@@ -73,18 +84,14 @@ fun TestDashboardScreen(
                     bottom = navigationBarHeight + 100.dp
                 )
         ) {
-            // 大标题
             ImmersiveTestHeader(title = "测试")
 
-            // 统计卡片 (Pager)
-            // 统计卡片 (Pager)
-            StatsPager(
-                uiState = uiState
-            )
+            Spacer(modifier = Modifier.height(20.dp))
+
+            StatsPager(uiState = uiState)
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 复习与回顾 (2 Column Row)
             SectionTitle("复习与回顾")
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -110,7 +117,6 @@ fun TestDashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 基础练习 (2x2 Grid)
             SectionTitle("基础练习")
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Row(
@@ -159,7 +165,6 @@ fun TestDashboardScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 综合挑战 (Hero Banner)
             SectionTitle("挑战自我")
             DashboardBanner(
                 title = "综合测试",
@@ -174,131 +179,296 @@ fun TestDashboardScreen(
     }
 }
 
-/**
- * 统计数据轮播页
- */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StatsPager(
     uiState: TestDashboardUiState
 ) {
+    data class CompactStatsPage(
+        val title: String,
+        val icon: ImageVector,
+        val accent: Color,
+        val primaryValue: String,
+        val primaryLabel: String,
+        val secondaryValue: String,
+        val secondaryUnit: String,
+        val secondaryLabel: String,
+        val ringValue: Int,
+        val ringLabel: String,
+        val useSoftRingColor: Boolean = false
+    )
+
+    fun ringColorByAccuracy(accuracyPercent: Int): Color {
+        return when {
+            accuracyPercent < 60 -> NemoDanger
+            accuracyPercent < 85 -> NemoOrange
+            else -> NemoSecondary
+        }
+    }
+
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val pageCount = 10000
     val pagerState = rememberPagerState(
         initialPage = pageCount / 2,
         pageCount = { pageCount }
     )
+    val isDragged by pagerState.interactionSource.collectIsDraggedAsState()
 
-    // Determine current page theme
-    val currentPageIndex = pagerState.currentPage % 2
-    val isClayTheme = currentPageIndex == 0
-
-    // Select the theme object based on page
-    val currentTheme = if (isClayTheme) ClayTheme else RoseTheme
-
-    // 移除背景色修改，保持默认卡片样式 (CardBg is white in definition, effectively default)
-    PremiumCard {
-        Column {
-            // Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = if (isClayTheme) "今日概览" else "总体统计",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = currentTheme.TitleText
-                )
-
-                Icon(
-                    imageVector = if (isClayTheme) Icons.Rounded.Today else Icons.Rounded.Insights,
-                    contentDescription = null,
-                    tint = currentTheme.Primary,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .background(currentTheme.IconBg, CircleShape) // 使用 IconBg
-                        .padding(6.dp)
-                )
+    LaunchedEffect(pagerState, isDragged) {
+        while (true) {
+            delay(CAROUSEL_AUTO_SCROLL_MS)
+            if (!isDragged) {
+                pagerState.animateScrollToPage(pagerState.currentPage + 1)
             }
+        }
+    }
 
-            // Pager
-            HorizontalPager(
-                state = pagerState,
+    val pages = listOf(
+        CompactStatsPage(
+            title = "今日测试",
+            icon = Icons.Rounded.Bolt,
+            accent = NemoPrimary,
+            primaryValue = uiState.todayTestCount.toString(),
+            primaryLabel = "已测题目",
+            secondaryValue = uiState.consecutiveTestDays.toString(),
+            secondaryUnit = "天",
+            secondaryLabel = "连续学习",
+            ringValue = (uiState.todayAccuracy * 100).roundToInt(),
+            ringLabel = "今日正确率"
+        ),
+        CompactStatsPage(
+            title = "总体统计",
+            icon = Icons.Rounded.EmojiEvents,
+            accent = NemoDanger,
+            primaryValue = uiState.totalTestCount.toString(),
+            primaryLabel = "累计测试",
+            secondaryValue = uiState.maxTestStreak.toString(),
+            secondaryUnit = "天",
+            secondaryLabel = "最高连签",
+            ringValue = (uiState.overallAccuracy * 100).roundToInt(),
+            ringLabel = "累计正确率",
+            useSoftRingColor = true
+        )
+    )
+
+    val activePage = pages[pagerState.currentPage % pages.size]
+    val visualPageIndex = pagerState.currentPage % pages.size
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        HorizontalPager(
+            state = pagerState,
+            pageSpacing = 10.dp,
+            contentPadding = PaddingValues(horizontal = 6.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) { page ->
+            val pageData = pages[page % pages.size]
+            val baseRingColor = ringColorByAccuracy(pageData.ringValue)
+            val ringColor = if (pageData.useSoftRingColor) baseRingColor.copy(alpha = 0.9f) else baseRingColor
+
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = if (isDark) MaterialTheme.colorScheme.surfaceContainer else Color.White,
                 modifier = Modifier.fillMaxWidth()
-            ) { page ->
-                val actualPage = page % 2
-
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    when (actualPage) {
-                        0 -> Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            VisualStatItem(
-                                value = uiState.todayTestCount.toString(),
-                                label = "今日已测",
-                                color = ClayTheme.Primary, // Color 1: Primary
-                                modifier = Modifier.weight(1f)
+                            Box(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .background(pageData.accent, RoundedCornerShape(10.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = pageData.icon,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Column {
+                                Text(
+                                    text = pageData.title,
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            CompactStatItem(
+                                value = pageData.primaryValue,
+                                label = pageData.primaryLabel,
+                                valueColor = MaterialTheme.colorScheme.onSurface,
+                                isDark = isDark
                             )
-                            VisualStatItem(
-                                value = "${(uiState.todayAccuracy * 100).roundToInt()}%",
-                                label = "正确率",
-                                color = ClayTheme.Secondary, // Color 2: Secondary
-                                modifier = Modifier.weight(1f)
-                            )
-                            VisualStatItem(
-                                value = "${uiState.consecutiveTestDays} 天",
-                                label = "连签",
-                                color = ClayTheme.Tertiary, // Color 3: Tertiary
-                                modifier = Modifier.weight(1f)
+                            CompactStatItem(
+                                value = pageData.secondaryValue,
+                                label = pageData.secondaryLabel,
+                                unit = pageData.secondaryUnit,
+                                valueColor = pageData.accent,
+                                isDark = isDark
                             )
                         }
-                        1 -> Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            VisualStatItem(
-                                value = uiState.totalTestCount.toString(),
-                                label = "累计测试",
-                                color = RoseTheme.Primary, // Color 4: Primary
-                                modifier = Modifier.weight(1f)
-                            )
-                            VisualStatItem(
-                                value = "${(uiState.overallAccuracy * 100).roundToInt()}%",
-                                label = "总正确率",
-                                color = RoseTheme.Secondary, // Color 5: Secondary
-                                modifier = Modifier.weight(1f)
-                            )
-                            VisualStatItem(
-                                value = "${uiState.maxTestStreak} 天",
-                                label = "最高连签",
-                                color = RoseTheme.Tertiary, // Color 6: Tertiary
-                                modifier = Modifier.weight(1f)
+                            Box(
+                                modifier = Modifier.size(84.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    progress = { 1f },
+                                    modifier = Modifier.fillMaxSize(),
+                                    color = if (isDark) MaterialTheme.colorScheme.surfaceContainerHighest else Color(0xFFEFF3F8),
+                                    strokeWidth = 10.dp,
+                                    trackColor = Color.Transparent
+                                )
+                                CircularProgressIndicator(
+                                    progress = { (pageData.ringValue / 100f).coerceIn(0f, 1f) },
+                                    modifier = Modifier.fillMaxSize(),
+                                    color = ringColor,
+                                    strokeWidth = 10.dp,
+                                    trackColor = Color.Transparent
+                                )
+                                Row(
+                                    verticalAlignment = Alignment.Bottom,
+                                    horizontalArrangement = Arrangement.spacedBy(1.dp)
+                                ) {
+                                    Text(
+                                        text = pageData.ringValue.toString(),
+                                        style = MaterialTheme.typography.titleLarge.copy(
+                                            fontWeight = FontWeight.Black,
+                                            fontSize = 20.sp,
+                                            fontFeatureSettings = "tnum"
+                                        ),
+                                        color = ringColor,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Text(
+                                        text = "%",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                                        modifier = Modifier.padding(bottom = 2.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = pageData.ringLabel,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.3.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
                             )
                         }
                     }
+
                 }
             }
+        }
 
-            // 底部指示器
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
             SlidingDotIndicator(
                 pagerState = pagerState,
                 pageCount = 2,
-                activeColor = currentTheme.Accent, // User specified Accent for active state
-                inactiveColor = currentTheme.IconBg, // Use soft IconBg for inactive
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 16.dp)
+                activeColor = activePage.accent,
+                inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "${visualPageIndex + 1}/${pages.size}",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
             )
         }
     }
 }
 
-/**
- * 仪表盘小方块 Tile 组件
- */
+@Composable
+private fun CompactStatItem(
+    value: String,
+    label: String,
+    valueColor: Color,
+    isDark: Boolean,
+    unit: String = ""
+) {
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color(0xFFF8FAFC),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(1.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Black,
+                        fontFeatureSettings = "tnum"
+                    ),
+                    color = valueColor
+                )
+                if (unit.isNotEmpty()) {
+                    Text(
+                        text = unit,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
+            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.2.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
+            )
+        }
+    }
+}
+
 @Composable
 private fun DashboardTile(
     modifier: Modifier = Modifier,
@@ -308,12 +478,17 @@ private fun DashboardTile(
     color: Color,
     onClick: () -> Unit
 ) {
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val surfaceColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer else BentoColors.Surface
+    val textMain = if (isDark) MaterialTheme.colorScheme.onSurface else BentoColors.TextMain
+    val textSub = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else BentoColors.TextSub
+
     Card(
         modifier = modifier
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // 去除阴影
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = surfaceColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Row(
             modifier = Modifier
@@ -322,7 +497,6 @@ private fun DashboardTile(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start
         ) {
-            // Icon Box
             Box(
                 modifier = Modifier
                     .size(42.dp)
@@ -340,23 +514,20 @@ private fun DashboardTile(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Text Content
-            Column(
-                verticalArrangement = Arrangement.Center
-            ) {
+            Column(verticalArrangement = Arrangement.Center) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold
                     ),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = textMain,
                     maxLines = 1
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = textSub,
                     lineHeight = 14.sp,
                     maxLines = 1,
                 )
@@ -365,9 +536,6 @@ private fun DashboardTile(
     }
 }
 
-/**
- * 综合挑战 Banner 组件
- */
 @Composable
 private fun DashboardBanner(
     title: String,
@@ -376,77 +544,49 @@ private fun DashboardBanner(
     gradientColors: List<Color>,
     onClick: () -> Unit
 ) {
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val surfaceColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer else BentoColors.Surface
+    val textMain = if (isDark) MaterialTheme.colorScheme.onSurface else BentoColors.TextMain
+    val textSub = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else BentoColors.TextSub
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(120.dp) // 固定高度 120dp
+            .height(120.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        // border removed as requested
+        colors = CardDefaults.cardColors(containerColor = surfaceColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp), // 调整 Padding 策略
-            contentAlignment = Alignment.CenterStart // 内容垂直居中，水平靠左
+                .padding(horizontal = 20.dp),
+            contentAlignment = Alignment.CenterStart
         ) {
-            // 背景装饰 (淡色大图标) - 移回右侧，微调位置避免裁切
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = gradientColors.first().copy(alpha = 0.08f),
                 modifier = Modifier
-                    .size(80.dp) // 稍微调小一点适应 120dp 高度
+                    .size(80.dp)
                     .align(Alignment.CenterEnd)
-                    .offset(x = 10.dp) // 稍微向右偏移一点，制造溢出感但不被过度裁切
+                    .offset(x = 10.dp)
             )
 
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary
+                    color = textMain
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = textSub
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun PremiumCard(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val containerColor = if (isDark) MaterialTheme.colorScheme.surfaceContainer else Color.White
-    val borderColor = if (isDark) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-    val shadowElevation = if (isDark) 2.dp else 10.dp
-    val shadowColor = if (isDark) Color.Black.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.03f)
-
-    Surface(
-        shape = RoundedCornerShape(26.dp),
-        color = containerColor,
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, borderColor),
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = shadowElevation,
-                shape = RoundedCornerShape(26.dp),
-                spotColor = shadowColor,
-                ambientColor = shadowColor
-            )
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            content = content
-        )
     }
 }

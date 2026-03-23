@@ -57,7 +57,17 @@ data class AppSettings(
     val ttsSpeechRate: Float = 1.0f,
     val ttsPitch: Float = 1.0f,
     val ttsVoiceName: String? = null,
-    val isAutoPlayAudioEnabled: Boolean = false
+    val isAutoPlayAudioEnabled: Boolean = false,
+
+    // 高级学习策略
+    val learningSteps: String = "1 10",
+    val learnAheadLimit: Int = 20,
+    val relearningSteps: String = "1 10",
+    val isRandomNewContentEnabled: Boolean = true,
+
+    // 同步触发策略
+    val isSyncOnLearningComplete: Boolean = true,
+    val isSyncOnTestComplete: Boolean = true
 )
 
 /**

@@ -3,8 +3,6 @@ package com.jian.nemo.core.domain.model
 /**
  * 测试模式
  * 定义4种选择题测试模式
- *
- * 参考: 阶段11文档
  */
 enum class TestMode {
     /** 日译中：显示日语，选择中文释义 */

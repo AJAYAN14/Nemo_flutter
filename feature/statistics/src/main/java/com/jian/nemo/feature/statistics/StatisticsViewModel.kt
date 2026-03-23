@@ -9,8 +9,11 @@ import com.jian.nemo.core.domain.usecase.statistics.GetLearningStatsUseCase
 import com.jian.nemo.core.domain.usecase.statistics.GetRecentRecordsUseCase
 import com.jian.nemo.core.domain.usecase.statistics.GetLearnedGrammarsForDateUseCase
 import com.jian.nemo.core.domain.usecase.statistics.GetLearnedWordsForDateUseCase
+import com.jian.nemo.core.domain.usecase.statistics.GetReviewedGrammarsForDateUseCase
+import com.jian.nemo.core.domain.usecase.statistics.GetReviewedWordsForDateUseCase
 import com.jian.nemo.core.domain.usecase.statistics.GetReviewForecastUseCase
 import com.jian.nemo.feature.statistics.model.StatisticDisplayItem
+import com.jian.nemo.feature.statistics.model.StatisticSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +39,8 @@ class StatisticsViewModel @Inject constructor(
     private val getRecentRecordsUseCase: GetRecentRecordsUseCase,
     private val getLearnedWordsForDateUseCase: GetLearnedWordsForDateUseCase,
     private val getLearnedGrammarsForDateUseCase: GetLearnedGrammarsForDateUseCase,
+    private val getReviewedWordsForDateUseCase: GetReviewedWordsForDateUseCase,
+    private val getReviewedGrammarsForDateUseCase: GetReviewedGrammarsForDateUseCase,
     private val getReviewForecastUseCase: GetReviewForecastUseCase,
     private val settingsRepository: com.jian.nemo.core.domain.repository.SettingsRepository
 ) : ViewModel() {
@@ -121,29 +126,63 @@ class StatisticsViewModel @Inject constructor(
                 .flatMapLatest { date ->
                     combine(
                         getLearnedWordsForDateUseCase(date),
-                        getLearnedGrammarsForDateUseCase(date)
-                    ) { words, grammars ->
-                        val wordItems = words.map { word ->
+                        getLearnedGrammarsForDateUseCase(date),
+                        getReviewedWordsForDateUseCase(date),
+                        getReviewedGrammarsForDateUseCase(date)
+                    ) { learnedWords, learnedGrammars, reviewedWords, reviewedGrammars ->
+                        val learnedWordItems = learnedWords.map { word ->
                             StatisticDisplayItem(
                                 id = word.id,
                                 japanese = word.japanese,
                                 hiragana = word.hiragana,
                                 chinese = word.chinese,
-                                level = word.level.uppercase()
+                                level = word.level.uppercase(),
+                                source = StatisticSource.LEARNED
                             )
                         }
 
-                        val grammarItems = grammars.map { grammar ->
+                        val reviewedWordItems = reviewedWords
+                            .filterNot { reviewed -> learnedWords.any { it.id == reviewed.id } }
+                            .map { word ->
+                                StatisticDisplayItem(
+                                    id = word.id,
+                                    japanese = word.japanese,
+                                    hiragana = word.hiragana,
+                                    chinese = word.chinese,
+                                    level = word.level.uppercase(),
+                                    source = StatisticSource.REVIEWED
+                                )
+                            }
+
+                        val learnedGrammarItems = learnedGrammars.map { grammar ->
                             StatisticDisplayItem(
                                 id = grammar.id,
                                 japanese = grammar.grammar,
                                 hiragana = grammar.getFirstConjunction() ?: "",
                                 chinese = grammar.getFirstExplanation(),
-                                level = grammar.grammarLevel.uppercase()
+                                level = grammar.grammarLevel.uppercase(),
+                                source = StatisticSource.LEARNED
                             )
                         }
 
-                        Triple(date, wordItems, grammarItems)
+                        val reviewedGrammarItems = reviewedGrammars
+                            .filterNot { reviewed -> learnedGrammars.any { it.id == reviewed.id } }
+                            .map { grammar ->
+                                StatisticDisplayItem(
+                                    id = grammar.id,
+                                    japanese = grammar.grammar,
+                                    hiragana = grammar.getFirstConjunction() ?: "",
+                                    chinese = grammar.getFirstExplanation(),
+                                    level = grammar.grammarLevel.uppercase(),
+                                    source = StatisticSource.REVIEWED
+                                )
+                            }
+
+                        Triple(
+                            date,
+                            learnedWordItems + reviewedWordItems,
+                            learnedGrammarItems + reviewedGrammarItems
+                        )
                     }
                 }
                 .collect { (date, wordItems, grammarItems) ->

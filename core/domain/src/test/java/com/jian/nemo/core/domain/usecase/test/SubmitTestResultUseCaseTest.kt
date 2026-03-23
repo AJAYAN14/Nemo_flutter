@@ -8,6 +8,7 @@ import com.jian.nemo.core.domain.model.Word
 import com.jian.nemo.core.domain.model.WrongAnswer
 import com.jian.nemo.core.domain.repository.WrongAnswerRepository
 import com.jian.nemo.core.domain.repository.GrammarWrongAnswerRepository
+import com.jian.nemo.core.domain.repository.SettingsRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -28,17 +29,21 @@ class SubmitTestResultUseCaseTest {
 
     private lateinit var wrongAnswerRepository: WrongAnswerRepository
     private lateinit var grammarWrongAnswerRepository: GrammarWrongAnswerRepository
+    private lateinit var settingsRepository: SettingsRepository
     private lateinit var useCase: SubmitTestResultUseCase
 
     @Before
     fun setup() {
         wrongAnswerRepository = mockk(relaxed = true)
         grammarWrongAnswerRepository = mockk<GrammarWrongAnswerRepository>(relaxed = true)
-        useCase = SubmitTestResultUseCase(wrongAnswerRepository, grammarWrongAnswerRepository)
+        settingsRepository = mockk(relaxed = true)
+        useCase = SubmitTestResultUseCase(wrongAnswerRepository, grammarWrongAnswerRepository, settingsRepository)
 
         // Mock DateTimeUtils
         mockkObject(DateTimeUtils)
-        every { DateTimeUtils.getCurrentEpochDay() } returns 100L
+        every { settingsRepository.learningDayResetHourFlow } returns kotlinx.coroutines.flow.flowOf(4)
+        every { settingsRepository.testWrongAnswerRemovalThresholdFlow } returns kotlinx.coroutines.flow.flowOf(0)
+        every { DateTimeUtils.getLearningDay(4) } returns 100L
     }
 
     @Test
@@ -218,7 +223,7 @@ class SubmitTestResultUseCaseTest {
     @Test
     fun `should use today epoch day as timestamp`() = runTest {
         // Given
-        every { DateTimeUtils.getTodayEpochDay() } returns 200L
+        every { DateTimeUtils.getLearningDay(4) } returns 200L
 
         val wrongQuestion = createMultipleChoiceQuestion(
             id = 1,
@@ -275,7 +280,6 @@ class SubmitTestResultUseCaseTest {
         hiragana = "たんご$id",
         chinese = "单词$id",
         level = "n5",
-        tone = null,
         pos = null,
         example1 = null,
         gloss1 = null,

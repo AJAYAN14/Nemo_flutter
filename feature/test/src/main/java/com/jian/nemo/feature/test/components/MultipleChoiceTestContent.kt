@@ -1,9 +1,6 @@
 package com.jian.nemo.feature.test.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -14,7 +11,6 @@ import androidx.compose.ui.unit.sp
 import com.jian.nemo.core.domain.model.TestQuestion
 import com.jian.nemo.feature.test.presentation.model.OptionStatus
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.shape.RoundedCornerShape
 
 /**
  * 选择题测试内容组件
@@ -90,48 +86,10 @@ fun MultipleChoiceTestContent(
         }
 
         // Explanation Card
-        if (question.isAnswered && !question.explanation.isNullOrBlank() && question.word == null) {
+        val explanationPayload = question.resolvedExplanationPayload
+        if (question.isAnswered && explanationPayload != null) {
             Spacer(modifier = Modifier.height(32.dp))
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.outlinedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                val scrollState = rememberScrollState()
-                Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-                    // Accent Bar
-                    Box(
-                         modifier = Modifier
-                             .fillMaxHeight()
-                             .width(6.dp)
-                             .background(MaterialTheme.colorScheme.primary)
-                    )
-
-                    Column(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .heightIn(max = 200.dp)
-                            .verticalScroll(scrollState)
-                    ) {
-                        Text(
-                            text = "解析",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        Text(
-                            text = question.explanation ?: "",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            lineHeight = 24.sp
-                        )
-                    }
-                }
-            }
+            QuestionExplanationCard(payload = explanationPayload, modifier = Modifier.fillMaxWidth())
         }
     }
 }

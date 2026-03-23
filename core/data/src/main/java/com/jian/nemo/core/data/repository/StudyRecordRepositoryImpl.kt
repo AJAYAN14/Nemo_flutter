@@ -110,6 +110,10 @@ class StudyRecordRepositoryImpl @Inject constructor(
     private suspend fun getOrCreateTodayRecord(): StudyRecord {
         val resetHour = settingsRepository.learningDayResetHourFlow.first()
         val today = DateTimeUtils.getLearningDay(resetHour)
+
+        runCatching { settingsRepository.updateDailyStreak() }
+            .onFailure { e -> println("⚠️ 更新连续学习天数失败: ${e.message}") }
+
         return studyRecordDao.getByDate(today).first()?.toDomainModel()
             ?: StudyRecord(date = today)
     }

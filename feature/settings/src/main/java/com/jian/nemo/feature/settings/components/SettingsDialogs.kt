@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.testTag
 import com.jian.nemo.feature.settings.ConflictResolutionOption
 
 /**
@@ -333,12 +334,18 @@ fun AdvancedLearningSettingsBottomSheet(
     learningSteps: String,
     relearningSteps: String,
     learnAheadLimit: Int,
+    leechThreshold: Int,
+    leechAction: String,
     onDismiss: () -> Unit,
-    onSave: (String, String, Int) -> Unit
+    onSave: (String, String, Int, Int, String) -> Unit
 ) {
     var stepsInput by remember { mutableStateOf(learningSteps) }
     var relearningStepsInput by remember { mutableStateOf(relearningSteps) }
     var limitInput by remember { mutableFloatStateOf(learnAheadLimit.toFloat()) }
+    var leechThresholdInput by remember { mutableIntStateOf(leechThreshold.coerceIn(1, 12)) }
+    var leechActionInput by remember {
+        mutableStateOf(if (leechAction == "bury_today") "bury_today" else "skip")
+    }
     val accentColor = Color(0xFFAF52DE) // NemoPurple
 
     ModalBottomSheet(
@@ -530,18 +537,155 @@ fun AdvancedLearningSettingsBottomSheet(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // 3. Leech Threshold
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Leech 阈值（累计失败）",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Surface(
+                        color = accentColor.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "$leechThresholdInput 次",
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                            color = accentColor,
+                            modifier = Modifier
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .testTag("leech_threshold_value")
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = { leechThresholdInput = (leechThresholdInput - 1).coerceAtLeast(1) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("leech_threshold_minus")
+                    ) {
+                        Text("-1")
+                    }
+
+                    OutlinedButton(
+                        onClick = { leechThresholdInput = (leechThresholdInput + 1).coerceAtMost(12) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("leech_threshold_plus")
+                    ) {
+                        Text("+1")
+                    }
+                }
+
+                Text(
+                    text = "达到阈值后执行下方行为。默认 5 次。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // 4. Leech Action
+                Text(
+                    text = "Leech 处理方式",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .testTag("leech_action_skip_row")
+                        .clickable { leechActionInput = "skip" }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = leechActionInput == "skip",
+                            onClick = { leechActionInput = "skip" }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text("暂停卡片（skip）", fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "命中后不再进入常规复习队列",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                        .testTag("leech_action_bury_row")
+                        .clickable { leechActionInput = "bury_today" }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = leechActionInput == "bury_today",
+                            onClick = { leechActionInput = "bury_today" }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text("仅埋到明天（bury_today）", fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "今天不再出现，明天自动回队列",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(48.dp))
 
                 // Save Button
                 Button(
                     onClick = {
                         if (stepsInput.isNotBlank() && relearningStepsInput.isNotBlank()) {
-                             onSave(stepsInput, relearningStepsInput, limitInput.toInt())
+                             onSave(
+                                 stepsInput,
+                                 relearningStepsInput,
+                                 limitInput.toInt(),
+                                 leechThresholdInput,
+                                 leechActionInput
+                             )
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(56.dp)
+                        .testTag("advanced_learning_save_button"),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = accentColor

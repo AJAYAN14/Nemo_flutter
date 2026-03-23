@@ -6,6 +6,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.roundToInt
+import java.util.Random
 
 /**
  * FSRS 6 记忆状态
@@ -307,5 +308,33 @@ class FsrsAlgorithm(
     fun nextIntervalDays(stability: Float): Int {
         val raw = nextInterval(stability)
         return raw.roundToInt().coerceIn(1, MAX_INTERVAL)
+    }
+
+    /**
+     * 计算带抖动的间隔 (deterministic fuzz)
+     *
+     * 目的：减少到期日完全扎堆，提升真实复习分布体验。
+     * 兼容策略：
+     * - 小间隔不抖动，避免影响新学阶段节奏。
+     * - 使用种子保证同一输入稳定可复现。
+     */
+    fun nextIntervalDaysWithFuzz(stability: Float, seed: Long): Int {
+        val base = nextIntervalDays(stability)
+        return fuzzIntervalDays(base, seed)
+    }
+
+    fun fuzzIntervalDays(baseInterval: Int, seed: Long): Int {
+        if (baseInterval < 3) return baseInterval
+
+        val span = when {
+            baseInterval < 7 -> 1
+            baseInterval < 30 -> max(1, (baseInterval * 0.08f).roundToInt())
+            baseInterval < 90 -> max(2, (baseInterval * 0.12f).roundToInt())
+            else -> max(4, (baseInterval * 0.15f).roundToInt())
+        }
+
+        val random = Random(seed xor (baseInterval.toLong() * 1103515245L + 12345L))
+        val delta = random.nextInt(span * 2 + 1) - span
+        return (baseInterval + delta).coerceIn(1, MAX_INTERVAL)
     }
 }

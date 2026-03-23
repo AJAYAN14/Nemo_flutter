@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -25,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,15 +34,35 @@ import com.jian.nemo.core.ui.component.SlidingDotIndicator
 import com.jian.nemo.core.designsystem.theme.NemoPrimary
 import com.jian.nemo.core.designsystem.theme.NemoSecondary
 import com.jian.nemo.core.designsystem.theme.NemoDanger
-import com.jian.nemo.core.designsystem.theme.OceanTheme
-import com.jian.nemo.core.designsystem.theme.ForestTheme
-import com.jian.nemo.core.designsystem.theme.LavenderTheme
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.text.buildAnnotatedString
+import kotlinx.coroutines.delay
 
 // 定义常量
 private const val ANIMATION_DURATION = 200
 private const val PRESS_SCALE = 0.97f
+private const val CAROUSEL_AUTO_SCROLL_MS = 5000L
+private val BENTO_GRID_HEIGHT = 168.dp
+
+private data class BentoMetric(
+    val label: String,
+    val value: String,
+    val unit: String
+)
+
+private enum class BentoVisualType {
+    Progress,
+    Dots,
+    Bars
+}
+
+private data class BentoPageModel(
+    val title: String,
+    val icon: ImageVector,
+    val accentColor: Color,
+    val main: BentoMetric,
+    val topRight: BentoMetric,
+    val bottomRight: BentoMetric,
+    val visualType: BentoVisualType
+)
 
 /**
  * 沉浸式头部 (V2: Clean & Minimal)
@@ -92,13 +114,15 @@ fun LearningSummaryCard(
         initialPage = pageCount / 2,
         pageCount = { pageCount }
     )
+    val isDragged by pagerState.interactionSource.collectIsDraggedAsState()
 
-    // Determine current page theme (New Themes: Ocean, Forest, Lavender)
-    val actualPage = pagerState.currentPage % 3
-    val currentTheme = when (actualPage) {
-        0 -> OceanTheme
-        1 -> ForestTheme
-        else -> LavenderTheme
+    LaunchedEffect(pagerState, isDragged) {
+        while (true) {
+            delay(CAROUSEL_AUTO_SCROLL_MS)
+            if (!isDragged) {
+                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+            }
+        }
     }
 
     val todayProgress = when {
@@ -107,241 +131,292 @@ fun LearningSummaryCard(
         else -> ((todayLearned.toFloat() / dailyGoal) * 100).toInt()
     }
 
-    PremiumCard {
-        Column(modifier = Modifier.padding(16.dp)) {
-            val titles = listOf("日间概览", "学习轨迹", "成长总览")
-            val currentTitle = titles[actualPage]
+    val pageModels = listOf(
+        BentoPageModel(
+            title = "日间概览",
+            icon = Icons.Rounded.Today,
+            accentColor = NemoPrimary,
+            main = BentoMetric("今日已学", todayLearned.toString(), "个"),
+            topRight = BentoMetric("待复习", dueCount.toString(), "词"),
+            bottomRight = BentoMetric("目标完成度", todayProgress.toString(), "%"),
+            visualType = BentoVisualType.Progress
+        ),
+        BentoPageModel(
+            title = "学习轨迹",
+            icon = Icons.Rounded.Timeline,
+            accentColor = NemoSecondary,
+            main = BentoMetric("连续学习", studyStreak.toString(), "天"),
+            topRight = BentoMetric("累计掌握", masteredCount.toString(), "词"),
+            bottomRight = BentoMetric("待学习", unmasteredCount.toString(), "词"),
+            visualType = BentoVisualType.Dots
+        ),
+        BentoPageModel(
+            title = "成长总览",
+            icon = Icons.AutoMirrored.Rounded.TrendingUp,
+            accentColor = Color(0xFFF4B73F),
+            main = BentoMetric("总进度", (progress * 100).toInt().toString(), "%"),
+            topRight = BentoMetric("累计学习", totalStudyDays.toString(), "天"),
+            bottomRight = BentoMetric("本周学习", weekStudyDays.toString(), "天"),
+            visualType = BentoVisualType.Bars
+        )
+    )
 
+    val actualPage = pagerState.currentPage % pageModels.size
+    val currentPage = pageModels[actualPage]
 
-            // Header Row (Consistent with StatsPager)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp), // Match StatsPager padding
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = currentTitle,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = currentTheme.TitleText
-                )
-
-                // Subtle Icon
-                 Icon(
-                    imageVector = when(actualPage) {
-                        0 -> Icons.Rounded.Today
-                        1 -> Icons.Rounded.Timeline
-                        else -> Icons.AutoMirrored.Rounded.TrendingUp
-                    },
-                    contentDescription = null,
-                    tint = currentTheme.Primary,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .background(currentTheme.IconBg, CircleShape)
-                        .padding(6.dp)
-                )
-            }
-
-            // Pager Content
-            HorizontalPager(
-                state = pagerState,
+    Column(modifier = Modifier.fillMaxWidth()) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth()
+        ) { page ->
+            val model = pageModels[page % pageModels.size]
+            BentoStatsGrid(
+                model = model,
                 modifier = Modifier.fillMaxWidth()
-            ) { page ->
-                val pageIndex = page % 3
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    when (pageIndex) {
-                        0 -> Page1_DailyOverview(
-                            todayLearned = todayLearned,
-                            dueCount = dueCount,
-                            todayProgress = todayProgress
-                        )
-                        1 -> Page2_LearningTrack(
-                            masteredCount = masteredCount,
-                            unmasteredCount = unmasteredCount,
-                            studyStreak = studyStreak
-                        )
-                        2 -> Page3_GrowthOverview(
-                            totalProgress = progress,
-                            totalStudyDays = totalStudyDays,
-                            weekStudyDays = weekStudyDays
-                        )
-                    }
-                }
-            }
+            )
+        }
 
-            // 底部指示器
-            SlidingDotIndicator(
-                pagerState = pagerState,
-                pageCount = 3,
-                activeColor = currentTheme.Accent,
-                inactiveColor = currentTheme.IconBg,
+        SlidingDotIndicator(
+            pagerState = pagerState,
+            pageCount = 3,
+            activeColor = currentPage.accentColor,
+            inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(top = 10.dp)
+        )
+    }
+}
+
+@Composable
+private fun BentoStatsGrid(
+    model: BentoPageModel,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.height(BENTO_GRID_HEIGHT),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        BentoMainTile(
+            metric = model.main,
+            accentColor = model.accentColor,
+            icon = model.icon,
+            visualType = model.visualType,
+            modifier = Modifier
+                .weight(1.45f)
+                .fillMaxHeight()
+        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            BentoSubTile(
+                metric = model.topRight,
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 16.dp) // Match StatsPager padding
+                    .weight(1f)
+                    .fillMaxWidth()
+            )
+            BentoSubTile(
+                metric = model.bottomRight,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
             )
         }
     }
 }
 
-/**
- * 第1页：日间概览 (数字版) - Uses OceanTheme explicitly
- */
 @Composable
-private fun Page1_DailyOverview(
-    todayLearned: Int,
-    dueCount: Int,
-    todayProgress: Int
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        VisualStatItem(
-            value = todayLearned.toString(),
-            label = "今日已学",
-            color = OceanTheme.Primary,
-            modifier = Modifier.weight(1f)
-        )
-        VisualStatItem(
-            value = dueCount.toString(),
-            label = "待复习",
-            color = OceanTheme.Secondary,
-            modifier = Modifier.weight(1f)
-        )
-        VisualStatItem(
-            value = "${todayProgress}%",
-            label = "今日目标",
-            color = OceanTheme.Tertiary,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-/**
- * Page 2: 学习轨迹 - Uses ForestTheme explicitly
- */
-@Composable
-private fun Page2_LearningTrack(
-    masteredCount: Int,
-    unmasteredCount: Int,
-    studyStreak: Int
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        VisualStatItem(
-            value = masteredCount.toString(),
-            label = "总掌握",
-            color = ForestTheme.Primary,
-            modifier = Modifier.weight(1f)
-        )
-         VisualStatItem(
-            value = unmasteredCount.toString(),
-            label = "待学习",
-            color = ForestTheme.Secondary,
-            modifier = Modifier.weight(1f)
-        )
-         VisualStatItem(
-            value = "$studyStreak 天",
-            label = "连续学习",
-            color = ForestTheme.Tertiary,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-/**
- * Page 3: 成长总览 - Uses LavenderTheme explicitly
- */
-@Composable
-private fun Page3_GrowthOverview(
-    totalProgress: Float,
-    totalStudyDays: Int,
-    weekStudyDays: Int
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-         VisualStatItem(
-             // Show only integer % for clean look
-            value = "${(totalProgress * 100).toInt()}%",
-            label = "总进度",
-            color = LavenderTheme.Primary,
-            modifier = Modifier.weight(1f)
-         )
-         VisualStatItem(
-            value = "$totalStudyDays 天",
-            label = "累计学习",
-            color = LavenderTheme.Secondary,
-            modifier = Modifier.weight(1f)
-        )
-         VisualStatItem(
-            value = "$weekStudyDays 天",
-            label = "本周学习",
-            color = LavenderTheme.Tertiary,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-/**
- * 视觉化统计项 (Bold Numeric)
- */
-@Composable
-private fun VisualStatItem(
-    value: String,
-    label: String,
-    color: Color,
+private fun BentoMainTile(
+    metric: BentoMetric,
+    accentColor: Color,
+    icon: ImageVector,
+    visualType: BentoVisualType,
     modifier: Modifier = Modifier
 ) {
-    // 简单的数字/单位分离逻辑
-    val numberPart = value.filter { it.isDigit() || it == '.' }
-    val unitPart = value.filterNot { it.isDigit() || it == '.' }
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val mainTileColor = if (isDark) accentColor.copy(alpha = 0.88f) else accentColor
 
-    Column(
+    Surface(
         modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
+        shape = RoundedCornerShape(24.dp),
+        color = mainTileColor
     ) {
-        // 使用 AnnotatedString 分离样式
-        val text = buildAnnotatedString {
-            withStyle(
-                style = androidx.compose.ui.text.SpanStyle(
-                    fontSize = 32.sp, // 大字号
-                    fontWeight = FontWeight.Black, // 最粗体
-                    color = color
-                )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.12f),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(72.dp)
+                    .offset(x = 8.dp, y = (-6).dp)
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Bottom
             ) {
-                append(numberPart)
-            }
-            if (unitPart.isNotEmpty()) {
-                withStyle(
-                    style = androidx.compose.ui.text.SpanStyle(
-                        fontSize = 14.sp, // 小字号单位
+                BentoVisualHint(visualType)
+                Text(
+                    text = metric.label,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = Color.White.copy(alpha = 0.78f)
+                )
+                StatValueRow(
+                    value = metric.value,
+                    unit = metric.unit,
+                    valueStyle = MaterialTheme.typography.displayMedium.copy(
+                        fontWeight = FontWeight.Black,
+                        fontSize = 44.sp,
+                        color = Color.White
+                    ),
+                    unitStyle = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = color.copy(alpha = 0.8f) // 稍微浅一点
+                        color = Color.White.copy(alpha = 0.56f)
                     )
-                ) {
-                    append(" $unitPart".trim()) // 稍微加个空格如果需要
-                }
+                )
             }
         }
+    }
+}
 
+@Composable
+private fun BentoSubTile(
+    metric: BentoMetric,
+    modifier: Modifier = Modifier
+) {
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val subTileColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color.White
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        color = subTileColor
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = metric.label,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 0.5.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
+            )
+            StatValueRow(
+                value = metric.value,
+                unit = metric.unit,
+                valueStyle = MaterialTheme.typography.headlineLarge.copy(
+                    fontWeight = FontWeight.Black,
+                    fontSize = 30.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                unitStyle = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+                )
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatValueRow(
+    value: String,
+    unit: String,
+    valueStyle: TextStyle,
+    unitStyle: TextStyle
+) {
+    Row(
+        modifier = Modifier.padding(top = 2.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
         Text(
-            text = text,
-            lineHeight = 32.sp
+            text = value,
+            style = valueStyle.copy(fontFeatureSettings = "tnum"),
+            modifier = Modifier.alignByBaseline()
         )
         Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium.copy( // 调大回 labelMedium
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp // 稍微减小一点字间距以平衡
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-            modifier = Modifier.padding(top = 4.dp)
+            text = unit,
+            style = unitStyle,
+            modifier = Modifier.alignByBaseline()
         )
+    }
+}
+
+@Composable
+private fun BentoVisualHint(type: BentoVisualType) {
+    when (type) {
+        BentoVisualType.Progress -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .background(Color.White.copy(alpha = 0.22f), RoundedCornerShape(2.dp))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(0.7f)
+                        .background(Color.White, RoundedCornerShape(2.dp))
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+        }
+
+        BentoVisualType.Dots -> {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                repeat(7) { index ->
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .background(
+                                color = if (index < 5) Color.White.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.24f),
+                                shape = RoundedCornerShape(2.dp)
+                            )
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+        }
+
+        BentoVisualType.Bars -> {
+            Row(
+                modifier = Modifier.height(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                listOf(8.dp, 12.dp, 16.dp, 10.dp).forEachIndexed { index, barHeight ->
+                    Box(
+                        modifier = Modifier
+                            .width(4.dp)
+                            .height(barHeight)
+                            .background(
+                                color = when (index) {
+                                    2 -> Color.White
+                                    1 -> Color.White.copy(alpha = 0.45f)
+                                    3 -> Color.White.copy(alpha = 0.62f)
+                                    else -> Color.White.copy(alpha = 0.24f)
+                                },
+                                shape = RoundedCornerShape(3.dp)
+                            )
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+        }
     }
 }
 
@@ -384,13 +459,7 @@ fun PremiumCard(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-            }
-            .shadow(
-                elevation = shadowElevation,
-                shape = RoundedCornerShape(24.dp),
-                spotColor = shadowColor,
-                ambientColor = shadowColor
-            ),
+            },
         interactionSource = interactionSource,
         content = { Column(content = content) }
     )
@@ -463,14 +532,14 @@ fun DataAndResourcesSection(
                     icon = Icons.Rounded.QueryStats,
                     color = NemoDanger,
                     title = "今日统计",
-                    subtitle = "详细学习统计",
+                    subtitle = "查看今日详细的学习统计",
                     onClick = onStatisticsClick
                 )
                 SquircleListItem(
                     icon = Icons.Rounded.Insights,
                     color = Color(0xFFAF52DE), // Purple
                     title = "历史统计",
-                    subtitle = "长周期学习报告",
+                    subtitle = "查看所有详细的学习统计",
                     onClick = onHistoricalStatisticsClick
                 )
                  SquircleListItem(

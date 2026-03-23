@@ -35,12 +35,20 @@ class GetLearningStatsUseCase @Inject constructor(
 
             // 1. 组合 Settings 相关 Flow
             val settingsFlow = combine(
-                settingsRepository.dailyStreakFlow,
-                settingsRepository.totalStudyDaysFlow,
                 settingsRepository.dailyGoalFlow,
                 settingsRepository.grammarDailyGoalFlow
-            ) { streak, totalDays, wordGoal, grammarGoal ->
-                SettingsData(streak, totalDays, wordGoal, grammarGoal)
+            ) { wordGoal, grammarGoal ->
+                SettingsData(wordGoal, grammarGoal)
+            }
+
+            // 1.1 学习活跃天统计（以 study_records 为准，避免 DataStore 漂移）
+            val activityFlow = combine(
+                studyRecordRepository.getAllRecords(),
+                studyRecordRepository.getTotalStudyDays()
+            ) { records, totalDays ->
+                val dateSet = records.map { it.date }.toSet()
+                val streak = calculateCurrentStreak(dateSet, today)
+                LearningActivityData(streak, totalDays)
             }
 
             // 2. 本周学习天数 Flow (逻辑移植自 MainViewModel)
@@ -98,13 +106,24 @@ class GetLearningStatsUseCase @Inject constructor(
                 dueCountsFlow,
                 totalAndMasteredFlow,
                 settingsFlow,
+                activityFlow,
                 weekStudyDaysFlow
-            ) { todayRecord, dueCounts, totalMastered, settings, weekDays ->
+            ) { args ->
+                val todayRecord = args[0] as com.jian.nemo.core.domain.model.StudyRecord?
+                val dueCounts = args[1] as DueCountsData
+                val totalMastered = args[2] as MasteredAndTotalData
+                val settings = args[3] as SettingsData
+                val activity = args[4] as LearningActivityData
+                val weekDays = args[5] as Int
+
+                val learnedWordsToday = todayRecord?.learnedWords ?: dueCounts.todayLearnedWords
+                val learnedGrammarsToday = todayRecord?.learnedGrammars ?: dueCounts.todayLearnedGrammars
+
                 LearningStats(
-                    dailyStreak = settings.dailyStreak,
-                    totalStudyDays = settings.totalStudyDays,
-                    todayLearnedWords = dueCounts.todayLearnedWords,
-                    todayLearnedGrammars = dueCounts.todayLearnedGrammars,
+                    dailyStreak = activity.dailyStreak,
+                    totalStudyDays = activity.totalStudyDays,
+                    todayLearnedWords = learnedWordsToday,
+                    todayLearnedGrammars = learnedGrammarsToday,
                     todayReviewedWords = todayRecord?.reviewedWords ?: 0,
                     todayReviewedGrammars = todayRecord?.reviewedGrammars ?: 0,
                     masteredWords = totalMastered.masteredWords,
@@ -122,10 +141,13 @@ class GetLearningStatsUseCase @Inject constructor(
     }
 
     private data class SettingsData(
-        val dailyStreak: Int,
-        val totalStudyDays: Int,
         val wordDailyGoal: Int,
         val grammarDailyGoal: Int
+    )
+
+    private data class LearningActivityData(
+        val dailyStreak: Int,
+        val totalStudyDays: Int
     )
 
     private data class DueCountsData(
@@ -141,4 +163,22 @@ class GetLearningStatsUseCase @Inject constructor(
         val totalWords: Int,
         val totalGrammars: Int
     )
+
+    private fun calculateCurrentStreak(dates: Set<Long>, today: Long): Int {
+        if (dates.isEmpty()) return 0
+
+        // 与旧行为保持一致：若今天还未学习但昨天学了，连续天数仍维持到昨天。
+        var cursor = when {
+            dates.contains(today) -> today
+            dates.contains(today - 1) -> today - 1
+            else -> return 0
+        }
+
+        var streak = 0
+        while (dates.contains(cursor)) {
+            streak++
+            cursor--
+        }
+        return streak
+    }
 }

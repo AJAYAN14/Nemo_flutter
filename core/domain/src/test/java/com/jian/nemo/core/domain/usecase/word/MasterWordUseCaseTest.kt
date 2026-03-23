@@ -4,6 +4,7 @@ import com.jian.nemo.core.common.Result
 import com.jian.nemo.core.common.util.DateTimeUtils
 import com.jian.nemo.core.domain.model.SrsUpdateResult
 import com.jian.nemo.core.domain.model.Word
+import com.jian.nemo.core.domain.repository.SettingsRepository
 import com.jian.nemo.core.domain.repository.StudyRecordRepository
 import com.jian.nemo.core.domain.repository.WordRepository
 import com.jian.nemo.core.domain.service.SrsCalculator
@@ -29,6 +30,7 @@ class MasterWordUseCaseTest {
     private lateinit var wordRepository: WordRepository
     private lateinit var srsCalculator: SrsCalculator
     private lateinit var studyRecordRepository: StudyRecordRepository
+    private lateinit var settingsRepository: SettingsRepository
     private lateinit var useCase: MasterWordUseCase
 
     @Before
@@ -36,11 +38,13 @@ class MasterWordUseCaseTest {
         wordRepository = mockk()
         srsCalculator = mockk()
         studyRecordRepository = mockk()
-        useCase = MasterWordUseCase(wordRepository, srsCalculator, studyRecordRepository)
+        settingsRepository = mockk()
+        useCase = MasterWordUseCase(wordRepository, srsCalculator, studyRecordRepository, settingsRepository)
 
         // Mock DateTimeUtils
         mockkObject(DateTimeUtils)
-        every { DateTimeUtils.getCurrentEpochDay() } returns 100L
+        every { settingsRepository.learningDayResetHourFlow } returns flowOf(4)
+        every { DateTimeUtils.getLearningDay(4) } returns 100L
     }
 
     @Test
@@ -187,7 +191,6 @@ class MasterWordUseCaseTest {
         hiragana = "てすと",
         chinese = "测试",
         level = "n5",
-        tone = null,
         pos = null,
         example1 = null,
         gloss1 = null,

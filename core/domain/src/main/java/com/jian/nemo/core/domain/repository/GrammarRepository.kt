@@ -58,6 +58,11 @@ interface GrammarRepository {
      */
     fun getTodayLearnedGrammars(today: Long): Flow<List<Grammar>>
 
+    /**
+     * 获取今日复习过的语法
+     */
+    fun getTodayReviewedGrammars(today: Long): Flow<List<Grammar>>
+
 
     /**
      * 获取收藏的语法

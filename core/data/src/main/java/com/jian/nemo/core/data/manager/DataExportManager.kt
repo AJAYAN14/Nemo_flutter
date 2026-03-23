@@ -210,11 +210,11 @@ class DataExportManager @Inject constructor(
                                 writer.write("\"words\":[")
                                 var isFirstWaWord = true
                                 database.wrongAnswerDao().getExportWrongAnswersCursor().use { cursor ->
-                                    val wIdIdx = cursor.getColumnIndexOrThrow("wordId")
+                                    val wIdIdx = cursor.getColumnIndexOrThrow("word_id")
                                     val tsIdx = cursor.getColumnIndexOrThrow("timestamp")
-                                    val modeIdx = cursor.getColumnIndexOrThrow("testMode")
-                                    val userAnsIdx = cursor.getColumnIndexOrThrow("userAnswer")
-                                    val corrAnsIdx = cursor.getColumnIndexOrThrow("correctAnswer")
+                                    val modeIdx = cursor.getColumnIndexOrThrow("test_mode")
+                                    val userAnsIdx = cursor.getColumnIndexOrThrow("user_answer")
+                                    val corrAnsIdx = cursor.getColumnIndexOrThrow("correct_answer")
 
                                     while (cursor.moveToNext()) {
                                         if (!isFirstWaWord) writer.write(",")
@@ -235,11 +235,11 @@ class DataExportManager @Inject constructor(
                                 writer.write("\"grammars\":[")
                                 var isFirstWaGrammar = true
                                 database.grammarWrongAnswerDao().getExportWrongAnswersCursor().use { cursor ->
-                                    val gIdIdx = cursor.getColumnIndexOrThrow("grammarId")
+                                    val gIdIdx = cursor.getColumnIndexOrThrow("grammar_id")
                                     val tsIdx = cursor.getColumnIndexOrThrow("timestamp")
-                                    val modeIdx = cursor.getColumnIndexOrThrow("testMode")
-                                    val userAnsIdx = cursor.getColumnIndexOrThrow("userAnswer")
-                                    val corrAnsIdx = cursor.getColumnIndexOrThrow("correctAnswer")
+                                    val modeIdx = cursor.getColumnIndexOrThrow("test_mode")
+                                    val userAnsIdx = cursor.getColumnIndexOrThrow("user_answer")
+                                    val corrAnsIdx = cursor.getColumnIndexOrThrow("correct_answer")
 
                                     while (cursor.moveToNext()) {
                                         if (!isFirstWaGrammar) writer.write(",")
@@ -262,9 +262,9 @@ class DataExportManager @Inject constructor(
                                 var isFirstTestRecord = true
                                 database.testRecordDao().getExportTestRecordsCursor().use { cursor ->
                                     val dateIdx = cursor.getColumnIndexOrThrow("date")
-                                    val totIdx = cursor.getColumnIndexOrThrow("totalQuestions")
-                                    val corrIdx = cursor.getColumnIndexOrThrow("correctAnswers")
-                                    val modeIdx = cursor.getColumnIndexOrThrow("testMode")
+                                    val totIdx = cursor.getColumnIndexOrThrow("total_questions")
+                                    val corrIdx = cursor.getColumnIndexOrThrow("correct_answers")
+                                    val modeIdx = cursor.getColumnIndexOrThrow("test_mode")
                                     val tsIdx = cursor.getColumnIndexOrThrow("timestamp")
 
                                     while (cursor.moveToNext()) {
@@ -287,13 +287,13 @@ class DataExportManager @Inject constructor(
                                 var isFirstStudyRecord = true
                                 database.studyRecordDao().getExportStudyRecordsCursor().use { cursor ->
                                     val dateIdx = cursor.getColumnIndexOrThrow("date")
-                                    val lwIdx = cursor.getColumnIndexOrThrow("learnedWords")
-                                    val lgIdx = cursor.getColumnIndexOrThrow("learnedGrammars")
-                                    val rwIdx = cursor.getColumnIndexOrThrow("reviewedWords")
-                                    val rgIdx = cursor.getColumnIndexOrThrow("reviewedGrammars")
-                                    val swIdx = cursor.getColumnIndexOrThrow("skippedWords")
-                                    val sgIdx = cursor.getColumnIndexOrThrow("skippedGrammars")
-                                    val tcIdx = cursor.getColumnIndexOrThrow("testCount")
+                                    val lwIdx = cursor.getColumnIndexOrThrow("learned_words")
+                                    val lgIdx = cursor.getColumnIndexOrThrow("learned_grammars")
+                                    val rwIdx = cursor.getColumnIndexOrThrow("reviewed_words")
+                                    val rgIdx = cursor.getColumnIndexOrThrow("reviewed_grammars")
+                                    val swIdx = cursor.getColumnIndexOrThrow("skipped_words")
+                                    val sgIdx = cursor.getColumnIndexOrThrow("skipped_grammars")
+                                    val tcIdx = cursor.getColumnIndexOrThrow("test_count")
                                     val tsIdx = cursor.getColumnIndexOrThrow("timestamp")
 
                                     while (cursor.moveToNext()) {
@@ -568,9 +568,15 @@ class DataExportManager @Inject constructor(
             val uri = Uri.parse(uriString)
             exportDataToFile("default_user", tempFile)
 
-            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+            val outputStream = context.contentResolver.openOutputStream(uri)
+            if (outputStream == null) {
+                Log.e(TAG, "导出失败: 无法打开输出流 uri=$uri")
+                return@withContext false
+            }
+
+            outputStream.use { os ->
                 java.io.FileInputStream(tempFile).use { inputStream ->
-                    inputStream.copyTo(outputStream)
+                    inputStream.copyTo(os)
                 }
             }
             true

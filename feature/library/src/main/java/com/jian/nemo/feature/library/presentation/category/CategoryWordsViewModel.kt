@@ -47,7 +47,6 @@ class CategoryWordsViewModel @Inject constructor(
                 val words = if (pos != null) {
                     getWordsByPartOfSpeechUseCase(pos)
                 } else {
-                    // TODO: 处理特殊分类如 "kata" (外来语)，目前新架构暂未支持
                     emptyList()
                 }
 

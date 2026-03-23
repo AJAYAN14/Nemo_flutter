@@ -124,8 +124,18 @@ class SettingsViewModel @Inject constructor(
             val advancedFlow = combine(
                  settingsRepository.learningStepsFlow,
                  settingsRepository.relearningStepsFlow,
-                 settingsRepository.learnAheadLimitFlow
-            ) { steps, relearningSteps, limit -> Triple(steps, relearningSteps, limit) }
+                 settingsRepository.learnAheadLimitFlow,
+                 settingsRepository.leechThresholdFlow,
+                 settingsRepository.leechActionFlow
+            ) { steps, relearningSteps, limit, leechThreshold, leechAction ->
+                AdvancedSettings(
+                    learningSteps = steps,
+                    relearningSteps = relearningSteps,
+                    learnAheadLimit = limit,
+                    leechThreshold = leechThreshold,
+                    leechAction = leechAction
+                )
+            }
 
             val ttsFlow = combine(
                 settingsRepository.ttsSpeechRateFlow,
@@ -155,9 +165,11 @@ class SettingsViewModel @Inject constructor(
                         lastSyncTime = lastSyncTime,
                         isAutoSyncEnabled = isAutoSyncEnabled,
                         lastSyncConflictCount = conflictCount,
-                        learningSteps = advanced.first,
-                        relearningSteps = advanced.second,
-                        learnAheadLimit = advanced.third,
+                        learningSteps = advanced.learningSteps,
+                        relearningSteps = advanced.relearningSteps,
+                        learnAheadLimit = advanced.learnAheadLimit,
+                        leechThreshold = advanced.leechThreshold,
+                        leechAction = advanced.leechAction,
                         ttsSpeechRate = rate,
                         ttsPitch = pitch,
                         ttsVoiceName = voiceName,
@@ -183,6 +195,8 @@ class SettingsViewModel @Inject constructor(
             is SettingsEvent.SetLearningSteps -> setLearningSteps(event.steps)
             is SettingsEvent.SetRelearningSteps -> setRelearningSteps(event.steps)
             is SettingsEvent.SetLearnAheadLimit -> setLearnAheadLimit(event.limit)
+            is SettingsEvent.SetLeechThreshold -> setLeechThreshold(event.threshold)
+            is SettingsEvent.SetLeechAction -> setLeechAction(event.action)
             is SettingsEvent.ShowAdvancedLearningDialog -> _uiState.update { it.copy(showAdvancedLearningDialog = event.show) }
 
             is SettingsEvent.SetTtsSpeechRate -> setTtsSpeechRate(event.rate)
@@ -399,6 +413,19 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    private fun setLeechThreshold(threshold: Int) {
+        viewModelScope.launch {
+            settingsRepository.setLeechThreshold(threshold.coerceAtLeast(1))
+        }
+    }
+
+    private fun setLeechAction(action: String) {
+        viewModelScope.launch {
+            val normalized = if (action == "bury_today") "bury_today" else "skip"
+            settingsRepository.setLeechAction(normalized)
+        }
+    }
+
     private fun setTtsSpeechRate(rate: Float) {
         viewModelScope.launch {
             settingsRepository.setTtsSpeechRate(rate)
@@ -480,4 +507,12 @@ class SettingsViewModel @Inject constructor(
 }
 
 data class Quintuple<A, B, C, D, E>(val first: A, val second: B, val third: C, val fourth: D, val fifth: E)
+
+private data class AdvancedSettings(
+    val learningSteps: String,
+    val relearningSteps: String,
+    val learnAheadLimit: Int,
+    val leechThreshold: Int,
+    val leechAction: String
+)
 

@@ -2,10 +2,13 @@ package com.jian.nemo.core.domain.usecase.word
 
 import app.cash.turbine.test
 import com.jian.nemo.core.common.Result
+import com.jian.nemo.core.common.util.DateTimeUtils
 import com.jian.nemo.core.domain.model.Word
+import com.jian.nemo.core.domain.repository.SettingsRepository
 import com.jian.nemo.core.domain.repository.WordRepository
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
@@ -20,12 +23,18 @@ import org.junit.Test
 class GetNewWordsUseCaseTest {
 
     private lateinit var wordRepository: WordRepository
+    private lateinit var settingsRepository: SettingsRepository
     private lateinit var useCase: GetNewWordsUseCase
 
     @Before
     fun setup() {
         wordRepository = mockk()
-        useCase = GetNewWordsUseCase(wordRepository)
+        settingsRepository = mockk()
+        useCase = GetNewWordsUseCase(wordRepository, settingsRepository)
+
+        mockkObject(DateTimeUtils)
+        every { settingsRepository.learningDayResetHourFlow } returns flowOf(4)
+        every { DateTimeUtils.getLearningDay(4) } returns 100L
     }
 
     @Test
@@ -35,7 +44,7 @@ class GetNewWordsUseCaseTest {
             createTestWord(id = 1, japanese = "単語1"),
             createTestWord(id = 2, japanese = "単語2")
         )
-        every { wordRepository.getNewWords("n5") } returns flowOf(testWords)
+        every { wordRepository.getNewWords("n5", any()) } returns flowOf(testWords)
 
         // When & Then
         useCase("n5").test {
@@ -56,7 +65,7 @@ class GetNewWordsUseCaseTest {
     fun `invoke should return Error when repository throws exception`() = runTest {
         // Given
         val exception = RuntimeException("Database error")
-        every { wordRepository.getNewWords("n5") } returns kotlinx.coroutines.flow.flow {
+        every { wordRepository.getNewWords("n5", any()) } returns kotlinx.coroutines.flow.flow {
             throw exception
         }
 
@@ -66,7 +75,8 @@ class GetNewWordsUseCaseTest {
 
             val result = awaitItem()
             assertTrue(result is Result.Error)
-            assertEquals(exception, result.exceptionOrNull())
+            assertNotNull(result.exceptionOrNull())
+            assertEquals("Database error", result.exceptionOrNull()?.message)
 
             awaitComplete()
         }
@@ -75,7 +85,7 @@ class GetNewWordsUseCaseTest {
     @Test
     fun `invoke should return empty list when no new words available`() = runTest {
         // Given
-        every { wordRepository.getNewWords("n1") } returns flowOf(emptyList())
+        every { wordRepository.getNewWords("n1", any()) } returns flowOf(emptyList())
 
         // When & Then
         useCase("n1").test {
@@ -102,7 +112,6 @@ class GetNewWordsUseCaseTest {
         hiragana = hiragana,
         chinese = chinese,
         level = level,
-        tone = null,
         pos = null,
         example1 = null,
         gloss1 = null,

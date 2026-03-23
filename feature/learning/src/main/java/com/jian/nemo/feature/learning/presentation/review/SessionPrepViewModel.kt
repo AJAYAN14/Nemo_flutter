@@ -92,12 +92,4 @@ class SessionPrepViewModel @Inject constructor(
         }
     }
 
-    /**
-     * 开始复习
-     * 目前仅打印日志或留空，不做跳转
-     */
-    fun onStartReview() {
-        // TODO: Implement navigation to LearningScreen
-        println("TODO: Navigate to LearningScreen")
-    }
 }

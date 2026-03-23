@@ -62,12 +62,6 @@ data class WordDto(
     val chinese: String,
 
     /**
-     * 音调
-     */
-    @SerialName("tone")
-    val tone: String? = null,
-
-    /**
      * 词性
      */
     @SerialName("pos")

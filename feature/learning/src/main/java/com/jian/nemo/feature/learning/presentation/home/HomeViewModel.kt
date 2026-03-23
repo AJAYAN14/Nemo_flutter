@@ -4,12 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jian.nemo.core.data.repository.NotificationRepositoryImpl
 import com.jian.nemo.core.domain.model.AppNotification
+import com.jian.nemo.core.domain.model.User
 import com.jian.nemo.core.domain.repository.ConfigRepository
+import com.jian.nemo.core.domain.usecase.auth.GetUserFlowUseCase
 import com.jian.nemo.feature.learning.presentation.LearningMode
 import com.jian.nemo.feature.learning.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.*
+import java.time.LocalTime
 import javax.inject.Inject
 
 /**
@@ -20,13 +23,21 @@ class HomeViewModel @Inject constructor(
     private val getLearningStatsUseCase: com.jian.nemo.core.domain.usecase.statistics.GetLearningStatsUseCase,
     private val settingsRepository: com.jian.nemo.core.domain.repository.SettingsRepository,
     private val notificationRepository: NotificationRepositoryImpl,
-    private val configRepository: ConfigRepository
+    private val configRepository: ConfigRepository,
+    private val getUserFlowUseCase: GetUserFlowUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
+        // 获取用户信息
+        viewModelScope.launch {
+            getUserFlowUseCase().collect { user ->
+                _uiState.update { it.copy(user = user) }
+            }
+        }
+
         // 恢复上次学习模式
         viewModelScope.launch {
             settingsRepository.lastLearningModeFlow.collect { modeStr ->
@@ -122,7 +133,13 @@ class HomeViewModel @Inject constructor(
     }
 
     fun selectLevel(level: String) {
-        _uiState.update { it.copy(selectedLevel = level) }
+        _uiState.update { 
+            if (it.learningMode == LearningMode.Word) {
+                it.copy(wordSelectedLevel = level)
+            } else {
+                it.copy(grammarSelectedLevel = level)
+            }
+        }
     }
 
     fun toggleLevelSheet(show: Boolean) {
@@ -139,7 +156,8 @@ class HomeViewModel @Inject constructor(
 
 data class HomeUiState(
     val learningMode: LearningMode = LearningMode.Word,
-    val selectedLevel: String = "N5",
+    val wordSelectedLevel: String = "N5",
+    val grammarSelectedLevel: String = "N5",
     val levels: List<String> = listOf("N1", "N2", "N3", "N4", "N5"),
     val stats: TodayStats = TodayStats(),
     val showLevelSheet: Boolean = false,
@@ -155,8 +173,14 @@ data class HomeUiState(
     val bgTextResId: Int = R.string.bg_text_word,
     val titleResId: Int = R.string.title_word_learning,
     val currentProgress: Int = 0,
-    val dailyGoal: Int = 0
+    val dailyGoal: Int = 0,
+    
+    // User Context
+    val user: User? = null
 ) {
+    val selectedLevel: String
+        get() = if (learningMode == LearningMode.Word) wordSelectedLevel else grammarSelectedLevel
+
     val progressFraction: Float
         get() = if (dailyGoal > 0) (currentProgress.toFloat() / dailyGoal).coerceIn(0f, 1f) else 0f
 
@@ -165,6 +189,12 @@ data class HomeUiState(
 
     val itemsDue: Int
         get() = if (learningMode == LearningMode.Word) stats.dueWords else stats.dueGrammars
+
+    val reviewedToday: Int
+        get() = if (learningMode == LearningMode.Word) stats.reviewedWords else stats.reviewedGrammars
+
+    val dailyCompletionRate: Int
+        get() = if (dailyGoal > 0) ((currentProgress.toFloat() / dailyGoal) * 100).toInt().coerceIn(0, 100) else 0
 }
 
 /**

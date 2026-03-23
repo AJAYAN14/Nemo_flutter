@@ -203,9 +203,28 @@ interface WordDao {
         SELECT w.* FROM words w
         JOIN word_study_states s ON w.id = s.word_id
         WHERE s.first_learned_date = :todayEpochDay
+        AND (s.is_skipped = 0 OR s.is_skipped IS NULL)
+        AND s.is_deleted = 0
+        AND w.is_delisted = 0
         ORDER BY w.id DESC
     """)
     fun getTodayLearnedWords(todayEpochDay: Long): Flow<List<WordEntity>>
+
+    /**
+     * 获取今日复习过的单词
+     * @param todayEpochDay 今天的Epoch Day
+     */
+    @Query("""
+        SELECT w.* FROM words w
+        JOIN word_study_states s ON w.id = s.word_id
+        WHERE s.last_reviewed_date = :todayEpochDay
+        AND s.repetition_count > 0
+        AND (s.is_skipped = 0 OR s.is_skipped IS NULL)
+        AND s.is_deleted = 0
+        AND w.is_delisted = 0
+        ORDER BY w.id DESC
+    """)
+    fun getTodayReviewedWords(todayEpochDay: Long): Flow<List<WordEntity>>
 
     /**
      * 获取所有已学习的单词 (不包含跳过的)

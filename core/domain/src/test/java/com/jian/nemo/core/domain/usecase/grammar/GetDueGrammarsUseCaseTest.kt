@@ -3,8 +3,11 @@ package com.jian.nemo.core.domain.usecase.grammar
 import app.cash.turbine.test
 import com.jian.nemo.core.common.Result
 import com.jian.nemo.core.common.util.DateTimeUtils
+import com.jian.nemo.core.domain.model.GrammarExample
 import com.jian.nemo.core.domain.model.Grammar
+import com.jian.nemo.core.domain.model.GrammarUsage
 import com.jian.nemo.core.domain.repository.GrammarRepository
+import com.jian.nemo.core.domain.repository.SettingsRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -22,16 +25,19 @@ import org.junit.Test
 class GetDueGrammarsUseCaseTest {
 
     private lateinit var grammarRepository: GrammarRepository
+    private lateinit var settingsRepository: SettingsRepository
     private lateinit var useCase: GetDueGrammarsUseCase
 
     @Before
     fun setup() {
         grammarRepository = mockk()
-        useCase = GetDueGrammarsUseCase(grammarRepository)
+        settingsRepository = mockk()
+        useCase = GetDueGrammarsUseCase(grammarRepository, settingsRepository)
 
         // Mock DateTimeUtils
         mockkObject(DateTimeUtils)
-        every { DateTimeUtils.getCurrentEpochDay() } returns 100L
+        every { settingsRepository.learningDayResetHourFlow } returns flowOf(4)
+        every { DateTimeUtils.getLearningDay(4) } returns 100L
     }
 
     @Test
@@ -86,7 +92,8 @@ class GetDueGrammarsUseCaseTest {
 
             val result = awaitItem()
             assertTrue(result is Result.Error)
-            assertEquals(exception, result.exceptionOrNull())
+            assertNotNull(result.exceptionOrNull())
+            assertEquals("Database error", result.exceptionOrNull()?.message)
 
             awaitComplete()
         }
@@ -100,19 +107,23 @@ class GetDueGrammarsUseCaseTest {
     ) = Grammar(
         id = id,
         grammar = grammar,
-        explanation = "关于～",
         grammarLevel = "n5",
-        conjunction1 = "名詞＋について",
-        conjunction2 = null,
-        conjunction3 = null,
-        conjunction4 = null,
-        attention = null,
-        example1 = "日本の文化について勉強します。",
-        translation1 = "学习关于日本的文化。",
-        example2 = null,
-        translation2 = null,
-        example3 = null,
-        translation3 = null,
+        usages = listOf(
+            GrammarUsage(
+                subtype = null,
+                connection = "名詞＋について",
+                explanation = "关于～",
+                notes = null,
+                examples = listOf(
+                    GrammarExample(
+                        sentence = "日本の文化について勉強します。",
+                        translation = "学习关于日本的文化。",
+                        source = null,
+                        isDialog = false
+                    )
+                )
+            )
+        ),
         repetitionCount = repetitionCount,
         stability = 2.5f,
         difficulty = 5.0f,

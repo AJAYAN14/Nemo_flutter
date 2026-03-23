@@ -145,4 +145,14 @@ sealed interface LearningEvent {
      * 切换自动朗读 (翻面自动播放音频)
      */
     data class ToggleAutoPlayAudio(val enabled: Boolean) : LearningEvent
+
+    /**
+     * 切换显示答案等待（防秒翻）
+     */
+    data class ToggleShowAnswerDelay(val enabled: Boolean) : LearningEvent
+
+    /**
+     * 切换显示答案等待时长（循环档位）
+     */
+    data object CycleShowAnswerDelayDuration : LearningEvent
 }

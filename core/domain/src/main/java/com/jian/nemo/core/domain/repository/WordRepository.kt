@@ -49,6 +49,11 @@ interface WordRepository {
     fun getTodayLearnedWords(today: Long): Flow<List<Word>>
 
     /**
+     * 获取今日复习过的单词
+     */
+    fun getTodayReviewedWords(today: Long): Flow<List<Word>>
+
+    /**
      * 获取收藏的单词
      */
     fun getFavoriteWords(): Flow<List<Word>>

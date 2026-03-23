@@ -1,18 +1,29 @@
 package com.jian.nemo.util
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.pm.PackageManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import java.io.File
 
 object NotificationHelper {
     private const val CHANNEL_ID = "download_channel"
     private const val NOTIFICATION_ID = 1001
+
+    private fun hasPostNotificationsPermission(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+    }
 
     fun createNotificationChannel(context: Context) {
         val appContext = context.applicationContext
@@ -42,9 +53,11 @@ object NotificationHelper {
             .setProgress(100, progress, false)
             .setOngoing(true)
 
+        if (!hasPostNotificationsPermission(appContext)) return
+
         try {
             NotificationManagerCompat.from(appContext).notify(NOTIFICATION_ID, builder.build())
-        } catch (e: Exception) {
+        } catch (e: SecurityException) {
             e.printStackTrace()
         }
     }
@@ -82,9 +95,11 @@ object NotificationHelper {
             .setOngoing(false)
             .setProgress(0, 0, false)
 
+        if (!hasPostNotificationsPermission(appContext)) return
+
         try {
             NotificationManagerCompat.from(appContext).notify(NOTIFICATION_ID, builder.build())
-        } catch (e: Exception) {
+        } catch (e: SecurityException) {
             e.printStackTrace()
         }
     }

@@ -56,7 +56,7 @@ data class SavedSession(
  * 负责统一处理 Word 和 Grammar 会话的加载逻辑：
  * 1. 尝试恢复已保存的会话
  * 2. 获取到期复习项
- * 3. 计算新项配额（含破产保护）
+ * 3. 计算新项配额
  * 4. 智能混合排序
  *
  * 遵循原则:
@@ -120,13 +120,13 @@ class SessionLoader @Inject constructor(
         val dueItems = allDueItems.filter(filterByLevel)
         val dueCount = dueItems.size
 
-        // 3. 计算动态新项配额 (Bankruptcy Protection)
+        // 3. 计算新项配额（当前策略：不减载）
         val rawRemainingQuota = (dailyGoal - completedToday).coerceAtLeast(0)
         val adjustedQuota = learningSessionPolicy.calculateAdjustedNewQuota(rawRemainingQuota, dueCount)
 
         // [Debug Log]
         println("📊 会话规划: 目标=$dailyGoal, 已学=$completedToday, 复习堆积=$dueCount")
-        println("   -> 原始配额=$rawRemainingQuota, 修正配额=$adjustedQuota")
+        println("   -> 新词配额=$adjustedQuota")
 
         // 4. 如果调整后配额为0且无复习项，则会话完成
         if (adjustedQuota == 0 && dueItems.isEmpty()) {
@@ -151,7 +151,7 @@ class SessionLoader @Inject constructor(
         }
 
         println("✅ 学习会话启动成功: ${sessionItems.size} 个项目 (复习: ${dueItems.size}, 新: ${sessionNewItems.size})")
-        println("   -> 混合策略: 动态配额 $adjustedQuota + 穿插排序")
+        println("   -> 混合策略: 全量配额 $adjustedQuota + 穿插排序")
 
         return SessionLoadResult.NewSession(
             items = sessionItems,

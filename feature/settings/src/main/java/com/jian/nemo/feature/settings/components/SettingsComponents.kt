@@ -76,14 +76,7 @@ fun PremiumCard(
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = containerColor,
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = shadowElevation,
-                shape = RoundedCornerShape(24.dp),
-                spotColor = shadowColor,
-                ambientColor = shadowColor
-            ),
+        modifier = modifier.fillMaxWidth(),
         content = { Column(content = content) }
     )
 }

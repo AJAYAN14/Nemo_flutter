@@ -8,21 +8,14 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /**
- * Hilt 模块: 提供 SRS 算法实例
- *
- * 使用 @Binds 绑定接口和实现，便于未来替换算法
- *
- * 参考: 实施计划 05-SRS算法实现.md Step 4
+ * Hilt 模块: 提供基于 FSRS 算法的 SRS 计算器实例
  */
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class SrsModule {
 
     /**
-     *提供 SrsCalculator 实例
-     *
-     * 使用 SmTwoSrsCalculator 作为默认实现
-     * 如果未来需要切换算法（如SM-15），只需修改此绑定
+     * 绑定 SrsCalculator 接口到 FSRS 实现类
      */
     @Binds
     @Singleton

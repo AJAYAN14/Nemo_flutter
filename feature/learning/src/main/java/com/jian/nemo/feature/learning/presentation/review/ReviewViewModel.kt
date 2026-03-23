@@ -14,7 +14,9 @@ import com.jian.nemo.core.domain.usecase.grammar.UpdateGrammarUseCase
 import com.jian.nemo.core.domain.usecase.review.ProcessReviewResultUseCase
 import com.jian.nemo.core.domain.usecase.word.GetDueWordsUseCase
 import com.jian.nemo.core.domain.usecase.word.UpdateWordUseCase
+import com.jian.nemo.feature.learning.domain.LearningQueueManager
 import com.jian.nemo.feature.learning.domain.LearningScheduler
+import com.jian.nemo.feature.learning.domain.QueueSelectionResult
 import com.jian.nemo.feature.learning.domain.ScheduleResult
 import com.jian.nemo.feature.learning.domain.SrsIntervalPreview
 import com.jian.nemo.feature.learning.presentation.LearningItem
@@ -28,18 +30,28 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
+ * Review status
+ */
+enum class ReviewStatus {
+    Loading,
+    Reviewing,
+    Waiting,
+    SessionCompleted
+}
+
+/**
  * Review UI State
  */
 data class ReviewUiState(
-    val isLoading: Boolean = false,
+    val status: ReviewStatus = ReviewStatus.Loading,
     val reviewItems: List<ReviewPreviewItem> = emptyList(),
     val currentIndex: Int = 0,
     val currentItem: ReviewPreviewItem? = null,
     val isAnswerShown: Boolean = false,
-    val isSessionCompleted: Boolean = false,
     val isProcessing: Boolean = false,
     val totalCompleted: Int = 0,
     val error: String? = null,
+    val waitingUntil: Long = 0L,
 
     // UI Helpers
     val ratingIntervals: Map<Int, String> = emptyMap()
@@ -56,11 +68,13 @@ class ReviewViewModel @Inject constructor(
     private val srsIntervalPreview: SrsIntervalPreview,
     private val updateWordUseCase: UpdateWordUseCase,
     private val updateGrammarUseCase: UpdateGrammarUseCase,
-    private val studyRecordRepository: StudyRecordRepository
+    private val studyRecordRepository: StudyRecordRepository,
+    private val learningQueueManager: LearningQueueManager
 ) : ViewModel() {
 
     companion object {
-        private const val LEECH_THRESHOLD = 5
+        private const val LEECH_ACTION_SKIP = "skip"
+        private const val LEECH_ACTION_BURY_TODAY = "bury_today"
     }
 
     private val _uiState = MutableStateFlow(ReviewUiState())
@@ -74,15 +88,15 @@ class ReviewViewModel @Inject constructor(
     /** 重学到期时间 (ItemId -> DueTime Epoch Millis) */
     private val _relearningDueTimes = mutableMapOf<Int, Long>()
 
-    /** 会话内失败次数追踪 (ItemId -> Count) */
-    private val _lapseCounts = mutableMapOf<Int, Int>()
-
     /** 重学步进配置 (分钟列表) */
     private var _relearningStepsConfig: List<Int> = listOf(1, 10)
 
     /** 会话锁定的学习日 */
     private var _sessionLockedDay: Long? = null
     private var _resetHour: Int = 4
+    private var _learnAheadLimitMinutes: Int = 20
+    private var _leechThreshold: Int = 5
+    private var _leechAction: String = LEECH_ACTION_SKIP
 
     init {
         loadData()
@@ -92,12 +106,15 @@ class ReviewViewModel @Inject constructor(
 
     private fun loadData() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(status = ReviewStatus.Loading) }
 
             try {
                 // 0. 加载配置
                 _resetHour = settingsRepository.learningDayResetHourFlow.first()
                 _sessionLockedDay = DateTimeUtils.getLearningDay(_resetHour)
+                _learnAheadLimitMinutes = settingsRepository.learnAheadLimitFlow.first().coerceAtLeast(0)
+                _leechThreshold = settingsRepository.leechThresholdFlow.first().coerceAtLeast(1)
+                _leechAction = settingsRepository.leechActionFlow.first()
 
                 val relearningStepsStr = settingsRepository.relearningStepsFlow.first()
                 _relearningStepsConfig = parseSteps(relearningStepsStr)
@@ -110,36 +127,25 @@ class ReviewViewModel @Inject constructor(
                 val dueGrammarsResult = getDueGrammarsUseCase().first { it !is Result.Loading }
                 val dueGrammars = if (dueGrammarsResult is Result.Success) dueGrammarsResult.data else emptyList()
 
-                // 3. Combine
-                val combinedList = mutableListOf<ReviewPreviewItem>()
-                combinedList.addAll(dueWords.map { ReviewPreviewItem.WordItem(it) })
-                combinedList.addAll(dueGrammars.map { ReviewPreviewItem.GrammarItem(it) })
+                // 3. 全局混排：按 due day 排序后统一调度，避免单词/语法分段处理
+                val combinedList = (dueWords.map { ReviewPreviewItem.WordItem(it) } +
+                    dueGrammars.map { ReviewPreviewItem.GrammarItem(it) })
+                    .sortedWith(compareBy<ReviewPreviewItem> { it.dueDay }.thenBy { it.itemId })
 
                 if (combinedList.isNotEmpty()) {
-                    val firstItem = combinedList[0]
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            reviewItems = combinedList,
-                            currentIndex = 0,
-                            currentItem = firstItem,
-                            isSessionCompleted = false,
-                            ratingIntervals = calculateIntervalsSync(firstItem)
-                        )
-                    }
+                    selectNext(combinedList, 0)
                 } else {
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
-                            reviewItems = emptyList(),
-                            isSessionCompleted = true
+                            status = ReviewStatus.SessionCompleted,
+                            reviewItems = emptyList()
                         )
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 _uiState.update {
-                    it.copy(isLoading = false, error = "加载失败: ${e.message}")
+                    it.copy(status = ReviewStatus.Reviewing, error = "加载失败: ${e.message}")
                 }
             }
         }
@@ -149,6 +155,14 @@ class ReviewViewModel @Inject constructor(
 
     fun showAnswer() {
         _uiState.update { it.copy(isAnswerShown = true) }
+    }
+
+    /**
+     * 手动从等待状态恢复
+     */
+    fun resumeFromWaiting() {
+        _uiState.update { it.copy(waitingUntil = 0L) }
+        selectNext(_uiState.value.reviewItems, _uiState.value.currentIndex)
     }
 
     // ========== 核心方法：评分 ==========
@@ -221,21 +235,28 @@ class ReviewViewModel @Inject constructor(
         val itemId = item.itemId
 
         // 1. Lapse Penalty (更新 DB 中的 interval/stability)
-        applyLapsePenalty(item, quality)
+        val penalizedItem = applyLapsePenalty(item, quality)
 
-        // 2. 计数
-        val lapseCount = _lapseCounts.getOrDefault(itemId, 0) + 1
-        _lapseCounts[itemId] = lapseCount
+        // 2. 读取累计 lapse（跨会话），再写回 +1
+        val currentLapseCount = when (item) {
+            is ReviewPreviewItem.WordItem -> settingsRepository.wordLapsesFlow.first()[itemId] ?: 0
+            is ReviewPreviewItem.GrammarItem -> settingsRepository.grammarLapsesFlow.first()[itemId] ?: 0
+        }
+        when (item) {
+            is ReviewPreviewItem.WordItem -> settingsRepository.incrementWordLapse(itemId)
+            is ReviewPreviewItem.GrammarItem -> settingsRepository.incrementGrammarLapse(itemId)
+        }
 
         // 3. 用 LearningScheduler 调度
-        val learningItem = item.toLearningItem(
+        val penalizedLearningItem = penalizedItem.toLearningItem(
             step = _relearningSteps[itemId] ?: 0,
             dueTime = _relearningDueTimes[itemId] ?: 0L
         )
         val result = learningScheduler.scheduleFailure(
-            item = learningItem,
-            currentLapseCount = lapseCount,
-            stepConfig = _relearningStepsConfig
+            item = penalizedLearningItem,
+            currentLapseCount = currentLapseCount,
+            stepConfig = _relearningStepsConfig,
+            leechThreshold = _leechThreshold
         )
 
         // 4. 处理调度结果
@@ -298,7 +319,7 @@ class ReviewViewModel @Inject constructor(
                 }
 
                 // 重入队到末尾并前进
-                reQueueToEnd()
+                reQueueToEnd(item.toReviewPreviewItem())
             }
         }
     }
@@ -335,10 +356,10 @@ class ReviewViewModel @Inject constructor(
      * 当用户点 Again 时，立即通过 FSRS 计算惩罚后的 interval/stability 并更新 DB。
      * 重学毕业时基于这个惩罚后的值调度。
      */
-    private suspend fun applyLapsePenalty(item: ReviewPreviewItem, quality: Int) {
+    private suspend fun applyLapsePenalty(item: ReviewPreviewItem, quality: Int): ReviewPreviewItem {
         val today = _sessionLockedDay ?: DateTimeUtils.getLearningDay(_resetHour)
 
-        when (item) {
+        val penalizedItem = when (item) {
             is ReviewPreviewItem.WordItem -> {
                 val srsResult = srsCalculator.calculate(item.word, quality, today)
                 val updatedWord = item.word.copy(
@@ -352,6 +373,7 @@ class ReviewViewModel @Inject constructor(
                     lastModifiedTime = DateTimeUtils.getCurrentCompensatedMillis()
                 )
                 updateWordUseCase(updatedWord)
+                ReviewPreviewItem.WordItem(updatedWord)
             }
             is ReviewPreviewItem.GrammarItem -> {
                 val srsResult = srsCalculator.calculate(item.grammar, quality, today)
@@ -366,10 +388,12 @@ class ReviewViewModel @Inject constructor(
                     lastModifiedTime = DateTimeUtils.getCurrentCompensatedMillis()
                 )
                 updateGrammarUseCase(updatedGrammar)
+                ReviewPreviewItem.GrammarItem(updatedGrammar)
             }
         }
 
         println("⚡ Lapse Penalty 已应用: ${item.displayName}")
+        return penalizedItem
     }
 
     /**
@@ -422,29 +446,50 @@ class ReviewViewModel @Inject constructor(
     /**
      * 处理钉子户 (Leech)
      *
-     * 连续失败 LEECH_THRESHOLD 次后暂停该卡片
+     * 累计失败达到阈值后，按配置执行 skip 或 bury_today
      */
     private suspend fun handleLeech(learningItem: LearningItem) {
-        // 暂停卡片 (标记 isSkipped = true)
+        val today = _sessionLockedDay ?: DateTimeUtils.getLearningDay(_resetHour)
+        val action = if (_leechAction == LEECH_ACTION_BURY_TODAY) LEECH_ACTION_BURY_TODAY else LEECH_ACTION_SKIP
+
         when (learningItem) {
             is LearningItem.WordItem -> {
-                val updatedWord = learningItem.word.copy(
-                    isSkipped = true,
-                    lastModifiedTime = DateTimeUtils.getCurrentCompensatedMillis()
-                )
+                val updatedWord = if (action == LEECH_ACTION_BURY_TODAY) {
+                    learningItem.word.copy(
+                        nextReviewDate = today + 1,
+                        lastModifiedTime = DateTimeUtils.getCurrentCompensatedMillis()
+                    )
+                } else {
+                    learningItem.word.copy(
+                        isSkipped = true,
+                        lastModifiedTime = DateTimeUtils.getCurrentCompensatedMillis()
+                    )
+                }
                 updateWordUseCase(updatedWord)
             }
             is LearningItem.GrammarItem -> {
-                val updatedGrammar = learningItem.grammar.copy(
-                    isSkipped = true,
-                    lastModifiedTime = DateTimeUtils.getCurrentCompensatedMillis()
-                )
+                val updatedGrammar = if (action == LEECH_ACTION_BURY_TODAY) {
+                    learningItem.grammar.copy(
+                        nextReviewDate = today + 1,
+                        lastModifiedTime = DateTimeUtils.getCurrentCompensatedMillis()
+                    )
+                } else {
+                    learningItem.grammar.copy(
+                        isSkipped = true,
+                        lastModifiedTime = DateTimeUtils.getCurrentCompensatedMillis()
+                    )
+                }
                 updateGrammarUseCase(updatedGrammar)
             }
         }
 
         _uiState.update {
-            it.copy(error = "已暂停钉子户: ${learningItem.displayName}")
+            val message = if (action == LEECH_ACTION_BURY_TODAY) {
+                "已暂埋钉子户到明天: ${learningItem.displayName}"
+            } else {
+                "已暂停钉子户: ${learningItem.displayName}"
+            }
+            it.copy(error = message)
         }
 
         removeCurrentAndMoveNext()
@@ -457,17 +502,16 @@ class ReviewViewModel @Inject constructor(
      *
      * 将当前项移除，追加到列表末尾，然后选择下一项。
      */
-    private fun reQueueToEnd() {
+    private fun reQueueToEnd(requeuedItem: ReviewPreviewItem) {
         val state = _uiState.value
         val currentIndex = state.currentIndex
-        val currentItem = state.currentItem ?: return
 
         val newList = state.reviewItems.toMutableList()
         if (currentIndex in newList.indices) {
             newList.removeAt(currentIndex)
         }
         // 追加到末尾
-        newList.add(currentItem)
+        newList.add(requeuedItem)
 
         selectNext(newList, currentIndex)
     }
@@ -488,44 +532,77 @@ class ReviewViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     isProcessing = false,
-                    isSessionCompleted = true,
+                    status = ReviewStatus.SessionCompleted,
                     reviewItems = emptyList()
                 )
             }
             return
         }
 
-        val adjustedIndex = currentIndex.coerceIn(0, newList.size - 1)
-        selectNext(newList, adjustedIndex)
+        selectNext(newList, currentIndex)
     }
 
     /**
-     * 选择下一项并更新 UI
+     * 选择下一项并更新 UI (严格调度版)
      */
     private fun selectNext(newList: List<ReviewPreviewItem>, preferredIndex: Int) {
         if (newList.isEmpty()) {
             _uiState.update {
                 it.copy(
                     isProcessing = false,
-                    isSessionCompleted = true,
+                    status = ReviewStatus.SessionCompleted,
                     reviewItems = emptyList()
                 )
             }
             return
         }
 
-        val adjustedIndex = preferredIndex.coerceIn(0, newList.size - 1)
-        val nextItem = newList[adjustedIndex]
+        // 调用严格的时间调度管理器
+        val selection = learningQueueManager.selectNextItem(
+            items = newList,
+            getDueTime = { _relearningDueTimes[it.itemId] ?: 0L },
+            now = System.currentTimeMillis(),
+            learnAheadLimitMs = _learnAheadLimitMinutes * 60 * 1000L,
+            preferredIndex = preferredIndex
+        )
 
-        _uiState.update {
-            it.copy(
-                isProcessing = false,
-                reviewItems = newList,
-                currentIndex = adjustedIndex,
-                currentItem = nextItem,
-                isAnswerShown = false,
-                ratingIntervals = calculateIntervalsSync(nextItem)
-            )
+        when (selection) {
+            is QueueSelectionResult.Next -> {
+                val nextItem = selection.item
+                val nextIndex = selection.index
+
+                _uiState.update {
+                    it.copy(
+                        status = ReviewStatus.Reviewing,
+                        isProcessing = false,
+                        reviewItems = newList,
+                        currentIndex = nextIndex,
+                        currentItem = nextItem,
+                        isAnswerShown = false,
+                        waitingUntil = 0L,
+                        ratingIntervals = calculateIntervalsSync(nextItem)
+                    )
+                }
+            }
+            is QueueSelectionResult.Wait -> {
+                _uiState.update {
+                    it.copy(
+                        status = ReviewStatus.Waiting,
+                        isProcessing = false,
+                        reviewItems = newList,
+                        waitingUntil = selection.waitingUntil
+                    )
+                }
+            }
+            is QueueSelectionResult.Empty -> {
+                _uiState.update {
+                    it.copy(
+                        status = ReviewStatus.SessionCompleted,
+                        isProcessing = false,
+                        reviewItems = emptyList()
+                    )
+                }
+            }
         }
     }
 
@@ -592,3 +669,17 @@ fun ReviewPreviewItem.toLearningItem(step: Int = 0, dueTime: Long = 0L): Learnin
         is ReviewPreviewItem.GrammarItem -> LearningItem.GrammarItem(grammar, step, dueTime)
     }
 }
+
+fun LearningItem.toReviewPreviewItem(): ReviewPreviewItem {
+    return when (this) {
+        is LearningItem.WordItem -> ReviewPreviewItem.WordItem(word)
+        is LearningItem.GrammarItem -> ReviewPreviewItem.GrammarItem(grammar)
+    }
+}
+
+/** 获取到期学习日（用于全局混排） */
+val ReviewPreviewItem.dueDay: Long
+    get() = when (this) {
+        is ReviewPreviewItem.WordItem -> word.nextReviewDate
+        is ReviewPreviewItem.GrammarItem -> grammar.nextReviewDate
+    }

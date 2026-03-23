@@ -174,7 +174,6 @@ fun SessionPrepScreen(
                  ) {
                      Button(
                          onClick = {
-                             viewModel.onStartReview()
                              onStartReview()
                          },
                          modifier = Modifier

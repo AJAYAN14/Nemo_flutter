@@ -268,8 +268,8 @@ fun TestSettingsScreen(
                          }
                      },
                      enabled = !isGenerating,
-                     modifier = Modifier.fillMaxWidth().height(56.dp).shadow(8.dp, RoundedCornerShape(28.dp)),
-                     shape = RoundedCornerShape(28.dp),
+                     modifier = Modifier.fillMaxWidth().height(56.dp).shadow(8.dp, RoundedCornerShape(24.dp)),
+                     shape = RoundedCornerShape(24.dp),
                      colors = ButtonDefaults.buttonColors(containerColor = NemoPrimary)
                  ) {
                      if (isGenerating) {

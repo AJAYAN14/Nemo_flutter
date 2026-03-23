@@ -2,6 +2,7 @@ package com.jian.nemo.core.domain.usecase.statistics
 
 import com.jian.nemo.core.common.util.DateTimeUtils
 import com.jian.nemo.core.domain.model.StudyRecord
+import com.jian.nemo.core.domain.repository.SettingsRepository
 import com.jian.nemo.core.domain.repository.StudyRecordRepository
 import io.mockk.every
 import io.mockk.mockk
@@ -20,16 +21,19 @@ import org.junit.Test
 class GetRecentRecordsUseCaseTest {
 
     private lateinit var studyRecordRepository: StudyRecordRepository
+    private lateinit var settingsRepository: SettingsRepository
     private lateinit var useCase: GetRecentRecordsUseCase
 
     @Before
     fun setup() {
         studyRecordRepository = mockk()
-        useCase = GetRecentRecordsUseCase(studyRecordRepository)
+        settingsRepository = mockk()
+        useCase = GetRecentRecordsUseCase(studyRecordRepository, settingsRepository)
 
         // Mock DateTimeUtils
         mockkObject(DateTimeUtils)
-        every { DateTimeUtils.getCurrentEpochDay() } returns 100L
+        every { settingsRepository.learningDayResetHourFlow } returns flowOf(4)
+        every { DateTimeUtils.getLearningDay(4) } returns 100L
     }
 
     @Test

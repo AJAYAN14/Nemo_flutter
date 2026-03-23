@@ -45,7 +45,6 @@ class ContentUpdateApplierImpl @Inject constructor(
                         val merged = existing.copy(
                             chinese = dto.chinese,
                             hiragana = dto.hiragana,
-                            tone = dto.tone,
                             pos = dto.pos,
                             example1 = dto.examples.getOrNull(0)?.japanese,
                             gloss1 = dto.examples.getOrNull(0)?.chinese,

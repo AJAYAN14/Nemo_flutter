@@ -86,6 +86,11 @@ class AuthViewModel @Inject constructor(
             getUserFlowUseCase().collect { user ->
                 // 如果正在执行登录/注册操作，忽略流中的快照，由操作自身处理
                 if (isAuthActionInProgress) return@collect
+                // 【修复】自动恢复/更新用户状态时，检查并同步远程头像配置到本地
+                val fetchedUrl = user?.avatarUrl
+                if (fetchedUrl != null && _uiState.value.avatarPath != fetchedUrl) {
+                    settingsRepository.setUserAvatarPath(fetchedUrl)
+                }
                 
                 _uiState.update {
                     it.copy(
@@ -237,6 +242,12 @@ class AuthViewModel @Inject constructor(
             try {
                 when (val result = loginUseCase(email, password)) {
                     is Result.Success -> {
+                        // 【修复】登录成功后，如果云端有 avatarUrl，同步写回本地 Settings
+                        val fetchedAvatarUrl = result.data.avatarUrl
+                        if (!fetchedAvatarUrl.isNullOrEmpty()) {
+                            settingsRepository.setUserAvatarPath(fetchedAvatarUrl)
+                        }
+
                         _uiState.update {
                             it.copy(
                                 isLoading = false,

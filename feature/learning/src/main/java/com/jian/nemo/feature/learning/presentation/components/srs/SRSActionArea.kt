@@ -16,11 +16,14 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -31,9 +34,13 @@ import androidx.compose.ui.unit.sp
 import com.jian.nemo.feature.learning.presentation.components.common.scaleOnPress
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import com.jian.nemo.core.ui.util.SoundEffectPlayer
+import kotlinx.coroutines.delay
 
 /**
  * SRS 操作区域组件 (100% 还原 HTML Bottom Action Bar)
@@ -46,12 +53,17 @@ import com.jian.nemo.core.ui.util.SoundEffectPlayer
 @Composable
 fun SRSActionArea(
     isAnswerShown: Boolean,
+    isShowAnswerDelayEnabled: Boolean = false,
+    showAnswerAvailableAt: Long = 0L,
     ratingIntervals: Map<Int, String>,
     onShowAnswer: () -> Unit,
+    onShowAnswerBlocked: ((Int) -> Unit)? = null,
     onRate: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val graceMs = 150L
     val context = androidx.compose.ui.platform.LocalContext.current
+    val haptic = LocalHapticFeedback.current
     // 检测深色模式
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5
 
@@ -77,6 +89,27 @@ fun SRSActionArea(
     val colorEmerald600 = if (isDarkTheme) Color(0xFF6EE7B7) else Color(0xFF059669)   // 浅色600 / 深色300
     val colorEmerald50 = if (isDarkTheme) Color(0xFF064E3B) else Color(0xFFECFDF5)    // 浅色50 / 深色900
 
+    val now by produceState(
+        initialValue = System.currentTimeMillis(),
+        key1 = isAnswerShown,
+        key2 = isShowAnswerDelayEnabled,
+        key3 = showAnswerAvailableAt
+    ) {
+        while (!isAnswerShown && isShowAnswerDelayEnabled && showAnswerAvailableAt > System.currentTimeMillis()) {
+            value = System.currentTimeMillis()
+            delay(100L)
+        }
+        value = System.currentTimeMillis()
+    }
+
+    val remainingMs = if (!isAnswerShown && isShowAnswerDelayEnabled) {
+        (showAnswerAvailableAt - now).coerceAtLeast(0L)
+    } else {
+        0L
+    }
+    val canShowAnswer = remainingMs <= graceMs
+    val remainingSec = ((remainingMs + 999L) / 1000L).toInt()
+
 
     Column(
         modifier = modifier
@@ -93,35 +126,52 @@ fun SRSActionArea(
         ) { showAnswer ->
             if (!showAnswer) {
                 // 显示答案按钮
-                // 显示答案按钮
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .scaleOnPress(onTap = onShowAnswer)
-                        .shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Gray, spotColor = Color.LightGray)
-                        .background(Color(0xFF111827), RoundedCornerShape(16.dp)) // gray-900
-                        .clip(RoundedCornerShape(16.dp)),
-                    contentAlignment = Alignment.Center
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 24.dp), // Add horizontal padding for safety
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .scaleOnPress(onTap = {
+                                if (canShowAnswer) {
+                                    onShowAnswer()
+                                } else {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    onShowAnswerBlocked?.invoke(remainingSec)
+                                }
+                            })
+                            .shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color.Gray, spotColor = Color.LightGray)
+                            .background(
+                                if (canShowAnswer) Color(0xFF111827) else Color(0xFF6B7280),
+                                RoundedCornerShape(16.dp)
+                            )
+                            .clip(RoundedCornerShape(16.dp)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.AutoAwesome, // Sparkles replacement
-                            contentDescription = null,
-                            tint = Color(0xFFFACC15), // yellow-400
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
-                        Text(
-                            text = "显示答案",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 24.dp), // Add horizontal padding for safety
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = if (canShowAnswer) Icons.Default.AutoAwesome else Icons.Default.AccessTime,
+                                contentDescription = null,
+                                tint = if (canShowAnswer) Color(0xFFFACC15) else Color.White.copy(alpha = 0.88f),
+                                modifier = Modifier
+                                    .padding(end = 8.dp)
+                                    .size(18.dp)
+                            )
+                            Text(
+                                text = if (canShowAnswer) "显示答案" else "显示答案 (${remainingSec}s)",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White.copy(alpha = if (canShowAnswer) 1f else 0.9f)
+                            )
+                        }
                     }
+
                 }
             } else {
                 // 评分按钮网格 (Anki Mode: 4个按钮)

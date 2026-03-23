@@ -1,8 +1,15 @@
 package com.jian.nemo.core.domain.algorithm
 
+import com.jian.nemo.core.domain.model.Grammar
 import com.jian.nemo.core.domain.model.SrsItem
 import com.jian.nemo.core.domain.model.SrsUpdateResult
+import com.jian.nemo.core.domain.model.Word
+import com.jian.nemo.core.domain.repository.ReviewLogRepository
 import com.jian.nemo.core.domain.service.SrsCalculator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,9 +23,37 @@ import javax.inject.Singleton
  * - quality 5   → Easy (4)
  */
 @Singleton
-class SrsCalculatorImpl @Inject constructor() : SrsCalculator {
+class SrsCalculatorImpl @Inject constructor(
+    private val reviewLogRepository: ReviewLogRepository
+) : SrsCalculator {
 
-    private val fsrs = FsrsAlgorithm()
+    @Volatile
+    private var fsrs = FsrsAlgorithm()
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    init {
+        // 兼容优先：默认参数立即可用，个性化在后台异步加载。
+        scope.launch {
+            try {
+                val logs = reviewLogRepository.getRecentLogs(limit = 1500)
+                val optimized = FsrsParameterOptimizer.optimize(logs)
+                if (optimized != null) {
+                    fsrs = FsrsAlgorithm(parameters = optimized.parameters)
+                    println(
+                        "[FSRS] personalization enabled, samples=${optimized.sampleSize}, " +
+                            "againRate=${"%.3f".format(optimized.againRate)}, " +
+                            "hardRate=${"%.3f".format(optimized.hardRate)}"
+                    )
+                } else {
+                    println("[FSRS] personalization skipped, insufficient logs (samples=${logs.size})")
+                }
+            } catch (_: Exception) {
+                // 保持默认参数，不影响线上主流程。
+                println("[FSRS] personalization skipped due to initialization error")
+            }
+        }
+    }
 
     override fun calculate(
         item: SrsItem,
@@ -60,7 +95,8 @@ class SrsCalculatorImpl @Inject constructor() : SrsCalculator {
         } else {
             // 成功
             newRepetitionCount = item.repetitionCount + 1
-            newInterval = fsrs.nextIntervalDays(newState.stability)
+            val seed = buildFuzzSeed(item, today, quality, newRepetitionCount)
+            newInterval = fsrs.nextIntervalDaysWithFuzz(newState.stability, seed)
         }
 
         // 6. 计算日期
@@ -95,5 +131,14 @@ class SrsCalculatorImpl @Inject constructor() : SrsCalculator {
             quality == 4 -> FsrsRating.Good
             else -> FsrsRating.Easy
         }
+    }
+
+    private fun buildFuzzSeed(item: SrsItem, today: Long, quality: Int, repetitions: Int): Long {
+        val itemId = when (item) {
+            is Word -> item.id
+            is Grammar -> item.id
+            else -> 0
+        }
+        return (itemId.toLong() shl 32) xor (today shl 8) xor (quality.toLong() shl 4) xor repetitions.toLong()
     }
 }

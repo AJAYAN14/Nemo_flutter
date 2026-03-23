@@ -43,6 +43,7 @@ import com.jian.nemo.feature.settings.TtsSettingsScreen
 
 import com.jian.nemo.feature.learning.presentation.LearningScreen
 import com.jian.nemo.feature.learning.presentation.LearningMode
+import com.jian.nemo.feature.learning.presentation.kana.KanaChartScreen
 import com.jian.nemo.feature.learning.presentation.review.ReviewScreen
 import com.jian.nemo.feature.collection.navigation.favoritesScreen
 import com.jian.nemo.feature.collection.navigation.mistakesScreen
@@ -251,14 +252,17 @@ fun NemoNavHost(
                         LearningMode.Grammar -> navController.navigate(NavDestination.grammarLearning(level))
                     }
                 },
-                onNavigateToWordList = {
-                    navController.navigate(NavDestination.WORD_LIST)
+                onNavigateToKanaChart = {
+                    navController.navigate(NavDestination.KANA_CHART)
                 },
                 onNavigateToGrammarList = {
                     navController.navigate(NavDestination.GRAMMAR_LIST)
                 },
                 onNavigateToHeatmap = {
                     navController.navigate(NavDestination.ACTIVITY_HEATMAP)
+                },
+                onNavigateToProfile = {
+                    navController.navigate(NavDestination.PROFILE)
                 }
             )
         }
@@ -423,14 +427,16 @@ fun NemoNavHost(
         // 单词复习
         composable(NavDestination.WORD_REVIEW) {
             ReviewScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onStartReview = { navController.navigate("review_session") }
             )
         }
 
         // 语法复习
         composable(NavDestination.GRAMMAR_REVIEW) {
             ReviewScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onStartReview = { navController.navigate("review_session") }
             )
         }
 
@@ -674,6 +680,13 @@ fun NemoNavHost(
         composable(NavDestination.ACTIVITY_HEATMAP) {
             com.jian.nemo.feature.statistics.ActivityHeatmapScreen(
                 onBack = { navController.popBackStack() }
+            )
+        }
+
+        // 五十音图
+        composable(NavDestination.KANA_CHART) {
+            KanaChartScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

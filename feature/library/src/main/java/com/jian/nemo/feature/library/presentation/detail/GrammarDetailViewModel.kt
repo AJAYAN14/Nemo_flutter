@@ -27,6 +27,10 @@ class GrammarDetailViewModel @Inject constructor(
     private val audioRepository: AudioRepository
 ) : ViewModel() {
 
+    // Audio Status
+    private val _playingAudioId = MutableStateFlow<String?>(null)
+    val playingAudioId = _playingAudioId.asStateFlow()
+
     private val startGrammarId: Int = checkNotNull(savedStateHandle["grammarId"])
 
     // Context IDs for Swipe Navigation
@@ -69,10 +73,6 @@ class GrammarDetailViewModel @Inject constructor(
     fun getGrammarFlow(id: Int): kotlinx.coroutines.flow.Flow<Grammar?> {
         return grammarRepository.getGrammarById(id)
     }
-
-    // Audio Status
-    private val _playingAudioId = MutableStateFlow<String?>(null)
-    val playingAudioId = _playingAudioId.asStateFlow()
 
     private fun observeTtsEvents() {
         viewModelScope.launch {

@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jian.nemo.core.domain.model.ExplanationPayload
 import com.jian.nemo.core.domain.model.TestQuestion
 
 /**
@@ -86,6 +87,18 @@ fun TypingTestContent(
 
         // 答案反馈
         TypingFeedback(question = question)
+
+        if (question.isAnswered) {
+            Spacer(modifier = Modifier.height(24.dp))
+            QuestionExplanationCard(
+                payload = ExplanationPayload.WordSummary(
+                    japanese = question.word.japanese,
+                    hiragana = question.word.hiragana,
+                    meaning = question.word.chinese
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }
 

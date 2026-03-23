@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.jian.nemo.core.common.Result
 import com.jian.nemo.core.common.util.DateTimeUtils
 import com.jian.nemo.core.domain.model.Word
+import com.jian.nemo.core.domain.repository.SettingsRepository
 import com.jian.nemo.core.domain.repository.WordRepository
 import io.mockk.every
 import io.mockk.mockk
@@ -22,16 +23,19 @@ import org.junit.Test
 class GetDueWordsUseCaseTest {
 
     private lateinit var wordRepository: WordRepository
+    private lateinit var settingsRepository: SettingsRepository
     private lateinit var useCase: GetDueWordsUseCase
 
     @Before
     fun setup() {
         wordRepository = mockk()
-        useCase = GetDueWordsUseCase(wordRepository)
+        settingsRepository = mockk()
+        useCase = GetDueWordsUseCase(wordRepository, settingsRepository)
 
         // Mock DateTimeUtils
         mockkObject(DateTimeUtils)
-        every { DateTimeUtils.getCurrentEpochDay() } returns 100L
+        every { settingsRepository.learningDayResetHourFlow } returns flowOf(4)
+        every { DateTimeUtils.getLearningDay(4) } returns 100L
     }
 
     @Test
@@ -88,7 +92,6 @@ class GetDueWordsUseCaseTest {
         hiragana = "てすと",
         chinese = "测试",
         level = "n5",
-        tone = null,
         pos = null,
         example1 = null,
         gloss1 = null,

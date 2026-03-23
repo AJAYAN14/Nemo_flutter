@@ -49,11 +49,6 @@ data class WordEntity(
     val level: String,
 
     /**
-     * 音调标记 (如：①、②、③)
-     */
-    val tone: String? = null,
-
-    /**
      * 词性 (Part of Speech)
      * 用于12种词性分类，如: "名", "自動1", "他動2", "イ形", "副" 等
      */

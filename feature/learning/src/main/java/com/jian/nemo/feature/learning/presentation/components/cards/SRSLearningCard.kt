@@ -52,6 +52,7 @@ import coil.request.ImageRequest
 import androidx.compose.ui.platform.LocalContext
 import com.jian.nemo.core.designsystem.theme.IosColors
 import com.jian.nemo.core.ui.component.speaker.SpeakerButton
+import com.jian.nemo.feature.learning.presentation.CardBadge
 import kotlin.math.abs
 
 /**
@@ -105,6 +106,7 @@ private fun getColorForWord(wordId: Int): Color {
 fun SRSLearningCard(
     word: Word,
     isAnswerShown: Boolean,
+    cardBadge: CardBadge? = null,
     modifier: Modifier = Modifier,
     onPracticeClick: (() -> Unit)? = null,
     onSpeakWord: (() -> Unit)? = null,
@@ -150,7 +152,7 @@ fun SRSLearningCard(
             .padding(bottom = 100.dp)
     ) {
         // --- Question Area ---
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(
@@ -161,36 +163,65 @@ fun SRSLearningCard(
                 )
                 .background(cardBackground, RoundedCornerShape(26.dp))
                 .border(0.5.dp, borderColor, RoundedCornerShape(26.dp))
-                .padding(vertical = 24.dp, horizontal = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(vertical = 24.dp, horizontal = 16.dp)
         ) {
-            // Japanese
-            Text(
-                text = word.japanese,
-                color = primaryTextColor,
-                fontSize = 48.sp,
-                fontWeight = FontWeight.ExtraBold, // Refined from Black to ExtraBold
-                letterSpacing = (-1).sp,
-                modifier = Modifier.padding(bottom = 8.dp),
-                textAlign = TextAlign.Center,
-                lineHeight = 56.sp,
-                style = TextStyle(
-                    platformStyle = PlatformTextStyle(
-                        includeFontPadding = false
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = if (cardBadge != null) 20.dp else 0.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Japanese
+                Text(
+                    text = word.japanese,
+                    color = primaryTextColor,
+                    fontSize = 48.sp,
+                    fontWeight = FontWeight.ExtraBold, // Refined from Black to ExtraBold
+                    letterSpacing = (-1).sp,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    textAlign = TextAlign.Center,
+                    lineHeight = 56.sp,
+                    style = TextStyle(
+                        platformStyle = PlatformTextStyle(
+                            includeFontPadding = false
+                        )
                     )
                 )
-            )
 
-            // Hiragana
-            Text(
-                text = word.hiragana,
-                color = if (isAnswerShown) NemoNeutrals.Blue600 else hiraganaColorHidden,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.then(
-                    if (!isAnswerShown) Modifier.blur(8.dp) else Modifier
+                // Hiragana
+                Text(
+                    text = word.hiragana,
+                    color = if (isAnswerShown) NemoNeutrals.Blue600 else hiraganaColorHidden,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.then(
+                        if (!isAnswerShown) Modifier.blur(8.dp) else Modifier
+                    )
                 )
-            )
+            }
+
+            cardBadge?.let { badge ->
+                val (text, bgColor, textColor) = when (badge) {
+                    CardBadge.NEW -> Triple("新学", if (isDarkTheme) Color(0xFF1E3A8A) else Color(0xFFE0EDFF), if (isDarkTheme) Color(0xFFBFDBFE) else Color(0xFF1D4ED8))
+                    CardBadge.REVIEW -> Triple("复习", if (isDarkTheme) Color(0xFF14532D) else Color(0xFFDCFCE7), if (isDarkTheme) Color(0xFFBBF7D0) else Color(0xFF166534))
+                    CardBadge.RELEARN -> Triple("重学", if (isDarkTheme) Color(0xFF7C2D12) else Color(0xFFFFEDD5), if (isDarkTheme) Color(0xFFFED7AA) else Color(0xFF9A3412))
+                }
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .background(bgColor, CircleShape)
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = text,
+                        color = textColor,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.2.sp
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))

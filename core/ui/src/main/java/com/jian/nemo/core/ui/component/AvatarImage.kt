@@ -13,23 +13,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import java.io.File
-import android.graphics.BitmapFactory
-import kotlinx.coroutines.withContext
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import coil.compose.AsyncImage
 
 /**
  * 可复用的头像组件
@@ -58,7 +54,6 @@ fun AvatarImage(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var isLoading by remember { mutableStateOf(false) }
 
     // 生成基于用户名的颜色
@@ -79,44 +74,7 @@ fun AvatarImage(
         }
     }
 
-    // ✅ 改进：加载图片头像（异步 + LruCache缓存 + 自动内存管理）
-    LaunchedEffect(avatarPath) {
-        // 如果是预设头像，跳过文件加载
-        if (!avatarPath.isNullOrEmpty() && !com.jian.nemo.core.ui.util.PresetAvatars.isPreset(avatarPath)) {
-            // 1. 先检查缓存
-            val cached = com.jian.nemo.core.ui.util.AvatarCache.get(avatarPath)
-            if (cached != null) {
-                imageBitmap = cached
-                isLoading = false
-            } else {
-                // 2. 缓存未命中，在 IO 线程加载
-                isLoading = true
-                val result = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    try {
-                        val file = File(avatarPath)
-                        if (file.exists()) {
-                            val bitmap = BitmapFactory.decodeFile(file.absolutePath)
-                            bitmap?.asImageBitmap()
-                        } else null
-                    } catch (e: Exception) {
-                        null
-                    }
-                }
-
-                if (result != null) {
-                    // 3. 加载成功后存入缓存
-                    com.jian.nemo.core.ui.util.AvatarCache.put(avatarPath, result)
-                    imageBitmap = result
-                } else {
-                    imageBitmap = null
-                }
-                isLoading = false
-            }
-        } else {
-            imageBitmap = null
-            isLoading = false
-        }
-    }
+    val isImageAvatar = !avatarPath.isNullOrEmpty() && !com.jian.nemo.core.ui.util.PresetAvatars.isPreset(avatarPath)
 
     // 计算渐变边框的绘制参数 - Apple 风格渐变
     val gradientColors = remember {
@@ -161,10 +119,16 @@ fun AvatarImage(
             ),
         contentAlignment = Alignment.Center
     ) {
+        // 内层头像可用空间
+        val safeSize: Dp = size - (borderWidth * 2) - (padding * 2)
+        
+        // 内层元素基准尺寸计算
+        val innerSize = safeSize * 0.4f
+        
         // 内层头像容器，添加内边距
         Box(
             modifier = Modifier
-                .size(size - borderWidth * 2 - padding * 2)
+                .size(width = safeSize, height = safeSize)
                 .clip(shape)
                 .background(backgroundColor),
             contentAlignment = Alignment.Center
@@ -172,7 +136,7 @@ fun AvatarImage(
             when {
                 isLoading -> {
                     CircularProgressIndicator(
-                        modifier = Modifier.size((size - borderWidth * 2 - padding * 2) * 0.4f),
+                        modifier = Modifier.size(width = innerSize, height = innerSize),
                         strokeWidth = 2.dp,
                         color = Color.White
                     )
@@ -197,27 +161,59 @@ fun AvatarImage(
                          presetAvatar.emoji?.let { emoji ->
                              Text(
                                  text = emoji,
-                                 fontSize = ((size - borderWidth * 2 - padding * 2).value * 0.4f).sp,
+                                 fontSize = (innerSize.value).sp,
                                  textAlign = TextAlign.Center
                              )
                          }
                     }
                 }
-                imageBitmap != null -> {
-                    // ✅ 改进：显示图片头像（增强无障碍支持）
-                    Image(
-                        bitmap = imageBitmap!!,
-                        contentDescription = "用户 $username 的头像图片",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(shape)
-                            .then(
-                                Modifier.semantics {
-                                    this.contentDescription = "用户 $username 的个人头像图片"
+                isImageAvatar -> {
+                    // ✅ 改进：使用 Coil 支持网络和缓存图片加载，并添加详细状态处理
+                    val request = coil.request.ImageRequest.Builder(context)
+                        .data(avatarPath)
+                        .crossfade(true)
+                        // 强制指定一个稳定的 Key（忽略 URL 参数变化），比如只用纯数字 userId 或去除参数后的基础 URL
+                        .diskCacheKey(avatarPath?.substringBefore("?"))
+                        .memoryCacheKey(avatarPath?.substringBefore("?"))
+                        // 强制使用磁盘缓存
+                        .diskCachePolicy(coil.request.CachePolicy.ENABLED)
+                        .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
+                        .build()
+
+                    var isError by remember { mutableStateOf(false) }
+
+                    if (isError) {
+                        // 回退显示文字头像
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = initial,
+                                fontSize = (innerSize.value).sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.semantics {
+                                    this.contentDescription = "用户 $username 的默认头像，显示首字母 $initial (图片加载失败)"
                                 }
-                            ),
-                        contentScale = ContentScale.Crop
-                    )
+                            )
+                        }
+                    } else {
+                        AsyncImage(
+                            model = request,
+                            contentDescription = "用户 $username 的个人头像图片",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(shape),
+                            contentScale = ContentScale.Crop,
+                            onState = { state ->
+                                if (state is coil.compose.AsyncImagePainter.State.Error) {
+                                    isError = true
+                                }
+                            }
+                        )
+                    }
                 }
                 else -> {
                     // ✅ 改进：显示文字头像（增强无障碍支持）
@@ -228,7 +224,7 @@ fun AvatarImage(
                     ) {
                         Text(
                             text = initial,
-                            fontSize = ((size - borderWidth * 2 - padding * 2).value * 0.4f).sp,
+                            fontSize = (innerSize.value).sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
                             textAlign = TextAlign.Center,

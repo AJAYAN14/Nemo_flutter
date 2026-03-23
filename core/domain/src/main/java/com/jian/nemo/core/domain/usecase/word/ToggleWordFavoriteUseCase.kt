@@ -13,10 +13,6 @@ import javax.inject.Inject
  * 2. 切换状态
  * 3. 更新Repository
  * 4. 返回新状态
- *
- * 参考:
- * - 旧项目: WordRepository.kt toggleFavorite() (第488-490行)
- * - 实施计划: 06-单词Domain层.md (第379-401行)
  */
 class ToggleWordFavoriteUseCase @Inject constructor(
     private val wordRepository: WordRepository
@@ -36,7 +32,6 @@ class ToggleWordFavoriteUseCase @Inject constructor(
                 )
 
             // 2. 切换收藏状态
-            // 参考: 旧项目 WordRepository.kt 第488行
             val newStatus = !word.isFavorite
 
             // 3. 更新数据库

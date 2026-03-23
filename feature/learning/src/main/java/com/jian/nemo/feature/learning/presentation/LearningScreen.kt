@@ -2,15 +2,21 @@ package com.jian.nemo.feature.learning.presentation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -21,7 +27,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
@@ -36,8 +41,6 @@ import com.jian.nemo.feature.learning.presentation.components.common.DailyGoalMe
 import com.jian.nemo.feature.learning.presentation.components.common.LearnHeader
 import com.jian.nemo.feature.learning.presentation.components.common.WaitingContent
 import com.jian.nemo.feature.learning.presentation.components.sheets.LevelSelectionBottomSheet
-import com.jian.nemo.core.designsystem.theme.NemoSurfaceCard
-import com.jian.nemo.core.designsystem.theme.NemoSurfaceCardDark
 import com.jian.nemo.core.designsystem.theme.NemoSurfaceBackground
 import com.jian.nemo.core.designsystem.theme.NemoSurfaceBackgroundDark
 import com.jian.nemo.core.ui.component.common.NemoSnackbar
@@ -45,6 +48,7 @@ import com.jian.nemo.core.ui.component.common.NemoSnackbarType
 import com.jian.nemo.feature.learning.presentation.components.dialogs.TypingPracticeDialog
 import com.jian.nemo.feature.learning.presentation.components.cards.SRSLearningCard
 import com.jian.nemo.feature.learning.presentation.components.cards.SRSGrammarCard
+import com.jian.nemo.feature.learning.presentation.components.guide.RatingGuideScreen
 import com.jian.nemo.feature.learning.presentation.components.srs.SRSActionArea
 
 @Composable
@@ -63,14 +67,29 @@ fun LearningScreen(
 
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5
     val backgroundColor = if (isDarkTheme) NemoSurfaceBackgroundDark else NemoSurfaceBackground
-    val cardColor = if (isDarkTheme) NemoSurfaceCardDark else NemoSurfaceCard
 
     // 状态
     var showWordLevelSheet by rememberSaveable { mutableStateOf(false) }
     var showGrammarLevelSheet by rememberSaveable { mutableStateOf(false) }
+    var showRatingGuide by rememberSaveable { mutableStateOf(false) }
+    var showAnswerDelayHint by rememberSaveable { mutableStateOf(false) }
+    var showAnswerDelayHintSec by rememberSaveable { mutableStateOf(1) }
+    var showUndoHint by rememberSaveable { mutableStateOf(false) }
 
     // Levels
     val levels = listOf("N5", "N4", "N3", "N2", "N1")
+
+    val delayDurationLabel = when (uiState.showAnswerDelayMs) {
+        3000L -> "3s"
+        5000L -> "5s"
+        7000L -> "7s"
+        10000L -> "10s"
+        else -> "${uiState.showAnswerDelayMs}ms"
+    }
+
+    LaunchedEffect(uiState.canUndo) {
+        showUndoHint = uiState.canUndo
+    }
 
     // Bottom Sheets
     LevelSelectionBottomSheet(
@@ -101,13 +120,12 @@ fun LearningScreen(
         containerColor = backgroundColor
     ) { padding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+            modifier = Modifier.fillMaxSize()
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(padding)
                     .padding(horizontal = 16.dp)
             ) {
                 // Header
@@ -130,10 +148,17 @@ fun LearningScreen(
                     onNext = { viewModel.onEvent(LearningEvent.NavigateNext) },
                     onSuspend = { viewModel.onEvent(LearningEvent.SuspendCurrent) },
                     onBury = { viewModel.onEvent(LearningEvent.BuryCurrent) },
+                    onShowRatingGuide = { showRatingGuide = true },
                     isAutoAudioEnabled = uiState.isAutoAudioEnabled,
                     onToggleAutoAudio = if (uiState.learningMode == LearningMode.Word) {
                         { viewModel.onEvent(LearningEvent.ToggleAutoPlayAudio(it)) }
-                    } else null
+                    } else null,
+                    isShowAnswerDelayEnabled = uiState.isShowAnswerDelayEnabled,
+                    onToggleShowAnswerDelay = { viewModel.onEvent(LearningEvent.ToggleShowAnswerDelay(it)) },
+                    showAnswerDelayDurationLabel = delayDurationLabel,
+                    onCycleShowAnswerDelayDuration = { viewModel.onEvent(LearningEvent.CycleShowAnswerDelayDuration) },
+                    canUndo = uiState.canUndo,
+                    onUndo = { viewModel.onEvent(LearningEvent.Undo) }
                 )
 
                 // Content
@@ -153,8 +178,12 @@ fun LearningScreen(
                         else -> {
                             LearningContent(
                                 uiState = uiState,
-                                cardColor = cardColor,
-                                onEvent = viewModel::onEvent
+                                onEvent = viewModel::onEvent,
+                                getCardBadge = viewModel::getCardBadge,
+                                onShowAnswerBlocked = { remainingSec ->
+                                    showAnswerDelayHintSec = remainingSec
+                                    showAnswerDelayHint = true
+                                }
                             )
                         }
                     }
@@ -163,38 +192,65 @@ fun LearningScreen(
 
             // 顶部撤销 Snackbar
             NemoSnackbar(
-                visible = uiState.canUndo,
+                visible = uiState.canUndo && showUndoHint,
                 message = "点击撤销上一次评分",
                 actionText = "撤销",
                 icon = Icons.AutoMirrored.Filled.Undo,
                 type = NemoSnackbarType.INFO,
                 autoDismissMs = 5000L,
-                onDismiss = { viewModel.onEvent(LearningEvent.DismissUndo) },
-                onClick = { viewModel.onEvent(LearningEvent.Undo) },
-                modifier = Modifier.align(Alignment.TopCenter)
+                onDismiss = { showUndoHint = false },
+                onClick = {
+                    showUndoHint = false
+                    viewModel.onEvent(LearningEvent.Undo)
+                },
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding()
+                    .padding(top = 8.dp)
             )
+
+            NemoSnackbar(
+                visible = showAnswerDelayHint,
+                message = "等待中，请先回想 (${showAnswerDelayHintSec}s)",
+                icon = Icons.Default.AccessTime,
+                type = NemoSnackbarType.WARNING,
+                autoDismissMs = 2600L,
+                onDismiss = { showAnswerDelayHint = false },
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding()
+                    .padding(top = 72.dp)
+            )
+
+            if (showRatingGuide) {
+                RatingGuideScreen(
+                    onDismiss = { showRatingGuide = false }
+                )
+            }
         }
     }
 }
 
-
 @Composable
 fun LearningContent(
     uiState: LearningUiState,
-    cardColor: Color,
-    onEvent: (LearningEvent) -> Unit
+    onEvent: (LearningEvent) -> Unit,
+    getCardBadge: (LearningItem) -> CardBadge,
+    onShowAnswerBlocked: (Int) -> Unit
 ) {
     if (uiState.learningMode == LearningMode.Word) {
         WordLearningContent(
             uiState = uiState,
-            cardColor = cardColor,
-            onEvent = onEvent
+            onEvent = onEvent,
+            getCardBadge = getCardBadge,
+            onShowAnswerBlocked = onShowAnswerBlocked
         )
     } else {
         GrammarLearningContent(
             uiState = uiState,
-            cardColor = cardColor,
-            onEvent = onEvent
+            onEvent = onEvent,
+            getCardBadge = getCardBadge,
+            onShowAnswerBlocked = onShowAnswerBlocked
         )
     }
 }
@@ -202,8 +258,9 @@ fun LearningContent(
 @Composable
 fun WordLearningContent(
     uiState: LearningUiState,
-    cardColor: Color,
-    onEvent: (LearningEvent) -> Unit
+    onEvent: (LearningEvent) -> Unit,
+    getCardBadge: (LearningItem) -> CardBadge,
+    onShowAnswerBlocked: (Int) -> Unit
 ) {
     // 跟打练习对话框状态
     var showTypingDialog by remember { mutableStateOf(false) }
@@ -221,9 +278,7 @@ fun WordLearningContent(
 
         Spacer(modifier = Modifier.height(16.dp)) // Add some spacing from header
 
-        if (uiState.completedToday >= uiState.dailyGoal) {
-            DailyGoalMetContent()
-        } else if (uiState.currentWord != null) {
+        if (uiState.currentWord != null) {
             Box(modifier = Modifier.weight(1f)) {
                  // Card Content
                  Box(
@@ -301,6 +356,7 @@ fun WordLearningContent(
                                      SRSLearningCard(
                                           word = targetWord,
                                           isAnswerShown = uiState.isAnswerShown && page == uiState.currentIndex,
+                                          cardBadge = getCardBadge(LearningItem.WordItem(targetWord)),
                                           modifier = Modifier.fillMaxSize(),
                                           onPracticeClick = {
                                               showTypingDialog = true
@@ -318,12 +374,17 @@ fun WordLearningContent(
                  // SRS Action Area (Bottom)
                  SRSActionArea(
                      isAnswerShown = uiState.isAnswerShown,
+                     isShowAnswerDelayEnabled = uiState.isShowAnswerDelayEnabled,
+                     showAnswerAvailableAt = uiState.showAnswerAvailableAt,
                      ratingIntervals = uiState.ratingIntervals,
                      onShowAnswer = { onEvent(LearningEvent.ShowAnswer) },
+                     onShowAnswerBlocked = onShowAnswerBlocked,
                      onRate = { quality -> onEvent(LearningEvent.RateWord(quality)) },
                      modifier = Modifier.align(Alignment.BottomCenter)
                  )
             }
+        } else if (uiState.shouldShowDailyGoalMet) {
+            DailyGoalMetContent()
         } else {
             LearningFinishedContent(
                 title = "暂无单词任务",
@@ -336,15 +397,14 @@ fun WordLearningContent(
 @Composable
 fun GrammarLearningContent(
     uiState: LearningUiState,
-    cardColor: Color,
-    onEvent: (LearningEvent) -> Unit
+    onEvent: (LearningEvent) -> Unit,
+    getCardBadge: (LearningItem) -> CardBadge,
+    onShowAnswerBlocked: (Int) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         Spacer(modifier = Modifier.height(16.dp)) // Add some spacing from header
 
-        if (uiState.completedToday >= uiState.dailyGoal) {
-            DailyGoalMetContent()
-        } else if (uiState.currentGrammar != null) {
+        if (uiState.currentGrammar != null) {
             Box(modifier = Modifier.weight(1f)) {
                  // Card Content
                  Box(
@@ -418,6 +478,7 @@ fun GrammarLearningContent(
                                   SRSGrammarCard(
                                       grammar = targetGrammar,
                                       isAnswerShown = uiState.isAnswerShown && page == uiState.currentGrammarIndex,
+                                      cardBadge = getCardBadge(LearningItem.GrammarItem(targetGrammar)),
                                       modifier = Modifier.fillMaxSize(),
                                       onSpeakExample = { japanese, chinese, id -> onEvent(LearningEvent.SpeakExample(japanese, chinese, id)) },
                                       playingAudioId = uiState.playingAudioId
@@ -430,12 +491,17 @@ fun GrammarLearningContent(
                  // SRS Action Area (Bottom)
                  SRSActionArea(
                      isAnswerShown = uiState.isAnswerShown,
+                     isShowAnswerDelayEnabled = uiState.isShowAnswerDelayEnabled,
+                     showAnswerAvailableAt = uiState.showAnswerAvailableAt,
                      ratingIntervals = uiState.ratingIntervals,
                      onShowAnswer = { onEvent(LearningEvent.ShowAnswer) },
+                     onShowAnswerBlocked = onShowAnswerBlocked,
                      onRate = { quality -> onEvent(LearningEvent.RateGrammar(quality)) },
                      modifier = Modifier.align(Alignment.BottomCenter)
                  )
             }
+        } else if (uiState.shouldShowDailyGoalMet) {
+            DailyGoalMetContent()
         } else {
             LearningFinishedContent(
                 title = "暂无语法任务",

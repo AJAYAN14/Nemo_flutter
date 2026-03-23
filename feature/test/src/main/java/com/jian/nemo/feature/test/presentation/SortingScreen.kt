@@ -29,8 +29,10 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jian.nemo.core.domain.model.ExplanationPayload
 import com.jian.nemo.core.domain.model.SortableChar
 import com.jian.nemo.core.domain.model.TestQuestion
+import com.jian.nemo.feature.test.components.QuestionExplanationCard
 import com.jian.nemo.feature.test.TestViewModel
 
 // ... (SortingScreen composable remains largely the same aside from passed modifiers if any, skipping to internal components)
@@ -114,6 +116,18 @@ fun SortingScreen(
                     Spacer(modifier = Modifier.height(32.dp))
 
                     SortingFeedback(question = currentQuestion)
+
+                    if (currentQuestion.isAnswered && !isGrammarQuestion) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        QuestionExplanationCard(
+                            payload = ExplanationPayload.WordSummary(
+                                japanese = currentQuestion.word.japanese,
+                                hiragana = currentQuestion.word.hiragana,
+                                meaning = currentQuestion.word.chinese
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 

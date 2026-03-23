@@ -308,7 +308,7 @@ fun SettingsScreen(
                         icon = Icons.Rounded.Settings, // or SettingsSuggest
                         iconColor = NemoPurple,
                         title = "记忆算法配置",
-                        subtitle = "自定义间隔重复参数",
+                        subtitle = "步进、提前复习与 Leech 策略",
                         onClick = { viewModel.onEvent(SettingsEvent.ShowAdvancedLearningDialog(true)) },
                         showDivider = false,
                         trailing = {
@@ -460,11 +460,15 @@ fun SettingsScreen(
             learningSteps = uiState.learningSteps,
             relearningSteps = uiState.relearningSteps,
             learnAheadLimit = uiState.learnAheadLimit,
+            leechThreshold = uiState.leechThreshold,
+            leechAction = uiState.leechAction,
             onDismiss = { viewModel.onEvent(SettingsEvent.ShowAdvancedLearningDialog(false)) },
-            onSave = { steps, relearningSteps, limit ->
+            onSave = { steps, relearningSteps, limit, leechThreshold, leechAction ->
                 viewModel.onEvent(SettingsEvent.SetLearningSteps(steps))
                 viewModel.onEvent(SettingsEvent.SetRelearningSteps(relearningSteps))
                 viewModel.onEvent(SettingsEvent.SetLearnAheadLimit(limit))
+                viewModel.onEvent(SettingsEvent.SetLeechThreshold(leechThreshold))
+                viewModel.onEvent(SettingsEvent.SetLeechAction(leechAction))
                 viewModel.onEvent(SettingsEvent.ShowAdvancedLearningDialog(false))
             }
         )

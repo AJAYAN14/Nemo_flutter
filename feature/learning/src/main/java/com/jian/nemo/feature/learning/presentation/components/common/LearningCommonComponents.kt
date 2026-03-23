@@ -19,9 +19,11 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.AccessTime
+import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -37,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,6 +72,7 @@ fun Modifier.scaleOnPress(
     onTap: (() -> Unit)? = null
 ): Modifier {
     var isPressed by remember { mutableStateOf(false) }
+    val currentOnTap by rememberUpdatedState(onTap)
     val scale by animateFloatAsState(
         targetValue = if (isPressed) targetScale else 1f,
         label = "scale"
@@ -87,7 +91,7 @@ fun Modifier.scaleOnPress(
                     isPressed = false
                 },
                 onTap = {
-                    onTap?.invoke()
+                    currentOnTap?.invoke()
                 }
             )
         }
@@ -109,9 +113,16 @@ fun LearnHeader(
     onNext: () -> Unit,
     onSuspend: () -> Unit,
     onBury: () -> Unit,
+    onShowRatingGuide: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     isAutoAudioEnabled: Boolean = false,
     onToggleAutoAudio: ((Boolean) -> Unit)? = null,
+    isShowAnswerDelayEnabled: Boolean = false,
+    onToggleShowAnswerDelay: ((Boolean) -> Unit)? = null,
+    showAnswerDelayDurationLabel: String = "1.0s",
+    onCycleShowAnswerDelayDuration: (() -> Unit)? = null,
+    canUndo: Boolean = false,
+    onUndo: (() -> Unit)? = null,
     menu: @Composable (() -> Unit)? = null
 ) {
     val progress = if (dailyGoal > 0) completedCount.toFloat() / dailyGoal else 0f
@@ -260,7 +271,8 @@ fun LearnHeader(
                     }
 
                     // More Menu
-                    if (remainingCount > 0) {
+                    val canShowMenu = remainingCount > 0 || onUndo != null
+                    if (canShowMenu) {
                         if (menu != null) {
                             menu()
                         } else {
@@ -287,6 +299,36 @@ fun LearnHeader(
                                     expanded = expanded,
                                     onDismissRequest = { expanded = false }
                                 ) {
+                                    if (onUndo != null && canUndo) {
+                                        NemoMenuItem(
+                                            text = "撤销上一次评分",
+                                            onClick = {
+                                                expanded = false
+                                                onUndo()
+                                            },
+                                            leadingIcon = Icons.AutoMirrored.Rounded.Undo
+                                        )
+
+                                        androidx.compose.material3.HorizontalDivider(
+                                            modifier = Modifier.padding(vertical = 4.dp)
+                                        )
+                                    }
+
+                                    if (onShowRatingGuide != null) {
+                                        NemoMenuItem(
+                                            text = "评分说明（新学/复习）",
+                                            onClick = {
+                                                expanded = false
+                                                onShowRatingGuide()
+                                            },
+                                            leadingIcon = Icons.Rounded.CheckCircle
+                                        )
+
+                                        androidx.compose.material3.HorizontalDivider(
+                                            modifier = Modifier.padding(vertical = 4.dp)
+                                        )
+                                    }
+
                                     NemoMenuItem(
                                         text = "暂停此卡片 (Suspend)",
                                         onClick = {
@@ -342,6 +384,46 @@ fun LearnHeader(
                                                 onToggleAutoAudio(!isAutoAudioEnabled)
                                             }
                                         )
+                                    }
+
+                                    if (onToggleShowAnswerDelay != null) {
+                                        androidx.compose.material3.DropdownMenuItem(
+                                            text = {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        "显示答案等待",
+                                                        style = MaterialTheme.typography.bodyLarge
+                                                    )
+                                                    Switch(
+                                                        checked = isShowAnswerDelayEnabled,
+                                                        onCheckedChange = {
+                                                            onToggleShowAnswerDelay(it)
+                                                        },
+                                                        modifier = Modifier.size(
+                                                            width = 36.dp,
+                                                            height = 20.dp
+                                                        )
+                                                    )
+                                                }
+                                            },
+                                            onClick = {
+                                                onToggleShowAnswerDelay(!isShowAnswerDelayEnabled)
+                                            }
+                                        )
+
+                                        if (onCycleShowAnswerDelayDuration != null) {
+                                            NemoMenuItem(
+                                                text = "等待时长: $showAnswerDelayDurationLabel",
+                                                onClick = {
+                                                    onCycleShowAnswerDelayDuration()
+                                                },
+                                                leadingIcon = Icons.Rounded.Timer
+                                            )
+                                        }
                                     }
                                 }
                             }

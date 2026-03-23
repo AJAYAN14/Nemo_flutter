@@ -45,6 +45,7 @@ object NavDestination {
     // 数据与资料路由
     const val LEARNING_CALENDAR = "learning_calendar"
     const val ACTIVITY_HEATMAP = "activity_heatmap" // Added
+    const val KANA_CHART = "kana_chart"
     const val HISTORICAL_STATISTICS = "historical_statistics"
     const val WORD_LIST = "word_list"
     const val GRAMMAR_LIST = "grammar_list"

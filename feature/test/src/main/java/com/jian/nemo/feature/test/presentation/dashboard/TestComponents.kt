@@ -93,13 +93,7 @@ fun PremiumCard(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-            }
-            .shadow(
-                elevation = shadowElevation,
-                shape = RoundedCornerShape(24.dp),
-                spotColor = shadowColor,
-                ambientColor = shadowColor
-            ),
+            },
         interactionSource = interactionSource,
         content = { Column(content = content) }
     )

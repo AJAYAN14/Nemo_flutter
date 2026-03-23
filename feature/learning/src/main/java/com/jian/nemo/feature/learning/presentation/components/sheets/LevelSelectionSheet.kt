@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jian.nemo.core.designsystem.theme.BentoColors
+import androidx.compose.foundation.clickable
 
 /**
  * 等级选择底部Sheet (UI/UX Pro Max Optimized)
@@ -36,14 +38,15 @@ fun LevelSelectionBottomSheet(
     title: String = "选择学习等级",
     levels: List<String> = listOf("N5", "N4", "N3", "N2", "N1"),
     selectedLevel: String,
+    primaryColor: androidx.compose.ui.graphics.Color = BentoColors.Primary,
     onDismiss: () -> Unit,
     onLevelSelected: (String) -> Unit
 ) {
     if (show) {
         ModalBottomSheet(
             onDismissRequest = onDismiss,
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface,
+            containerColor = BentoColors.Surface,
+            contentColor = BentoColors.TextMain,
             dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
             Column(
@@ -56,6 +59,7 @@ fun LevelSelectionBottomSheet(
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold
                     ),
+                    color = BentoColors.TextMain,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
 
@@ -71,9 +75,10 @@ fun LevelSelectionBottomSheet(
                 // Using Column is fine for 5 items, but let's stick to Column for simplicity within Sheet.
                 levels.forEach { level ->
                     LevelSelectionCard(
-                        level = level,
+                        level = "JLPT $level",
                         description = levelDescriptions[level] ?: "",
                         isSelected = level == selectedLevel,
+                        primaryColor = primaryColor,
                         onClick = {
                             onLevelSelected(level)
                             onDismiss()
@@ -93,12 +98,13 @@ private fun LevelSelectionCard(
     level: String,
     description: String,
     isSelected: Boolean,
+    primaryColor: androidx.compose.ui.graphics.Color,
     onClick: () -> Unit
 ) {
-    val themePrimary = MaterialTheme.colorScheme.primary
-    val surfaceColor = MaterialTheme.colorScheme.surface
-    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
-    val outlineVariant = MaterialTheme.colorScheme.outlineVariant
+    val themePrimary = primaryColor
+    val surfaceColor = BentoColors.Surface
+    val onSurfaceColor = BentoColors.TextMain
+    val outlineVariant = BentoColors.TextSub.copy(alpha = 0.5f)
 
     // Animations
     val backgroundColor by animateColorAsState(
@@ -122,14 +128,19 @@ private fun LevelSelectionCard(
     )
 
     Surface(
-        onClick = onClick,
         shape = RoundedCornerShape(16.dp),
         color = backgroundColor,
         border = BorderStroke(if (isSelected) 2.dp else 1.dp, borderColor),
-        modifier = Modifier.graphicsLayer {
-            scaleX = scale
-            scaleY = scale
-        }
+        modifier = Modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
     ) {
         Row(
             modifier = Modifier
@@ -148,7 +159,7 @@ private fun LevelSelectionCard(
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (isSelected) themePrimary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (isSelected) themePrimary.copy(alpha = 0.8f) else BentoColors.TextSub,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
@@ -156,7 +167,7 @@ private fun LevelSelectionCard(
             Icon(
                 imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
                 contentDescription = null,
-                tint = if (isSelected) themePrimary else MaterialTheme.colorScheme.outlineVariant,
+                tint = if (isSelected) themePrimary else BentoColors.TextSub,
                 modifier = Modifier.size(24.dp)
             )
         }

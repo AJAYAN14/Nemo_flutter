@@ -221,6 +221,12 @@ object PreferencesKeys {
     /** 提前学习限制 (分钟) 默认: 20 */
     val LEARN_AHEAD_LIMIT = intPreferencesKey("learn_ahead_limit")
 
+    /** Leech 阈值 (累计 lapse) 默认: 5 */
+    val LEECH_THRESHOLD = intPreferencesKey("leech_threshold")
+
+    /** Leech 行为 默认: skip (skip | bury_today) */
+    val LEECH_ACTION = stringPreferencesKey("leech_action")
+
     // ========== TTS 设置 ==========
 
     /** 朗读语速 默认: 1.0f */
@@ -234,6 +240,12 @@ object PreferencesKeys {
 
     /** 翻面自动朗读开关 默认: true */
     val IS_AUTO_PLAY_AUDIO_ENABLED = booleanPreferencesKey("is_auto_play_audio_enabled")
+
+    /** 显示答案等待开关 默认: false */
+    val IS_SHOW_ANSWER_DELAY_ENABLED = booleanPreferencesKey("is_show_answer_delay_enabled")
+
+    /** 显示答案等待时长 (毫秒) 默认: 5000 */
+    val SHOW_ANSWER_DELAY_MS = longPreferencesKey("show_answer_delay_ms")
 
     // ========== 恢复断点续传 ==========
 

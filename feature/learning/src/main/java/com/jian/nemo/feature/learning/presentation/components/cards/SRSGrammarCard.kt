@@ -44,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateMapOf
 import kotlin.math.abs
 import com.jian.nemo.core.ui.component.speaker.SpeakerButton
+import com.jian.nemo.feature.learning.presentation.CardBadge
 
 /**
  * 获取随机贴纸文件名 (Grammar Version)
@@ -77,6 +78,7 @@ private fun getStickerForGrammar(grammarId: Int): String {
 fun SRSGrammarCard(
     grammar: Grammar,
     isAnswerShown: Boolean,
+    cardBadge: CardBadge? = null,
     modifier: Modifier = Modifier,
     onSpeakExample: ((String, String, String) -> Unit)? = null,
     playingAudioId: String? = null
@@ -101,9 +103,6 @@ fun SRSGrammarCard(
     val yellowIcon = if (isDarkTheme) Color(0xFFFDE047) else Color(0xFFCA8A04)
     val yellowText = if (isDarkTheme) Color(0xFFFEF08A) else Color(0xFF92400E)
 
-    // Gray 标签色
-    val grayBg = if (isDarkTheme) Color.White.copy(alpha = 0.1f) else Color(0xFFF3F4F6)
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -113,74 +112,86 @@ fun SRSGrammarCard(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // ========== 问题卡片 ==========
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(cardBackground, RoundedCornerShape(24.dp))
                 .border(1.dp, borderColor, RoundedCornerShape(24.dp))
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(32.dp)
         ) {
-            // 标签行
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 等级标签
+                // 标签行
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 等级标签
+                    Box(
+                        modifier = Modifier
+                            .background(indigoBg, CircleShape)
+                            .border(1.dp, indigoBorder, CircleShape)
+                            .padding(horizontal = 14.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = grammar.grammarLevel,
+                            color = indigoText,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 1.2.sp
+                        )
+                    }
+                }
+
+                // 语法条目（大标题）
+                Text(
+                    text = grammar.grammar,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = primaryTextColor,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 44.sp,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+
+                // 思考提示（答案隐藏时）
+                if (!isAnswerShown) {
+                    Text(
+                        text = "思考这个语法的用法...",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = secondaryTextColor.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
+            }
+
+            cardBadge?.let { badge ->
+                val (text, bgColor, textColor) = when (badge) {
+                    CardBadge.NEW -> Triple("新学", if (isDarkTheme) Color(0xFF1E3A8A) else Color(0xFFE0EDFF), if (isDarkTheme) Color(0xFFBFDBFE) else Color(0xFF1D4ED8))
+                    CardBadge.REVIEW -> Triple("复习", if (isDarkTheme) Color(0xFF14532D) else Color(0xFFDCFCE7), if (isDarkTheme) Color(0xFFBBF7D0) else Color(0xFF166534))
+                    CardBadge.RELEARN -> Triple("重学", if (isDarkTheme) Color(0xFF7C2D12) else Color(0xFFFFEDD5), if (isDarkTheme) Color(0xFFFED7AA) else Color(0xFF9A3412))
+                }
+
                 Box(
                     modifier = Modifier
-                        .background(indigoBg, CircleShape)
-                        .border(1.dp, indigoBorder, CircleShape)
+                        .align(Alignment.TopEnd)
+                        .background(bgColor, CircleShape)
                         .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = grammar.grammarLevel,
-                        color = indigoText,
+                        text = text,
+                        color = textColor,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 1.2.sp
                     )
                 }
-
-                // 类型标签
-                Box(
-                    modifier = Modifier
-                        .background(grayBg, CircleShape)
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = "文法",
-                        color = secondaryTextColor,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.2.sp
-                    )
-                }
-            }
-
-            // 语法条目（大标题）
-            Text(
-                text = grammar.grammar,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = primaryTextColor,
-                textAlign = TextAlign.Center,
-                lineHeight = 44.sp,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-
-            // 思考提示（答案隐藏时）
-            if (!isAnswerShown) {
-                Text(
-                    text = "思考这个语法的用法...",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = secondaryTextColor.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(top = 16.dp)
-                )
             }
         }
 

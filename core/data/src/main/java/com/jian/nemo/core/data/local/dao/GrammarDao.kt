@@ -180,9 +180,25 @@ interface GrammarDao {
         SELECT g.* FROM grammars g
         JOIN grammar_study_states s ON g.id = s.grammar_id
         WHERE s.first_learned_date = :todayEpochDay
+        AND (s.is_skipped = 0 OR s.is_skipped IS NULL)
+        AND s.is_deleted = 0
+        AND g.is_delisted = 0
         ORDER BY g.id DESC
     """)
     fun getTodayLearnedGrammarsWithUsages(todayEpochDay: Long): Flow<List<GrammarWithUsages>>
+
+    @Transaction
+    @Query("""
+        SELECT g.* FROM grammars g
+        JOIN grammar_study_states s ON g.id = s.grammar_id
+        WHERE s.last_reviewed_date = :todayEpochDay
+        AND s.repetition_count > 0
+        AND (s.is_skipped = 0 OR s.is_skipped IS NULL)
+        AND s.is_deleted = 0
+        AND g.is_delisted = 0
+        ORDER BY g.id DESC
+    """)
+    fun getTodayReviewedGrammarsWithUsages(todayEpochDay: Long): Flow<List<GrammarWithUsages>>
 
     @Transaction
     @Query("""

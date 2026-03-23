@@ -48,6 +48,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setUserAvatarPath(path: String) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.USER_AVATAR_PATH] = path
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -72,6 +73,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setDailyGoal(goal: Int) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.DAILY_GOAL] = goal
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
         Log.d(TAG, "每日目标已更新: $goal")
     }
@@ -88,6 +90,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setGrammarDailyGoal(goal: Int) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.GRAMMAR_DAILY_GOAL] = goal
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
         Log.d(TAG, "每日语法目标已更新: $goal")
     }
@@ -127,6 +130,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setDynamicColorEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_DYNAMIC_COLOR_ENABLED] = enabled
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -143,6 +147,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val validHour = hour.coerceIn(0, 23)
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.LEARNING_DAY_RESET_HOUR] = validHour
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
         Log.d(TAG, "学习日重置时间已更新: $validHour:00")
     }
@@ -430,6 +435,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val mode = currentTestModeFlow.value
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.getTestQuestionCountKey(mode)] = count
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -444,6 +450,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val mode = currentTestModeFlow.value
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.getTestTimeLimitKey(mode)] = minutes
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -458,6 +465,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val mode = currentTestModeFlow.value
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.getTestShuffleQuestionsKey(mode)] = enabled
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -472,6 +480,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val mode = currentTestModeFlow.value
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.getTestShuffleOptionsKey(mode)] = enabled
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -486,6 +495,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val mode = currentTestModeFlow.value
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.getTestAutoAdvanceKey(mode)] = enabled
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -500,6 +510,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val mode = currentTestModeFlow.value
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.getTestPrioritizeWrongKey(mode)] = enabled
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -514,6 +525,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val mode = currentTestModeFlow.value
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.getTestPrioritizeNewKey(mode)] = enabled
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -528,6 +540,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val mode = currentTestModeFlow.value
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.getTestQuestionSourceKey(mode)] = source
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -542,6 +555,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val mode = currentTestModeFlow.value
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.getTestWrongAnswerRemovalThresholdKey(mode)] = threshold
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -556,6 +570,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val mode = currentTestModeFlow.value
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.getTestContentTypeKey(mode)] = type
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -570,6 +585,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val mode = currentTestModeFlow.value
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.getTestSelectedWordLevelsKey(mode)] = levels
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -584,6 +600,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val mode = currentTestModeFlow.value
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.getTestSelectedGrammarLevelsKey(mode)] = levels
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -623,6 +640,7 @@ class SettingsRepositoryImpl @Inject constructor(
             preferences[PreferencesKeys.COMPREHENSIVE_TEST_TYPING_COUNT] = comprehensiveTypingCount
             preferences[PreferencesKeys.COMPREHENSIVE_TEST_MATCHING_COUNT] = comprehensiveCardMatchingCount
             preferences[PreferencesKeys.COMPREHENSIVE_TEST_SORTING_COUNT] = comprehensiveSortingCount
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -635,6 +653,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun saveComprehensiveTestMultipleChoiceCount(count: Int) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.COMPREHENSIVE_TEST_MC_COUNT] = count
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -645,6 +664,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun saveComprehensiveTestTypingCount(count: Int) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.COMPREHENSIVE_TEST_TYPING_COUNT] = count
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -655,6 +675,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun saveComprehensiveTestCardMatchingCount(count: Int) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.COMPREHENSIVE_TEST_MATCHING_COUNT] = count
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -665,6 +686,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun saveComprehensiveTestSortingCount(count: Int) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.COMPREHENSIVE_TEST_SORTING_COUNT] = count
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -708,6 +730,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setRandomNewContentEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_RANDOM_NEW_CONTENT_ENABLED] = enabled
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
     }
 
@@ -1115,6 +1138,30 @@ class SettingsRepositoryImpl @Inject constructor(
         Log.d(TAG, "提前学习限制已更新: $minutes mins")
     }
 
+    override val leechThresholdFlow: Flow<Int> = dataStore.data.map { preferences ->
+        (preferences[PreferencesKeys.LEECH_THRESHOLD] ?: 5).coerceAtLeast(1)
+    }
+
+    override suspend fun setLeechThreshold(threshold: Int) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.LEECH_THRESHOLD] = threshold.coerceAtLeast(1)
+        }
+        Log.d(TAG, "Leech阈值已更新: ${threshold.coerceAtLeast(1)}")
+    }
+
+    override val leechActionFlow: Flow<String> = dataStore.data.map { preferences ->
+        val raw = preferences[PreferencesKeys.LEECH_ACTION] ?: "skip"
+        if (raw == "skip" || raw == "bury_today") raw else "skip"
+    }
+
+    override suspend fun setLeechAction(action: String) {
+        val normalized = if (action == "bury_today") "bury_today" else "skip"
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.LEECH_ACTION] = normalized
+        }
+        Log.d(TAG, "Leech行为已更新: $normalized")
+    }
+
     override val relearningStepsFlow: Flow<String> = dataStore.data.map { preferences ->
         preferences[PreferencesKeys.RELEARNING_STEPS] ?: "1 10"
     }
@@ -1170,6 +1217,34 @@ class SettingsRepositoryImpl @Inject constructor(
         }
     }
 
+    override val isShowAnswerDelayEnabledFlow: Flow<Boolean> = dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.IS_SHOW_ANSWER_DELAY_ENABLED] ?: false }
+
+    override suspend fun setShowAnswerDelayEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.IS_SHOW_ANSWER_DELAY_ENABLED] = enabled
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
+        }
+    }
+
+    override val showAnswerDelayMsFlow: Flow<Long> = dataStore.data
+        .map { preferences ->
+            when (preferences[PreferencesKeys.SHOW_ANSWER_DELAY_MS] ?: 5000L) {
+                3000L, 5000L, 7000L, 10000L -> preferences[PreferencesKeys.SHOW_ANSWER_DELAY_MS] ?: 5000L
+                else -> 5000L
+            }
+        }
+
+    override suspend fun setShowAnswerDelayMs(ms: Long) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.SHOW_ANSWER_DELAY_MS] = when (ms) {
+                3000L, 5000L, 7000L, 10000L -> ms
+                else -> 5000L
+            }
+            preferences[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
+        }
+    }
+
     override suspend fun clearUserData() {
         dataStore.edit { preferences ->
             // 用户设置
@@ -1214,6 +1289,8 @@ class SettingsRepositoryImpl @Inject constructor(
             preferences.remove(PreferencesKeys.LEARNING_STEPS)
             preferences.remove(PreferencesKeys.RELEARNING_STEPS)
             preferences.remove(PreferencesKeys.LEARN_AHEAD_LIMIT)
+            preferences.remove(PreferencesKeys.LEECH_THRESHOLD)
+            preferences.remove(PreferencesKeys.LEECH_ACTION)
             preferences.remove(PreferencesKeys.PREFERRED_WORD_LEVEL)
             preferences.remove(PreferencesKeys.PREFERRED_GRAMMAR_LEVEL)
 
@@ -1327,18 +1404,28 @@ class SettingsRepositoryImpl @Inject constructor(
             ttsSpeechRate = prefs[PreferencesKeys.TTS_SPEECH_RATE] ?: 1.0f,
             ttsPitch = prefs[PreferencesKeys.TTS_PITCH] ?: 1.0f,
             ttsVoiceName = prefs[PreferencesKeys.TTS_VOICE_NAME],
-            isAutoPlayAudioEnabled = prefs[PreferencesKeys.IS_AUTO_PLAY_AUDIO_ENABLED] ?: true
+            isAutoPlayAudioEnabled = prefs[PreferencesKeys.IS_AUTO_PLAY_AUDIO_ENABLED] ?: true,
+
+            learningSteps = prefs[PreferencesKeys.LEARNING_STEPS] ?: "1 10",
+            learnAheadLimit = prefs[PreferencesKeys.LEARN_AHEAD_LIMIT] ?: 20,
+            relearningSteps = prefs[PreferencesKeys.RELEARNING_STEPS] ?: "1 10",
+            isRandomNewContentEnabled = prefs[PreferencesKeys.IS_RANDOM_NEW_CONTENT_ENABLED] ?: true,
+
+            isSyncOnLearningComplete = prefs[PreferencesKeys.SYNC_ON_LEARNING_COMPLETE] ?: true,
+            isSyncOnTestComplete = prefs[PreferencesKeys.SYNC_ON_TEST_COMPLETE] ?: true
         )
     }
 
     override suspend fun applyAppSettingsSnapshot(settings: AppSettings) {
         dataStore.edit { prefs ->
-            // Theme
+            // [MOD] 排除主题同步：不再从快照中应用主题设置
+            /*
             when (settings.theme) {
                 "dark" -> prefs[PreferencesKeys.IS_DARK_MODE] = true
                 "light" -> prefs[PreferencesKeys.IS_DARK_MODE] = false
                 else -> prefs.remove(PreferencesKeys.IS_DARK_MODE)
             }
+            */
 
             prefs[PreferencesKeys.DAILY_GOAL] = settings.dailyGoal
             prefs[PreferencesKeys.GRAMMAR_DAILY_GOAL] = settings.grammarDailyGoal
@@ -1376,10 +1463,17 @@ class SettingsRepositoryImpl @Inject constructor(
 
             prefs[PreferencesKeys.IS_AUTO_PLAY_AUDIO_ENABLED] = settings.isAutoPlayAudioEnabled
 
+            prefs[PreferencesKeys.LEARNING_STEPS] = settings.learningSteps
+            prefs[PreferencesKeys.LEARN_AHEAD_LIMIT] = settings.learnAheadLimit
+            prefs[PreferencesKeys.RELEARNING_STEPS] = settings.relearningSteps
+            prefs[PreferencesKeys.IS_RANDOM_NEW_CONTENT_ENABLED] = settings.isRandomNewContentEnabled
+            prefs[PreferencesKeys.SYNC_ON_LEARNING_COMPLETE] = settings.isSyncOnLearningComplete
+            prefs[PreferencesKeys.SYNC_ON_TEST_COMPLETE] = settings.isSyncOnTestComplete
+
             // Update timestamp
             prefs[PreferencesKeys.LAST_SETTINGS_MODIFIED_TIME] = System.currentTimeMillis()
         }
-        Log.d(TAG, "已应用云端设置快照")
+        Log.d(TAG, "已应用云端设置快照 (不含主题)")
     }
 
     override val lastSettingsModifiedTimeFlow: Flow<Long> = dataStore.data.map { prefs ->

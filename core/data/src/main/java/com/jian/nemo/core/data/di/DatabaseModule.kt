@@ -60,7 +60,6 @@ object DatabaseModule {
         )
             .addCallback(databaseCallback)  // 添加回调
             .addMigrations(MIGRATION_2_3, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_14_15)
-            .fallbackToDestructiveMigration()
             .build()
     }
 

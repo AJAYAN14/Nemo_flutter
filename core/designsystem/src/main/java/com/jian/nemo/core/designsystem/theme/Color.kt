@@ -80,6 +80,38 @@ val NemoDanger = Color(0xFFE53935)           // 危险/错误色
 val NemoWarning = Color(0xFFFBC02D)          // 警告色
 val NemoGold = Color(0xFFFFD700)             // 金色/高亮色
 
+// 测试结算页原始配色（集中管理）
+object TestResultPalette {
+    val CorrectCardBgDark = Color(0xFF0B5F49)
+    val CorrectCardBgLight = Color(0xFFE8F5E9)
+    val CorrectCardContentDark = Color(0xFF6EE7B7)
+    val CorrectCardContentLight = Color(0xFF2E7D32)
+
+    val WrongCardBgDark = Color(0xFF922626)
+    val WrongCardBgLight = Color(0xFFFEE2E2)
+    val WrongCardContentDark = Color(0xFFFCA5A5)
+    val WrongCardContentLight = Color(0xFFB91C1C)
+
+    val TimeCardBgDark = Color(0xFF8A4318)
+    val TimeCardBgLight = Color(0xFFFFF8E1)
+    val TimeCardContentDark = Color(0xFFFCD34D)
+    val TimeCardContentLight = Color(0xFFF57F17)
+
+    val DistributionCardBgDark = Color(0xFF263548)
+    val DistributionCardBgLight = Color(0xFFFFFFFF)
+    val DistributionTitleDark = Color(0xFFF8FAFC)
+    val DistributionTitleLight = Color(0xFF1E293B)
+
+    val WordAccentDark = Color(0xFF60A5FA)
+    val WordAccentLight = Color(0xFF3B82F6)
+    val GrammarAccentDark = Color(0xFFA78BFA)
+    val GrammarAccentLight = Color(0xFF8B5CF6)
+    val SecondaryTextDark = Color(0xFFA5B4C6)
+    val SecondaryTextLight = Color(0xFF64748B)
+    val DividerDark = Color(0xFF475569)
+    val DividerLight = Color(0xFFCBD5E1)
+}
+
 // ==============================================
 // 主题接口定义
 // ==============================================
@@ -189,6 +221,33 @@ val NemoSurfaceBorder = Color(0xFFE0E0E0)       // 语义化的边框颜色
 
 val NemoSurfaceBackgroundDark = Color(0xFF1C1B1F) // 深色页面背景
 val NemoSurfaceCardDark = Color(0xFF2B2930)       // 深色卡片容器
+
+// Rating Guide Screen (HTML restore)
+val RatingGuideTitleText = Color(0xFF0F172A)
+val RatingGuideCoreText = Color(0xFF475569)
+val RatingGuideBodyText = Color(0xFF334155)
+
+val RatingGuideBadgeRoseText = Color(0xFFE11D48)
+val RatingGuideBadgeRoseBg = Color(0xFFFFE4E6)
+val RatingGuideBadgeRoseTextDark = Color(0xFFFDA4AF)
+val RatingGuideBadgeRoseBgDark = Color(0xFF4C0519)
+val RatingGuideBadgeOrangeText = Color(0xFFEA580C)
+val RatingGuideBadgeOrangeBg = Color(0xFFFFEDD5)
+val RatingGuideBadgeOrangeTextDark = Color(0xFFFDBA74)
+val RatingGuideBadgeOrangeBgDark = Color(0xFF7C2D12)
+val RatingGuideBadgeBlueText = Color(0xFF2563EB)
+val RatingGuideBadgeBlueBg = Color(0xFFDBEAFE)
+val RatingGuideBadgeBlueTextDark = Color(0xFF93C5FD)
+val RatingGuideBadgeBlueBgDark = Color(0xFF1E3A8A)
+val RatingGuideBadgeEmeraldText = Color(0xFF059669)
+val RatingGuideBadgeEmeraldBg = Color(0xFFD1FAE5)
+val RatingGuideBadgeEmeraldTextDark = Color(0xFF6EE7B7)
+val RatingGuideBadgeEmeraldBgDark = Color(0xFF064E3B)
+
+val RatingGuideAdviceBg = Color(0xFFEEF2FF)
+val RatingGuideAdviceText = Color(0xFF4338CA)
+
+val RatingGuidePrimaryButton = Color(0xFF4F46E5)
 
 // ============================================================================
 // 弃用别名 (Legacy Aliases) - 用于维持向后兼容性
@@ -405,3 +464,35 @@ object NemoNeutrals {
     // Accents
     val Blue600 = Color(0xFF2563EB)
 }
+
+// ============================================================================
+// Bento UI 专供色彩 (HTML 原型)
+// ============================================================================
+object BentoColors {
+    val BgBase = Color(0xFFF1F5F9)         // 极其柔和的灰蓝色背景
+    val Surface = Color(0xFFFFFFFF)        // 纯白便当盒卡片
+
+    val Primary = Color(0xFFF97316)        // 元气橙/珊瑚橘 - 充满活力的主色调
+    val PrimaryHover = Color(0xFFEA580C)
+    val PrimaryLight = Color(0xFFFFEDD5)
+    
+    val GrammarPrimary = Color(0xFF059669) // 翠绿色，语法模式主题色
+    val GrammarPrimaryLight = Color(0xFFD1FAE5)
+
+    val TextMain = Color(0xFF0F172A)       // 深石板黑
+    val TextSub = Color(0xFF64748B)
+    val TextMuted = Color(0xFF94A3B8)
+
+    // 功能点缀色
+    val AccentBlue = Color(0xFF3B82F6)
+    val AccentGreen = Color(0xFF10B981)
+    val AccentOrange = Color(0xFFF59E0B)
+    val AccentPurple = Color(0xFF8B5CF6)
+    
+    // 图标特定背景色
+    val IconBgOrange = Color(0xFFFFF7ED)
+    val IconBgGreen = Color(0xFFECFDF5)
+    val IconBgBlue = Color(0xFFEFF6FF)
+    val IconBgPurple = Color(0xFFF5F3FF)
+}
+

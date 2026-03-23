@@ -24,9 +24,18 @@ fun ReviewSessionScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    if (uiState.isSessionCompleted) {
-        ReviewCompletedScreen(onNavigateBack)
-        return
+    when (uiState.status) {
+        ReviewStatus.SessionCompleted -> {
+            ReviewCompletedScreen(onNavigateBack)
+            return
+        }
+        ReviewStatus.Loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            return
+        }
+        else -> { /* Continue to Scaffold */ }
     }
 
     Scaffold(
@@ -44,8 +53,11 @@ fun ReviewSessionScreen(
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            if (uiState.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            if (uiState.status == ReviewStatus.Waiting) {
+                com.jian.nemo.feature.learning.presentation.components.common.WaitingContent(
+                    until = uiState.waitingUntil,
+                    onContinue = { viewModel.resumeFromWaiting() }
+                )
             } else {
                 Column(modifier = Modifier.fillMaxSize()) {
 

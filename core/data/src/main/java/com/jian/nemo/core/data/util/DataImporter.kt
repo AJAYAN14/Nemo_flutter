@@ -90,7 +90,6 @@ class DataImporter(
                     val mergedEntity = existingEntity.copy(
                         hiragana = newEntityData.hiragana,
                         chinese = newEntityData.chinese,
-                        tone = newEntityData.tone,
                         pos = newEntityData.pos,
                         example1 = newEntityData.example1,
                         gloss1 = newEntityData.gloss1,
@@ -250,7 +249,6 @@ fun WordDto.toEntity(): WordEntity {
         hiragana = hiragana,
         chinese = chinese,
         level = level,
-        tone = tone,
         pos = pos,
         example1 = examples.getOrNull(0)?.japanese,
         gloss1 = examples.getOrNull(0)?.chinese,

@@ -31,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.jian.nemo.core.designsystem.theme.*
 import com.jian.nemo.core.ui.component.common.CommonHeader
 import com.jian.nemo.feature.statistics.model.StatisticDisplayItem
+import com.jian.nemo.feature.statistics.model.StatisticSource
 
 /**
  * 今日统计界面 (UI/UX Pro Max)
@@ -55,10 +56,12 @@ fun StatisticsScreen(
 
     Scaffold(
         topBar = {
-            CommonHeader(
-                title = "今日统计",
-                onBack = onBack
-            )
+            Column(modifier = Modifier.background(backgroundColor)) {
+                CommonHeader(
+                    title = "今日学习记录",
+                    onBack = onBack
+                )
+            }
         },
         containerColor = backgroundColor
     ) { innerPadding ->
@@ -75,7 +78,7 @@ fun StatisticsScreen(
 
             // 1. 单词列表
             item {
-                StatisticsSectionTitle("新学单词 (${words.size})")
+                StatisticsSectionTitle("单词 (${words.size})")
             }
 
             if (words.isNotEmpty()) {
@@ -94,7 +97,7 @@ fun StatisticsScreen(
 
             // 2. 语法列表
             item {
-                StatisticsSectionTitle("新学语法 (${grammars.size})")
+                StatisticsSectionTitle("语法 (${grammars.size})")
             }
 
             if (grammars.isNotEmpty()) {
@@ -145,7 +148,8 @@ fun StatisticsSectionTitle(text: String) {
 fun StatisticsListCard(
     items: List<StatisticDisplayItem>,
     onItemClick: (Int) -> Unit,
-    isWord: Boolean
+    isWord: Boolean,
+    showSourceBadge: Boolean = true
 ) {
     val defaultShowCount = 5
     var isExpanded by remember { mutableStateOf(false) }
@@ -168,7 +172,8 @@ fun StatisticsListCard(
                     item = item,
                     avatarColor = color,
                     onClick = { onItemClick(item.id) },
-                    showDivider = index < showItems.size - 1
+                    showDivider = index < showItems.size - 1,
+                    showSourceBadge = showSourceBadge
                 )
             }
 
@@ -242,7 +247,8 @@ fun StatisticsItemRow(
     item: StatisticDisplayItem,
     avatarColor: Color,
     onClick: () -> Unit,
-    showDivider: Boolean
+    showDivider: Boolean,
+    showSourceBadge: Boolean = true
 ) {
     Row(
         modifier = Modifier
@@ -273,9 +279,39 @@ fun StatisticsItemRow(
         Spacer(modifier = Modifier.width(16.dp))
 
         Column(modifier = Modifier.weight(1f)) {
+            val (badgeText, badgeBg, badgeTextColor) = when (item.source) {
+                StatisticSource.LEARNED -> Triple(
+                    "新学",
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    MaterialTheme.colorScheme.primary
+                )
+                StatisticSource.REVIEWED -> Triple(
+                    "复习",
+                    NemoSecondary.copy(alpha = 0.15f),
+                    NemoSecondary
+                )
+            }
+
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                if (showSourceBadge) {
+                    Surface(
+                        color = badgeBg,
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = badgeText,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = badgeTextColor,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
                 Text(
                     text = item.japanese,
                     style = MaterialTheme.typography.titleMedium,

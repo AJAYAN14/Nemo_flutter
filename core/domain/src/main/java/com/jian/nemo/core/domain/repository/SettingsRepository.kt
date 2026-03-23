@@ -416,6 +416,14 @@ interface SettingsRepository {
     val learnAheadLimitFlow: Flow<Int>
     suspend fun setLearnAheadLimit(minutes: Int)
 
+    /** Leech 阈值Flow (累计 lapse 次数) 默认: 5 */
+    val leechThresholdFlow: Flow<Int>
+    suspend fun setLeechThreshold(threshold: Int)
+
+    /** Leech 行为Flow 默认: "skip" (skip | bury_today) */
+    val leechActionFlow: Flow<String>
+    suspend fun setLeechAction(action: String)
+
     /** 重学步进Flow (例如 "1 10") @see PreferencesKeys.RELEARNING_STEPS */
     val relearningStepsFlow: Flow<String>
     suspend fun setRelearningSteps(steps: String)
@@ -437,6 +445,15 @@ interface SettingsRepository {
     /** 翻面自动朗读开关Flow 默认: false */
     val isAutoPlayAudioEnabledFlow: Flow<Boolean>
     suspend fun setAutoPlayAudioEnabled(enabled: Boolean)
+
+    /** 显示答案等待开关 Flow 默认: false */
+    val isShowAnswerDelayEnabledFlow: Flow<Boolean>
+    suspend fun setShowAnswerDelayEnabled(enabled: Boolean)
+
+    /** 显示答案等待时长 (ms) Flow 默认: 5000，可选: 3000/5000/7000/10000 */
+    val showAnswerDelayMsFlow: Flow<Long>
+    suspend fun setShowAnswerDelayMs(ms: Long)
+
     /**
      * 清除用户相关数据 (保留设备配置)
      * 用于单用户模式登出清理

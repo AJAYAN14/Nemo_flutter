@@ -13,21 +13,16 @@ import javax.inject.Inject
 class LearningSessionPolicy @Inject constructor() {
 
     /**
-     * 计算调整后的新词配额 (Bankruptcy Protection / 破产保护)
-     * 规则：
-     * - 复习 < 20: 正常配额
-     * - 20 <= 复习 < 50: 配额减半
-     * - 复习 >= 50: 配额为 0 (强制还债，停止新词)
+     * 计算调整后的新词配额
+     *
+     * 当前策略：不对新词做减载，始终返回目标配额。
+     * 即“有多少学多少”，复习数量不会压缩新词配额。
      *
      * @param targetQuota 原始目标配额
-     * @param dueCount 到期复习数量
+     * @param dueCount 到期复习数量（当前策略未使用）
      */
     fun calculateAdjustedNewQuota(targetQuota: Int, dueCount: Int): Int {
-        return when {
-            dueCount >= 50 -> 0 // 红区：停止新词
-            dueCount >= 20 -> targetQuota / 2 // 黄区：减半
-            else -> targetQuota // 绿区：全速
-        }
+        return targetQuota
     }
 
     /**
