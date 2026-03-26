@@ -1,0 +1,8 @@
+Analyzing feature_library...                                    
+
+   info - Library names are not necessary - lib\feature_library.dart:1:9 - unnecessary_library_name
+   info - Unnecessary use of 'toList' in a spread - lib\src\detail\grammar_detail_screen.dart:178:16 - unnecessary_to_list_in_spreads
+   info - Unnecessary use of multiple underscores - lib\src\list\grammar_list_screen.dart:32:31 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\src\list\word_list_screen.dart:63:31 - unnecessary_underscores
+warning - Publishable packages can't have 'path' dependencies - pubspec.yaml:15:5 - invalid_dependency
+

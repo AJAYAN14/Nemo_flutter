@@ -1,0 +1,6 @@
+Analyzing feature_learning...                                   
+
+   info - The import of 'package:flutter/cupertino.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\src\home\home_screen.dart:2:8 - unnecessary_import
+  error - The getter 'brandOrange' isn't defined for the type 'NemoColors' - lib\src\home\home_screen.dart:196:119 - undefined_getter
+warning - Unused import: 'package:go_router/go_router.dart' - test\learning_routes_smoke_test.dart:2:8 - unused_import
+

@@ -1,0 +1,32 @@
+name: feature_statistics
+description: "Data statistics visualization feature for Nemo."
+version: 0.0.1
+homepage:
+publish_to: 'none'
+
+environment:
+  sdk: ^3.10.8
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  go_router: ^16.2.5
+  hooks_riverpod: ^2.6.1
+  core_designsystem:
+    path: ../../core/core_designsystem
+  core_ui:
+    path: ../../core/core_ui
+  feature_learning:
+    path: ../feature_learning
+  feature_library:
+    path: ../feature_library
+  fl_chart: ^0.69.0 # We'll need a charting library later
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.9
+
+flutter:

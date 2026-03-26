@@ -1,0 +1,10 @@
+Analyzing feature_test...                                       
+
+  error - The function 'StateProvider' isn't defined - lib\src\dashboard\test_dashboard_screen.dart:8:35 - undefined_function
+  error - The function 'StateProvider' isn't defined - lib\src\dashboard\test_dashboard_screen.dart:9:34 - undefined_function
+  error - The function 'StateProvider' isn't defined - lib\src\dashboard\test_settings_sheet.dart:6:27 - undefined_function
+  error - The function 'StateProvider' isn't defined - lib\src\dashboard\test_settings_sheet.dart:7:29 - undefined_function
+  error - The function 'StateProvider' isn't defined - lib\src\dashboard\test_settings_sheet.dart:8:26 - undefined_function
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeTrackColor instead. This feature was deprecated after v3.24.0-0.2.pre - lib\src\dashboard\test_settings_sheet.dart:200:13 - deprecated_member_use
+  error - Undefined name 'TestDashboardScreen' - test\feature_test_test.dart:7:12 - undefined_identifier
+

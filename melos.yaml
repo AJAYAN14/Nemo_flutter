@@ -1,0 +1,10 @@
+name: nemo_workspace
+
+packages:
+  - apps/**
+  - packages/**
+
+scripts:
+  bootstrap:
+    run: melos bootstrap
+    description: Install all package dependencies in the workspace.

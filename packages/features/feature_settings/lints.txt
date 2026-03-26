@@ -1,0 +1,5 @@
+Analyzing feature_settings...                                   
+
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeTrackColor instead. This feature was deprecated after v3.24.0-0.2.pre - lib\src\presentation\settings_screen.dart:185:13 - deprecated_member_use
+  error - The getter 'brandLight' isn't defined for the type 'NemoColors' - lib\src\presentation\tts_settings_screen.dart:157:44 - undefined_getter
+

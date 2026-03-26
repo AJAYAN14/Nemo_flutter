@@ -1,0 +1,31 @@
+name: feature_test
+description: "A new Flutter package project."
+version: 0.0.1
+homepage:
+publish_to: 'none'
+
+environment:
+  sdk: ^3.10.8
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  go_router: ^16.2.5
+  hooks_riverpod: ^2.6.1
+  core_designsystem:
+    path: ../../core/core_designsystem
+  core_ui:
+    path: ../../core/core_ui
+  core_domain:
+    path: ../../core/core_domain
+  flutter_confetti: ^0.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.9
+  freezed: ^2.4.7
+
+flutter:
