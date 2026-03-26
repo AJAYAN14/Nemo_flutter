@@ -1,9 +1,10 @@
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
+import '../category/category_classification_screen.dart';
 import 'package:go_router/go_router.dart';
-import '../mock/mock_category_grammar.dart';
-import '../routes/library_routes.dart';
+import '../../mock/mock_category_grammar.dart';
+import '../../routes/library_routes.dart';
 
 class GrammarListScreen extends StatefulWidget {
   const GrammarListScreen({super.key});

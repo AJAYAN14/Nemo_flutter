@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../home/home_screen.dart';
+import '../presentation/home_screen.dart';
 import '../kana/kana_chart_screen.dart';
 import '../learning/learning_screen.dart';
 import '../review/review_screen.dart';

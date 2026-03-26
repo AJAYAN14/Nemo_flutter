@@ -2,7 +2,7 @@ import 'package:core_domain/core_domain.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../dashboard/test_dashboard_screen.dart';
+import '../presentation/test_dashboard_screen.dart';
 import '../result/test_result_screen.dart';
 import '../test/multiple_choice_test_screen.dart';
 import '../test/test_settings_screen.dart';

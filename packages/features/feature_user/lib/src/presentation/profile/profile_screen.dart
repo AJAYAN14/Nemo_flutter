@@ -2,7 +2,7 @@ import 'package:core_designsystem/core_designsystem.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../routes/user_routes.dart';
+import '../../routes/user_routes.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});

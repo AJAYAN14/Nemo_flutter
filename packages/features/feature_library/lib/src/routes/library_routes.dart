@@ -1,10 +1,10 @@
 import 'package:go_router/go_router.dart';
-import '../category/category_classification_screen.dart';
-import '../category/category_words_screen.dart';
-import '../detail/grammar_detail_screen.dart';
-import '../detail/word_detail_screen.dart';
-import '../list/grammar_list_screen.dart';
-import '../list/word_list_screen.dart';
+import '../presentation/category/category_classification_screen.dart';
+import '../presentation/category/category_words_screen.dart';
+import '../presentation/detail/grammar_detail_screen.dart';
+import '../presentation/detail/word_detail_screen.dart';
+import '../presentation/list/grammar_list_screen.dart';
+import '../presentation/list/word_list_screen.dart';
 
 abstract final class LibraryRoutePaths {
   static const String root = '/library';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../profile/profile_screen.dart';
-import '../profile/account_management_screen.dart';
+import '../presentation/profile/profile_screen.dart';
+import '../presentation/profile/account_management_screen.dart';
 
 abstract final class UserRoutePaths {
   static const String profile = '/profile';

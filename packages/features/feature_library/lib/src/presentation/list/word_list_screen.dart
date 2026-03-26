@@ -2,8 +2,8 @@ import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../routes/library_routes.dart';
-import '../mock/mock_words.dart';
+import '../../routes/library_routes.dart';
+import '../../mock/mock_words.dart';
 
 class WordListScreen extends StatefulWidget {
   const WordListScreen({super.key});

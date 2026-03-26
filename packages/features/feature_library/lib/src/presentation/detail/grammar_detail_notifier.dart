@@ -1,7 +1,7 @@
 import 'package:core_domain/core_domain.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../mock/mock_category_grammar.dart';
+import '../../mock/mock_category_grammar.dart';
 
 part 'grammar_detail_notifier.g.dart';
 

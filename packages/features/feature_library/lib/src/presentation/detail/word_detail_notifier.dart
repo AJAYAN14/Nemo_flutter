@@ -1,6 +1,6 @@
 import 'package:core_domain/core_domain.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../mock/mock_words.dart';
+import '../../mock/mock_words.dart';
 
 part 'word_detail_notifier.g.dart';
 
