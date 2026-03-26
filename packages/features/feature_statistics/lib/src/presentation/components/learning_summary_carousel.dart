@@ -143,7 +143,7 @@ class _LearningSummaryCarouselState extends State<LearningSummaryCarousel> {
               decoration: BoxDecoration(
                 color: active
                     ? pages[_currentPage].accentColor
-                    : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.2),
+                    : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(4),
               ),
             );
@@ -251,7 +251,7 @@ class _BentoMainTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = isDark ? accentColor.withOpacity(0.88) : accentColor;
+    final color = isDark ? accentColor.withValues(alpha: 0.88) : accentColor;
 
     return Container(
       decoration: BoxDecoration(
@@ -266,7 +266,7 @@ class _BentoMainTile extends StatelessWidget {
             child: Icon(
               icon,
               size: 72,
-              color: Colors.white.withOpacity(0.12),
+              color: Colors.white.withValues(alpha: 0.12),
             ),
           ),
           Padding(
@@ -281,7 +281,7 @@ class _BentoMainTile extends StatelessWidget {
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0.5,
-                        color: Colors.white.withOpacity(0.78),
+                        color: Colors.white.withValues(alpha: 0.78),
                       ),
                 ),
                 const SizedBox(height: 2),
@@ -305,7 +305,7 @@ class _BentoMainTile extends StatelessWidget {
                       unit,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: Colors.white.withOpacity(0.56),
+                            color: Colors.white.withValues(alpha: 0.56),
                           ),
                     ),
                   ],
@@ -350,7 +350,7 @@ class _BentoSubTile extends StatelessWidget {
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0.5,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.72),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.72),
                 ),
           ),
           const SizedBox(height: 2),
@@ -371,7 +371,7 @@ class _BentoSubTile extends StatelessWidget {
                 unit,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.45),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.45),
                     ),
               ),
             ],
@@ -396,7 +396,7 @@ class _BentoVisualHint extends StatelessWidget {
               width: double.infinity,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.22),
+                color: Colors.white.withValues(alpha: 0.22),
                 borderRadius: BorderRadius.circular(2),
               ),
               child: FractionallySizedBox(
@@ -423,7 +423,7 @@ class _BentoVisualHint extends StatelessWidget {
                   width: 6,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: index < 5 ? Colors.white.withOpacity(0.9) : Colors.white.withOpacity(0.24),
+                    color: index < 5 ? Colors.white.withValues(alpha: 0.9) : Colors.white.withValues(alpha: 0.24),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 );
@@ -447,10 +447,10 @@ class _BentoVisualHint extends StatelessWidget {
                     color: index == 2
                         ? Colors.white
                         : index == 1
-                            ? Colors.white.withOpacity(0.45)
+                            ? Colors.white.withValues(alpha: 0.45)
                             : index == 3
-                                ? Colors.white.withOpacity(0.62)
-                                : Colors.white.withOpacity(0.24),
+                                ? Colors.white.withValues(alpha: 0.62)
+                                : Colors.white.withValues(alpha: 0.24),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 );

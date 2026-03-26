@@ -5,7 +5,6 @@ import '../detail/grammar_detail_screen.dart';
 import '../detail/word_detail_screen.dart';
 import '../list/grammar_list_screen.dart';
 import '../list/word_list_screen.dart';
-import '../mock/mock_category_grammar.dart';
 
 abstract final class LibraryRoutePaths {
   static const String root = '/library';

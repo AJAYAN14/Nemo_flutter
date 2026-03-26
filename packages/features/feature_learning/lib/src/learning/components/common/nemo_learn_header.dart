@@ -74,7 +74,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                       borderRadius: BorderRadius.circular(22),
                       boxShadow: isDark ? null : [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 2),
                         ),
@@ -88,7 +88,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                           onPressed: canGoPrev ? onPrev : null,
                           icon: const Icon(Icons.keyboard_arrow_left_rounded),
                           color: contentColor,
-                          disabledColor: contentColor.withOpacity(0.2),
+                          disabledColor: contentColor.withValues(alpha: 0.2),
                           iconSize: 24,
                         ),
                         Padding(
@@ -96,7 +96,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                           child: Text(
                             '剩余 $remainingCount',
                             style: theme.textTheme.labelMedium?.copyWith(
-                              color: contentColor.withOpacity(0.6),
+                              color: contentColor.withValues(alpha: 0.6),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -105,7 +105,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                           onPressed: canGoNext ? onNext : null,
                           icon: const Icon(Icons.keyboard_arrow_right_rounded),
                           color: contentColor,
-                          disabledColor: contentColor.withOpacity(0.2),
+                          disabledColor: contentColor.withValues(alpha: 0.2),
                           iconSize: 24,
                         ),
                       ],
@@ -124,7 +124,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                       shape: BoxShape.circle,
                       boxShadow: isDark ? null : [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 2),
                         ),
@@ -153,7 +153,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(
                   value: progress.clamp(0.0, 1.0),
-                  backgroundColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+                  backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
                   valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
                 ),
               ),

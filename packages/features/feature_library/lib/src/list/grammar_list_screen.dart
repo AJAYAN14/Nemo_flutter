@@ -135,7 +135,7 @@ class _GrammarListScreenState extends State<GrammarListScreen> {
                                 fontWeight: FontWeight.w700,
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                               ),
                             ),
                             const Spacer(),
@@ -155,8 +155,7 @@ class _GrammarListScreenState extends State<GrammarListScreen> {
                     ),
                     // Grammars List
                     if (isExpanded)
-                      ...grammars
-                          .map(
+                      ...grammars.map(
                             (grammar) => Padding(
                               padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                               child: _GrammarListItemPremium(
@@ -170,8 +169,7 @@ class _GrammarListScreenState extends State<GrammarListScreen> {
                                 },
                               ),
                             ),
-                          )
-                          .toList(),
+                          ),
                   ],
                 );
               },
@@ -198,12 +196,12 @@ class _SearchBar extends StatelessWidget {
         color: containerColor,
         borderRadius: BorderRadius.circular(25),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -229,7 +227,7 @@ class _SearchBar extends StatelessWidget {
                 hintStyle: TextStyle(
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurfaceVariant.withOpacity(0.6),
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                   fontSize: 15,
                 ),
                 border: InputBorder.none,
@@ -279,7 +277,7 @@ class _GrammarListItemPremium extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             alignment: Alignment.center,
@@ -336,7 +334,7 @@ class _EmptyState extends StatelessWidget {
         Icon(
           Icons.inbox_rounded,
           size: 64,
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
         const SizedBox(height: 16),
         Text(

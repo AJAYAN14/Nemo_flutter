@@ -19,8 +19,6 @@ dependencies:
     path: ../../core/core_ui
   core_domain:
     path: ../../core/core_domain
-  feature_library:
-    path: ../feature_library
 
 dev_dependencies:
   flutter_test:

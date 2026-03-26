@@ -1,0 +1,13 @@
+name: core_storage
+description: Core storage contracts and primitives.
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  meta: ^1.17.0
+
+dev_dependencies:
+  lints: ^6.0.0

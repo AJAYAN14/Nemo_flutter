@@ -23,7 +23,7 @@ class TodayStatisticsScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: const Text('今日学习记录', style: TextStyle(fontWeight: FontWeight.w900)),
         centerTitle: true,
@@ -174,7 +174,7 @@ class _StatisticsItemRow extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: avatarColor.withOpacity(0.1),
+                  color: avatarColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 alignment: Alignment.center,
@@ -199,8 +199,8 @@ class _StatisticsItemRow extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: item.isLearned
-                                ? theme.colorScheme.primary.withOpacity(0.12)
-                                : const Color(0xFF10B981).withOpacity(0.15),
+                                ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                                : const Color(0xFF10B981).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -223,7 +223,7 @@ class _StatisticsItemRow extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -241,7 +241,7 @@ class _StatisticsItemRow extends StatelessWidget {
                     Text(
                       '${item.hiragana}${item.hiragana.isNotEmpty ? ' · ' : ''}${item.chinese}',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant.withOpacity(0.8),
+                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -258,7 +258,7 @@ class _StatisticsItemRow extends StatelessWidget {
             child: Divider(
               height: 0.5,
               thickness: 0.5,
-              color: theme.colorScheme.outlineVariant.withOpacity(0.15),
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
             ),
           ),
       ],
@@ -281,7 +281,7 @@ class _EmptyState extends StatelessWidget {
               Icon(
                 Icons.inbox_rounded,
                 size: 48,
-                color: Theme.of(context).colorScheme.surfaceVariant,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
               const SizedBox(height: 12),
               Text(

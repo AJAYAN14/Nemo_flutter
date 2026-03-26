@@ -1,0 +1,28 @@
+{
+  "configVersion": 2,
+  "packages": [
+    {
+      "name": "lints",
+      "rootUri": "file:///C:/Users/AJIAN/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/lints-6.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
+    },
+    {
+      "name": "meta",
+      "rootUri": "file:///C:/Users/AJIAN/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/meta-1.18.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "core_network",
+      "rootUri": "../",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    }
+  ],
+  "generator": "pub",
+  "generatorVersion": "3.10.8",
+  "flutterRoot": "file:///D:/flutter",
+  "flutterVersion": "3.38.9",
+  "pubCache": "file:///C:/Users/AJIAN/AppData/Local/Pub/Cache"
+}

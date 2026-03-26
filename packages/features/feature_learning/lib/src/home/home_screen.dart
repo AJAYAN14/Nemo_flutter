@@ -35,11 +35,11 @@ class HomeScreen extends ConsumerWidget {
               delegate: SliverChildListDelegate([
                 _Header(vm: vm),
                 const SizedBox(height: 20),
-                _Bento1_ControlCard(vm: vm, ref: ref),
+                _BentoControlCard(vm: vm, ref: ref),
                 const SizedBox(height: kGridGap),
-                _Bento_MiddleGrid(vm: vm),
+                _BentoMiddleGrid(vm: vm),
                 const SizedBox(height: kGridGap),
-                _Bento5_ActionButton(vm: vm),
+                _BentoActionButton(vm: vm),
                 const SizedBox(height: 32),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -100,7 +100,7 @@ class _Header extends StatelessWidget {
             padding: const EdgeInsets.all(2),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: NemoColors.textMuted.withOpacity(0.3), width: 2),
+              border: Border.all(color: NemoColors.textMuted.withValues(alpha: 0.3), width: 2),
             ),
             child: const CircleAvatar(
               radius: 22,
@@ -114,8 +114,8 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _Bento1_ControlCard extends StatelessWidget {
-  const _Bento1_ControlCard({required this.vm, required this.ref});
+class _BentoControlCard extends StatelessWidget {
+  const _BentoControlCard({required this.vm, required this.ref});
   final HomeViewModel vm;
   final WidgetRef ref;
 
@@ -157,7 +157,7 @@ class _Bento1_ControlCard extends StatelessWidget {
                       style: TextStyle(color: primaryColor, fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.2),
                     ),
                     const SizedBox(width: 4),
-                    Icon(Icons.arrow_forward_ios_rounded, size: 10, color: primaryColor.withOpacity(0.5)),
+                    Icon(Icons.arrow_forward_ios_rounded, size: 10, color: primaryColor.withValues(alpha: 0.5)),
                   ],
                 ),
               ),
@@ -219,8 +219,8 @@ class _ModeButton extends StatelessWidget {
   }
 }
 
-class _Bento_MiddleGrid extends StatelessWidget {
-  const _Bento_MiddleGrid({required this.vm});
+class _BentoMiddleGrid extends StatelessWidget {
+  const _BentoMiddleGrid({required this.vm});
   final HomeViewModel vm;
 
   @override
@@ -354,8 +354,8 @@ class _AnnotatedStat extends StatelessWidget {
   }
 }
 
-class _Bento5_ActionButton extends StatelessWidget {
-  const _Bento5_ActionButton({required this.vm});
+class _BentoActionButton extends StatelessWidget {
+  const _BentoActionButton({required this.vm});
   final HomeViewModel vm;
 
   @override
@@ -499,7 +499,7 @@ class _SubResource extends StatelessWidget {
                     decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
                     child: Icon(icon, color: color, size: 20),
                   ),
-                  Icon(Icons.arrow_forward_ios_rounded, size: 16, color: NemoColors.textSub.withOpacity(0.5)),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 16, color: NemoColors.textSub.withValues(alpha: 0.5)),
                 ],
               ),
               Column(
@@ -523,7 +523,7 @@ Widget _cardContainer({required Widget child, EdgeInsetsGeometry? padding}) {
     decoration: BoxDecoration(
       color: NemoColors.surface,
       borderRadius: BorderRadius.circular(kCardRadius),
-      border: Border.all(color: NemoColors.divider.withOpacity(0.5), width: 0.5),
+      border: Border.all(color: NemoColors.divider.withValues(alpha: 0.5), width: 0.5),
     ),
     child: child,
   );

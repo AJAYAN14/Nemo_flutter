@@ -1,10 +1,8 @@
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../routes/statistics_routes.dart';
 import 'package:core_ui/core_ui.dart';
-import 'package:feature_library/feature_library.dart';
-import 'package:feature_learning/feature_learning.dart';
+import '../routes/statistics_routes.dart';
 import 'components/learning_summary_carousel.dart';
 
 class StatisticsScreen extends StatelessWidget {
@@ -74,7 +72,7 @@ class StatisticsScreen extends StatelessWidget {
                     title: '今日到期复习',
                     subtitle: '核心复习任务',
                     onClick: () {
-                      context.pushNamed(LearningRouteNames.sessionPrep);
+                      context.push('/home/session-prep');
                     },
                   ),
                   SquircleListItem(
@@ -83,7 +81,7 @@ class StatisticsScreen extends StatelessWidget {
                     title: '专项训练',
                     subtitle: '针对性强化练习',
                     onClick: () {
-                      context.pushNamed(LibraryRouteNames.category, pathParameters: {'source': 'practice'});
+                      context.push('/library/category/practice');
                     },
                     showDivider: false,
                   ),
@@ -135,7 +133,7 @@ class StatisticsScreen extends StatelessWidget {
                     title: '单词列表',
                     subtitle: '词汇库管理',
                     onClick: () {
-                      context.pushNamed(LibraryRouteNames.wordList);
+                      context.push('/library/wordList');
                     },
                   ),
                   SquircleListItem(
@@ -144,7 +142,7 @@ class StatisticsScreen extends StatelessWidget {
                     title: '专项词汇',
                     subtitle: '按分类查看词汇',
                     onClick: () {
-                      context.pushNamed(LibraryRouteNames.category, pathParameters: {'source': 'library'});
+                      context.push('/library/category/library');
                     },
                   ),
                   SquircleListItem(
@@ -153,7 +151,7 @@ class StatisticsScreen extends StatelessWidget {
                     title: '语法列表',
                     subtitle: '语法知识库',
                     onClick: () {
-                      context.pushNamed(LibraryRouteNames.grammarList);
+                      context.push('/library/grammarList');
                     },
                   ),
                   SquircleListItem(

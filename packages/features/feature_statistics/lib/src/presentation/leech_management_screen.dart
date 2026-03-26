@@ -218,7 +218,7 @@ class _LeechItemCard extends StatelessWidget {
 
           // Recover Button
           Material(
-            color: NemoColors.brandBlue.withOpacity(0.1),
+            color: NemoColors.brandBlue.withValues(alpha: 0.1),
             shape: const CircleBorder(),
             child: IconButton(
               onPressed: onRecover,
@@ -248,7 +248,7 @@ class _EmptyLeechView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
             child: const Icon(

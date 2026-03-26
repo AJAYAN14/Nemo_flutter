@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:feature_library/feature_library.dart'; // import library module
 import '../home/home_screen.dart';
 import '../kana/kana_chart_screen.dart';
 import '../learning/learning_screen.dart';
-// import '../learning/category_card_learning_screen.dart'; // Old version
 import '../review/review_screen.dart';
 import '../session/session_prep_screen.dart';
 
@@ -62,11 +60,15 @@ abstract final class LearningRoutes {
       GoRoute(
         path: '/learning/category/:categoryId',
         name: 'learning-category',
-        builder: (context, state) => CategoryWordsScreen(
-          categoryId: state.pathParameters['categoryId']!,
-          title: state.uri.queryParameters['title'] ?? '',
-          initialMode: CategoryViewMode.card,
-        ),
+        redirect: (context, state) {
+          final categoryId = state.pathParameters['categoryId']!;
+          final title = state.uri.queryParameters['title'];
+          if (title == null || title.isEmpty) {
+            return '/library/category_words/$categoryId';
+          }
+          final encodedTitle = Uri.encodeQueryComponent(title);
+          return '/library/category_words/$categoryId?title=$encodedTitle';
+        },
       ),
     ];
   }
@@ -85,5 +87,4 @@ abstract final class LearningRoutes {
     ];
   }
 
-  // Standalone routes removal since we now have rootRoutes
 }

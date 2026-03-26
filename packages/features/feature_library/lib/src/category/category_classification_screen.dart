@@ -351,7 +351,7 @@ class _CategoryCard extends StatelessWidget {
                         item.subtitle,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                           fontWeight: FontWeight.w600,
                         ),
                         maxLines: 1,

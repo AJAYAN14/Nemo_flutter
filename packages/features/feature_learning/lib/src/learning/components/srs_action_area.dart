@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:core_designsystem/core_designsystem.dart';
 import 'srs_rating_button.dart';
 
 class SRSActionArea extends StatelessWidget {
@@ -119,7 +118,7 @@ class _ShowAnswerButtonState extends State<_ShowAnswerButton> with SingleTickerP
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),

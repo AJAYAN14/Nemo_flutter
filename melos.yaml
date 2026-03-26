@@ -8,3 +8,18 @@ scripts:
   bootstrap:
     run: melos bootstrap
     description: Install all package dependencies in the workspace.
+  analyze:
+    run: melos exec --fail-fast -- "flutter analyze --no-fatal-infos"
+    description: Run static analysis for all Flutter and Dart packages without failing on infos.
+  test:
+    run: melos exec --fail-fast --dir-exists=test -- "flutter test"
+    description: Run tests in workspace packages that contain a test directory.
+  format:
+    run: melos exec --fail-fast -- "dart format --set-exit-if-changed ."
+    description: Check formatting across workspace packages.
+  check-boundaries:
+    run: dart tool/check_feature_boundaries.dart
+    description: Ensure no cross-feature imports in package lib directories.
+  verify:
+    run: melos run check-boundaries && melos run analyze && melos run test
+    description: Run full verification pipeline.

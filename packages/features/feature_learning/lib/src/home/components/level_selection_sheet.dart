@@ -42,7 +42,7 @@ class LevelSelectionSheet extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -130,8 +130,8 @@ class _LevelSelectionCardState extends State<_LevelSelectionCard>
     final isDark = theme.brightness == Brightness.dark;
 
     final backgroundColor = widget.isSelected
-        ? widget.primaryColor.withOpacity(0.12)
-        : (isDark ? theme.colorScheme.surfaceVariant.withOpacity(0.3) : NemoColors.bgBase);
+        ? widget.primaryColor.withValues(alpha: 0.12)
+        : (isDark ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3) : NemoColors.bgBase);
 
 
     return GestureDetector(
@@ -170,7 +170,7 @@ class _LevelSelectionCardState extends State<_LevelSelectionCard>
                       style: TextStyle(
                         fontSize: 12,
                         color: widget.isSelected
-                            ? widget.primaryColor.withOpacity(0.8)
+                            ? widget.primaryColor.withValues(alpha: 0.8)
                             : (isDark ? Colors.white60 : NemoColors.textSub),
                       ),
                     ),

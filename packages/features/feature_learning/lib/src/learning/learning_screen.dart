@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'learning_providers.dart';
 import '../mock/learning_mock_data.dart';
@@ -68,7 +68,7 @@ class LearningScreen extends ConsumerWidget {
                   return SRSLearningCard(
                     word: item.word,
                     isAnswerShown: isShown,
-                    badge: CardBadge.NEW,
+                    badge: CardBadge.fresh,
                   );
                 } else if (item is GrammarItem) {
                   return SRSGrammarCard(

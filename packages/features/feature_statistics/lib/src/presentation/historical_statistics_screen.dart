@@ -147,7 +147,7 @@ class _StatItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
+        color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -166,7 +166,7 @@ class _StatItem extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w900,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -255,7 +255,7 @@ class _StatisticsListCardState extends State<_StatisticsListCard> {
             Divider(
               height: 1,
               thickness: 0.5,
-              color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1),
             ),
             InkWell(
               onTap: () => setState(() => _isExpanded = !_isExpanded),
@@ -315,7 +315,7 @@ class _StatisticsItemRow extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: avatarColor.withOpacity(0.1),
+                  color: avatarColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 alignment: Alignment.center,
@@ -347,7 +347,7 @@ class _StatisticsItemRow extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -367,7 +367,7 @@ class _StatisticsItemRow extends StatelessWidget {
                       '${item.hiragana} · ${item.chinese}',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
@@ -385,7 +385,7 @@ class _StatisticsItemRow extends StatelessWidget {
             child: Divider(
               height: 1,
               thickness: 0.5,
-              color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
             ),
           ),
       ],

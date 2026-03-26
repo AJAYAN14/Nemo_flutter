@@ -4,31 +4,31 @@ import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_domain/core_domain.dart';
 
 enum CardBadge {
-  NEW,
-  REVIEW,
-  RELEARN;
+  fresh,
+  review,
+  relearn;
 
   String get text {
     switch (this) {
-      case CardBadge.NEW: return '新学';
-      case CardBadge.REVIEW: return '复习';
-      case CardBadge.RELEARN: return '重学';
+      case CardBadge.fresh: return '新学';
+      case CardBadge.review: return '复习';
+      case CardBadge.relearn: return '重学';
     }
   }
 
   Color get bgColor {
     switch (this) {
-      case CardBadge.NEW: return const Color(0xFFE0EDFF);
-      case CardBadge.REVIEW: return const Color(0xFFDCFCE7);
-      case CardBadge.RELEARN: return const Color(0xFFFFEDD5);
+      case CardBadge.fresh: return const Color(0xFFE0EDFF);
+      case CardBadge.review: return const Color(0xFFDCFCE7);
+      case CardBadge.relearn: return const Color(0xFFFFEDD5);
     }
   }
 
   Color get textColor {
     switch (this) {
-      case CardBadge.NEW: return const Color(0xFF1D4ED8);
-      case CardBadge.REVIEW: return const Color(0xFF166534);
-      case CardBadge.RELEARN: return const Color(0xFF9A3412);
+      case CardBadge.fresh: return const Color(0xFF1D4ED8);
+      case CardBadge.review: return const Color(0xFF166534);
+      case CardBadge.relearn: return const Color(0xFF9A3412);
     }
   }
 }
@@ -59,8 +59,8 @@ class SRSLearningCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final cardBackground = isDark ? NemoColors.surfaceCardDark : NemoColors.surfaceCard;
-    final borderColor = isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05);
-    final shadowColor = isDark ? Colors.black.withOpacity(0.4) : Colors.black.withOpacity(0.03);
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
+    final shadowColor = isDark ? Colors.black.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.03);
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -180,7 +180,7 @@ class _QuestionBox extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w500,
-                  color: isAnswerShown ? NemoColors.accentBlue : (isDark ? Colors.white.withOpacity(0.2) : const Color(0xFFD1D5DB)),
+                  color: isAnswerShown ? NemoColors.accentBlue : (isDark ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFD1D5DB)),
                 ),
               ),
             ],
@@ -288,12 +288,12 @@ class _AnswerBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final practiceColor = _getColorForWord(word.id.hashCode);
-    final practiceBgColor = practiceColor.withOpacity(isDark ? 0.2 : 0.1);
+    final practiceBgColor = practiceColor.withValues(alpha: isDark ? 0.2 : 0.1);
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: backgroundColor.withOpacity(0.95),
+        color: backgroundColor.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(26),
         border: Border.all(color: borderColor, width: 0.5),
         boxShadow: [
@@ -366,7 +366,7 @@ class _AnswerBox extends StatelessWidget {
                   _PracticeButton(
                     onPressed: onPracticeClick!,
                     color: const Color(0xFF5856D6), // iOS Indigo
-                    backgroundColor: const Color(0xFF5856D6).withOpacity(0.1),
+                    backgroundColor: const Color(0xFF5856D6).withValues(alpha: 0.1),
                   ),
               ],
             ),
@@ -402,7 +402,7 @@ class _PosPill extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF3F4F6),
+        color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
@@ -488,7 +488,7 @@ class _ExampleRow extends StatelessWidget {
               onPressed: () => onSpeak!(japanese, chinese ?? '', id),
               icon: Icon(
                 isPlaying ? Icons.volume_up_rounded : Icons.volume_down_rounded,
-                color: NemoColors.textSub.withOpacity(0.6),
+                color: NemoColors.textSub.withValues(alpha: 0.6),
                 size: 20,
               ),
               padding: EdgeInsets.zero,

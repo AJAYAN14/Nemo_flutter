@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_domain/core_domain.dart';
 import 'review_providers.dart';
@@ -53,7 +53,7 @@ class ReviewScreen extends ConsumerWidget {
                   card = SRSLearningCard(
                     word: item.word,
                     isAnswerShown: index == currentIndex ? isAnswerShown : false,
-                    badge: CardBadge.REVIEW,
+                    badge: CardBadge.review,
                   );
                 } else if (item is GrammarReviewItem) {
                   card = SRSGrammarCard(

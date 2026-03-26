@@ -1,9 +1,8 @@
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_domain/core_domain.dart';
 import 'package:core_ui/core_ui.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import 'grammar_detail_notifier.dart';
 
@@ -167,8 +166,8 @@ class _Header extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            theme.colorScheme.primary.withOpacity(0.8),
-            theme.colorScheme.primary.withOpacity(0.1),
+            theme.colorScheme.primary.withValues(alpha: 0.8),
+            theme.colorScheme.primary.withValues(alpha: 0.1),
           ],
         ),
       ),
@@ -187,7 +186,7 @@ class _Header extends StatelessWidget {
                     color: Colors.black,
                     letterSpacing: -0.5,
                   ),
-                  furiganaTextColor: theme.colorScheme.primary.withOpacity(0.5),
+                  furiganaTextColor: theme.colorScheme.primary.withValues(alpha: 0.5),
                   furiganaTextSize: 12,
                 ),
               ),
@@ -199,7 +198,7 @@ class _Header extends StatelessWidget {
                 return NemoSpeakerButton(
                   isPlaying: isPlaying,
                   size: 56,
-                  backgroundColor: Colors.white.withOpacity(0.2),
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
                   tint: theme.colorScheme.primary,
                   onClick: () => notifier.playAudio(grammar.grammar, "header_${grammar.id}"),
                 );
@@ -265,7 +264,7 @@ class _UsageCard extends StatelessWidget {
               fontWeight: FontWeight.w600,
               color: Color(0xFF1E293B),
             ),
-            furiganaTextColor: theme.colorScheme.primary.withOpacity(0.5),
+            furiganaTextColor: theme.colorScheme.primary.withValues(alpha: 0.5),
             furiganaTextSize: 10,
           ),
           
@@ -293,10 +292,10 @@ class _UsageCard extends StatelessWidget {
               text: usage.notes!,
               baseTextStyle: TextStyle(
                 fontSize: 15,
-                color: const Color(0xFF334155).withOpacity(0.9),
+                color: const Color(0xFF334155).withValues(alpha: 0.9),
                 height: 1.5,
               ),
-              furiganaTextColor: theme.colorScheme.primary.withOpacity(0.4),
+              furiganaTextColor: theme.colorScheme.primary.withValues(alpha: 0.4),
               furiganaTextSize: 9,
             ),
           ],
@@ -306,7 +305,7 @@ class _UsageCard extends StatelessWidget {
           // Examples
           Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -369,10 +368,10 @@ class _ConnectionPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
           width: 0.5,
         ),
       ),
@@ -385,7 +384,7 @@ class _ConnectionPill extends StatelessWidget {
           color: Color(0xFF1E293B),
         ),
         furiganaTextSize: 9,
-        furiganaTextColor: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+        furiganaTextColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
       ),
     );
   }
@@ -428,7 +427,7 @@ class _ExampleItem extends StatelessWidget {
                         color: Color(0xFF334155),
                       ),
                       furiganaTextSize: 9,
-                      furiganaTextColor: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                      furiganaTextColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -460,7 +459,7 @@ class _ExampleItem extends StatelessWidget {
             height: 1,
             indent: 16,
             endIndent: 16,
-            color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
           ),
       ],
     );

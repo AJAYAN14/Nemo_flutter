@@ -212,7 +212,7 @@ class _CategoryWordsScreenState extends State<CategoryWordsScreen> {
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: [
                       BoxShadow(
-                        color: themeColor.withOpacity(0.4),
+                        color: themeColor.withValues(alpha: 0.4),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -363,7 +363,7 @@ class _TintedSquircleIconButton extends StatelessWidget {
       width: 56,
       height: 56,
       decoration: ShapeDecoration(
-        color: enabled ? themeColor.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+        color: enabled ? themeColor.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
         shape: ContinuousRectangleBorder(
           borderRadius: BorderRadius.circular(40),
         ),
@@ -371,7 +371,7 @@ class _TintedSquircleIconButton extends StatelessWidget {
       child: IconButton(
         icon: Icon(
           iconData, 
-          color: enabled ? themeColor : Colors.grey.withOpacity(0.5), 
+          color: enabled ? themeColor : Colors.grey.withValues(alpha: 0.5), 
           size: 24,
         ),
         onPressed: onPressed,
@@ -442,7 +442,7 @@ class _WordListItem extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: NemoColors.brandBlue.withOpacity(0.1),
+              color: NemoColors.brandBlue.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
             ),
             alignment: Alignment.center,

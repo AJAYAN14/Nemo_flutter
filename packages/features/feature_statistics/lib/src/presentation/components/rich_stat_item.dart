@@ -22,8 +22,8 @@ class RichStatItem extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final containerColor = isDark ? theme.colorScheme.surfaceVariant.withOpacity(0.3) : Colors.white;
-    final borderColor = isDark ? theme.colorScheme.outline.withOpacity(0.1) : theme.colorScheme.outlineVariant.withOpacity(0.2);
+    final containerColor = isDark ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3) : Colors.white;
+    final borderColor = isDark ? theme.colorScheme.outline.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.2);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -33,7 +33,7 @@ class RichStatItem extends StatelessWidget {
         border: Border.all(color: borderColor, width: 0.5),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.4) : Colors.black.withOpacity(0.04),
+            color: isDark ? Colors.black.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.04),
             blurRadius: isDark ? 2 : 10,
             offset: const Offset(0, 4),
           ),
@@ -61,7 +61,7 @@ class RichStatItem extends StatelessWidget {
           Text(
             subLabel,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: isDark ? theme.colorScheme.onSurfaceVariant.withOpacity(0.7) : NemoColors.textMuted,
+              color: isDark ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7) : NemoColors.textMuted,
             ),
           ),
         ],

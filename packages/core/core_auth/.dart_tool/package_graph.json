@@ -1,0 +1,28 @@
+{
+  "roots": [
+    "core_auth"
+  ],
+  "packages": [
+    {
+      "name": "core_auth",
+      "version": "0.0.1",
+      "dependencies": [
+        "meta"
+      ],
+      "devDependencies": [
+        "lints"
+      ]
+    },
+    {
+      "name": "lints",
+      "version": "6.1.0",
+      "dependencies": []
+    },
+    {
+      "name": "meta",
+      "version": "1.18.2",
+      "dependencies": []
+    }
+  ],
+  "configVersion": 1
+}

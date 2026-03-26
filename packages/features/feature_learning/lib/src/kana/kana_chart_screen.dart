@@ -220,7 +220,7 @@ class _KanaChartScreenState extends State<KanaChartScreen> with TickerProviderSt
       decoration: BoxDecoration(
         color: const Color(0xFFEAF6FF),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.85), width: 1),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.85), width: 1),
       ),
       child: Stack(
         children: [
@@ -236,7 +236,7 @@ class _KanaChartScreenState extends State<KanaChartScreen> with TickerProviderSt
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
+                      color: Colors.black.withValues(alpha: 0.06),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     )
@@ -313,11 +313,11 @@ class _KanaChartScreenState extends State<KanaChartScreen> with TickerProviderSt
           color: active ? const Color(0xFFD7F1FF) : const Color(0xFFF3FAFF),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: active ? NemoColors.brandBlue.withOpacity(0.32) : const Color(0xFFDCEEFF),
+            color: active ? NemoColors.brandBlue.withValues(alpha: 0.32) : const Color(0xFFDCEEFF),
           ),
           boxShadow: active ? null : [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 2,
               offset: const Offset(0, 1),
             )
@@ -328,7 +328,7 @@ class _KanaChartScreenState extends State<KanaChartScreen> with TickerProviderSt
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: active ? NemoColors.brandBlue : NemoColors.textMain.withOpacity(0.8),
+              color: active ? NemoColors.brandBlue : NemoColors.textMain.withValues(alpha: 0.8),
           ),
         ),
       ),
@@ -365,7 +365,7 @@ class _KanaChartScreenState extends State<KanaChartScreen> with TickerProviderSt
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: isFlashing ? const Color(0xFF0EA5A8).withOpacity(0.75) : Colors.transparent,
+                    color: isFlashing ? const Color(0xFF0EA5A8).withValues(alpha: 0.75) : Colors.transparent,
                     width: 1,
                   ),
                 ),
@@ -400,7 +400,7 @@ class _KanaChartScreenState extends State<KanaChartScreen> with TickerProviderSt
                     subtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: NemoColors.textSub.withOpacity(0.7),
+                      color: NemoColors.textSub.withValues(alpha: 0.7),
                     ),
                   ),
                 ),
@@ -514,13 +514,13 @@ class _KanaCardState extends State<_KanaCard> with SingleTickerProviderStateMixi
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: widget.isPlaying
-                  ? NemoColors.brandBlue.withOpacity(0.78)
+                  ? NemoColors.brandBlue.withValues(alpha: 0.78)
                   : Colors.transparent,
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               )

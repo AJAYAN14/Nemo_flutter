@@ -17,10 +17,6 @@ dependencies:
     path: ../../core/core_designsystem
   core_ui:
     path: ../../core/core_ui
-  feature_learning:
-    path: ../feature_learning
-  feature_library:
-    path: ../feature_library
   fl_chart: ^0.69.0 # We'll need a charting library later
 
 dev_dependencies:

@@ -34,7 +34,7 @@ class DecorativeBackgroundText extends StatelessWidget {
             fontSize: fontSize,
             fontFamily: 'serif',
             fontWeight: FontWeight.w900,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(alpha),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: alpha),
             height: 1.0,
             letterSpacing: 0,
           ),

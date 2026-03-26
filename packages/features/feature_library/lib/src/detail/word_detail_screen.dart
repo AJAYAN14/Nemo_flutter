@@ -27,7 +27,7 @@ class WordDetailScreen extends HookConsumerWidget {
     final pageController = usePageController(initialPage: initialIndex >= 0 ? initialIndex : 0);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: PageView.builder(
         controller: pageController,
         itemCount: contextIds.length,
@@ -87,8 +87,8 @@ class _WordDetailContent extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      primaryColor.withOpacity(isDark ? 0.2 : 0.1),
-                      Theme.of(context).colorScheme.background,
+                      primaryColor.withValues(alpha: isDark ? 0.2 : 0.1),
+                      Theme.of(context).colorScheme.surface,
                     ],
                   ),
                 ),
@@ -100,7 +100,7 @@ class _WordDetailContent extends StatelessWidget {
                       style: Theme.of(context).textTheme.displayMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.0,
-                            color: Theme.of(context).colorScheme.onBackground,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                     ),
                     const SizedBox(height: 8),
@@ -109,7 +109,7 @@ class _WordDetailContent extends StatelessWidget {
                       word.hiragana,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w500,
-                            color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                           ),
                     ),
                     const SizedBox(height: 24),
@@ -292,7 +292,7 @@ class _ExampleCard extends StatelessWidget {
               '$index.',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
                   ),
             ),
           ),
@@ -308,7 +308,7 @@ class _ExampleCard extends StatelessWidget {
                         fontSize: 17,
                         height: 1.5,
                       ),
-                  furiganaTextColor: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                  furiganaTextColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
                   furiganaTextSize: 10,
                 ),
                 const SizedBox(height: 8),
@@ -327,7 +327,7 @@ class _ExampleCard extends StatelessWidget {
           NemoSpeakerButton(
             isPlaying: isPlaying,
             size: 44,
-            backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+            backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
             onClick: onPlay,
           ),
         ],

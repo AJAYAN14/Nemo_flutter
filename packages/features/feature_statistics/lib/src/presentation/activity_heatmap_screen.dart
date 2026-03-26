@@ -100,7 +100,7 @@ class _ActivityHeatmapScreenState extends State<ActivityHeatmapScreen> with Sing
                 '每一天都在进步，保持连胜！',
                 style: TextStyle(
                   fontSize: 11,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -157,7 +157,7 @@ class _LearningHeatmapCard extends StatelessWidget {
               physics: const BouncingScrollPhysics(),
               itemCount: 52, // 1 year approx
               reverse: true, // Show most recent first (from right to left)
-              separatorBuilder: (_, __) => const SizedBox(width: 4),
+              separatorBuilder: (context, index) => const SizedBox(width: 4),
               itemBuilder: (context, weekIndex) {
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -165,10 +165,15 @@ class _LearningHeatmapCard extends StatelessWidget {
                     // Mock logic for level
                     final count = (weekIndex * dayIndex) % 15;
                     int level = 0;
-                    if (count > 10) level = 4;
-                    else if (count > 6) level = 3;
-                    else if (count > 3) level = 2;
-                    else if (count > 0) level = 1;
+                    if (count > 10) {
+                      level = 4;
+                    } else if (count > 6) {
+                      level = 3;
+                    } else if (count > 3) {
+                      level = 2;
+                    } else if (count > 0) {
+                      level = 1;
+                    }
 
                     return GestureDetector(
                       onTap: () {
@@ -314,7 +319,7 @@ class _RichStatItem extends StatelessWidget {
             subLabel,
             style: TextStyle(
               fontSize: 11,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
               fontWeight: FontWeight.w600,
             ),
           ),

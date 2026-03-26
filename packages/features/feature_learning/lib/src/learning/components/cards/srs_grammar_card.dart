@@ -49,7 +49,7 @@ class _SRSGrammarCardState extends State<SRSGrammarCard> {
     final isDark = theme.brightness == Brightness.dark;
 
     final cardBackground = isDark ? NemoColors.surfaceCardDark : NemoColors.surfaceCard;
-    final borderColor = isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFE5E7EB);
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE5E7EB);
     final primaryTextColor = isDark ? const Color(0xFFE6E1E5) : const Color(0xFF111827);
     final secondaryTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
 
@@ -216,7 +216,7 @@ class _QuestionBox extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: secondaryTextColor.withOpacity(0.6),
+                    color: secondaryTextColor.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -260,7 +260,7 @@ class _Badge extends StatelessWidget {
 }
 
 class _StickerBox extends StatelessWidget {
-  const _StickerBox({super.key, required this.grammarId});
+  const _StickerBox({required this.grammarId});
   final int grammarId;
 
   @override
@@ -340,7 +340,7 @@ class _UsageSection extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isExpanded ? indigoBg : indigoBg.withOpacity(0.5),
+                        color: isExpanded ? indigoBg : indigoBg.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -348,7 +348,7 @@ class _UsageSection extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w900,
-                          color: isExpanded ? indigoText : indigoText.withOpacity(0.7),
+                          color: isExpanded ? indigoText : indigoText.withValues(alpha: 0.7),
                           letterSpacing: 1,
                         ),
                       ),
@@ -367,7 +367,7 @@ class _UsageSection extends StatelessWidget {
                     const Spacer(),
                     Icon(
                       isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                      color: secondaryTextColor.withOpacity(0.5),
+                      color: secondaryTextColor.withValues(alpha: 0.5),
                       size: 20,
                     ),
                   ],
@@ -589,7 +589,7 @@ class _ExamplesCard extends StatelessWidget {
                                 const SizedBox(height: 6),
                                 Text(
                                   example.translation,
-                                  style: TextStyle(fontSize: 14, color: secondaryTextColor.withOpacity(0.8), height: 1.5),
+                                  style: TextStyle(fontSize: 14, color: secondaryTextColor.withValues(alpha: 0.8), height: 1.5),
                                 ),
                               ],
                             ),
@@ -607,7 +607,7 @@ class _ExamplesCard extends StatelessWidget {
                       ),
                     ),
                     if (exIndex < examples.length - 1)
-                      Divider(height: 1, color: borderColor.withOpacity(0.5)),
+                      Divider(height: 1, color: borderColor.withValues(alpha: 0.5)),
                   ],
                 );
               }).toList(),

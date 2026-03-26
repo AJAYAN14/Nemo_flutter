@@ -162,7 +162,7 @@ class _StatItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
+        color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -181,7 +181,7 @@ class _StatItem extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w900,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -234,7 +234,7 @@ class _WeekViewCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -278,7 +278,7 @@ class _WeekDayItem extends StatelessWidget {
         width: 36,
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? NemoColors.brandBlue : (isToday ? NemoColors.brandBlue.withOpacity(0.1) : Colors.transparent),
+          color: isSelected ? NemoColors.brandBlue : (isToday ? NemoColors.brandBlue.withValues(alpha: 0.1) : Colors.transparent),
           borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
@@ -288,7 +288,7 @@ class _WeekDayItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w900,
-                color: color.withOpacity(isSelected ? 0.8 : 0.6),
+                color: color.withValues(alpha: isSelected ? 0.8 : 0.6),
               ),
             ),
             const SizedBox(height: 4),
@@ -394,7 +394,7 @@ class _DetailSquircleItem extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 22),
@@ -425,7 +425,7 @@ class _DetailSquircleItem extends StatelessWidget {
             child: Divider(
               height: 1,
               thickness: 0.5,
-              color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
             ),
           ),
       ],

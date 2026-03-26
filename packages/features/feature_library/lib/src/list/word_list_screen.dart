@@ -124,7 +124,7 @@ class _WordListScreenState extends State<WordListScreen> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                               ),
                             ),
                             const Spacer(),
@@ -151,7 +151,7 @@ class _WordListScreenState extends State<WordListScreen> {
                             pathParameters: {'wordId': word.id},
                           ),
                         ),
-                      )).toList(),
+                      )),
                   ],
                 );
               },
@@ -176,12 +176,12 @@ class _SearchBar extends StatelessWidget {
         color: containerColor,
         borderRadius: BorderRadius.circular(25),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -199,7 +199,7 @@ class _SearchBar extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: '搜索：汉字 / 假名 / 释义',
                 hintStyle: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                   fontSize: 15,
                 ),
                 border: InputBorder.none,
@@ -249,7 +249,7 @@ class _WordListItemPremium extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             alignment: Alignment.center,
@@ -306,7 +306,7 @@ class _EmptyState extends StatelessWidget {
         Icon(
           Icons.inbox_rounded,
           size: 64,
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
         const SizedBox(height: 16),
         Text(

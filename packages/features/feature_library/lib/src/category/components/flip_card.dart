@@ -100,7 +100,7 @@ class _FlipCardState extends State<FlipCard> with SingleTickerProviderStateMixin
               borderRadius: BorderRadius.circular(32),
               boxShadow: [
                 BoxShadow(
-                  color: widget.themeColor.withOpacity(0.2), // spotColor
+                  color: widget.themeColor.withValues(alpha: 0.2), // spotColor
                   blurRadius: 16,
                   offset: const Offset(0, 8),
                   spreadRadius: -2,
@@ -115,7 +115,7 @@ class _FlipCardState extends State<FlipCard> with SingleTickerProviderStateMixin
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.white.withOpacity(0.8),
+                    Colors.white.withValues(alpha: 0.8),
                     Colors.white,
                   ],
                 ),
@@ -129,8 +129,8 @@ class _FlipCardState extends State<FlipCard> with SingleTickerProviderStateMixin
                         borderRadius: BorderRadius.circular(32),
                         border: Border.all(
                           color: isFrontVisible 
-                              ? Colors.white.withOpacity(0.5) 
-                              : Colors.white.withOpacity(0.2),
+                              ? Colors.white.withValues(alpha: 0.5) 
+                              : Colors.white.withValues(alpha: 0.2),
                           width: 1.5,
                         ),
                       ),
@@ -168,7 +168,7 @@ class _FlipCardState extends State<FlipCard> with SingleTickerProviderStateMixin
               ),
               baseTextColor: widget.themeColor,
               furiganaTextSize: 16,
-              furiganaTextColor: NemoColors.textMuted.withOpacity(0.7),
+              furiganaTextColor: NemoColors.textMuted.withValues(alpha: 0.7),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
@@ -189,7 +189,7 @@ class _FlipCardState extends State<FlipCard> with SingleTickerProviderStateMixin
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 2,
-                color: NemoColors.textMuted.withOpacity(0.4),
+                color: NemoColors.textMuted.withValues(alpha: 0.4),
               ),
             ),
           ],
@@ -211,7 +211,7 @@ class _FlipCardState extends State<FlipCard> with SingleTickerProviderStateMixin
                 margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
-                  color: widget.themeColor.withOpacity(0.15),
+                  color: widget.themeColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -241,7 +241,7 @@ class _FlipCardState extends State<FlipCard> with SingleTickerProviderStateMixin
             ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Divider(color: NemoColors.divider.withOpacity(0.2)),
+              child: Divider(color: NemoColors.divider.withValues(alpha: 0.2)),
             ),
             Align(
               alignment: Alignment.centerLeft,
@@ -253,7 +253,7 @@ class _FlipCardState extends State<FlipCard> with SingleTickerProviderStateMixin
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
-                      color: widget.themeColor.withOpacity(0.6),
+                      color: widget.themeColor.withValues(alpha: 0.6),
                       letterSpacing: 1,
                     ),
                   ),
@@ -279,7 +279,7 @@ class _FlipCardState extends State<FlipCard> with SingleTickerProviderStateMixin
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
-                    color: widget.themeColor.withOpacity(0.6),
+                    color: widget.themeColor.withValues(alpha: 0.6),
                     letterSpacing: 1,
                   ),
                 ),
@@ -348,7 +348,7 @@ class _SpeakButtonState extends State<_SpeakButton> with SingleTickerProviderSta
           width: 84,
           height: 84,
           decoration: BoxDecoration(
-            color: widget.color.withOpacity(0.1),
+            color: widget.color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -379,7 +379,7 @@ class _ExampleRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.03),
+        color: color.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -396,7 +396,7 @@ class _ExampleRow extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                   furiganaTextSize: 10,
-                  furiganaTextColor: NemoColors.textMuted.withOpacity(0.6),
+                  furiganaTextColor: NemoColors.textMuted.withValues(alpha: 0.6),
                 ),
                 if (chinese.isNotEmpty) ...[
                   const SizedBox(height: 6),
@@ -404,7 +404,7 @@ class _ExampleRow extends StatelessWidget {
                     chinese,
                     style: TextStyle(
                       fontSize: 14,
-                      color: NemoColors.textSub.withOpacity(0.8),
+                      color: NemoColors.textSub.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
@@ -412,7 +412,7 @@ class _ExampleRow extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: Icon(Icons.volume_up_rounded, size: 20, color: color.withOpacity(0.6)),
+            icon: Icon(Icons.volume_up_rounded, size: 20, color: color.withValues(alpha: 0.6)),
             onPressed: () {},
           ),
         ],
