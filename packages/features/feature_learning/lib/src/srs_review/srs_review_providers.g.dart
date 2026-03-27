@@ -1,12 +1,12 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'review_providers.dart';
+part of 'srs_review_providers.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$reviewNotifierHash() => r'6b8997c55f289bcf1e7dbc786081253c73a0f0cb';
+String _$srsReviewNotifierHash() => r'8f54bd88fdf169645d296b98534ac95c569e0bf3';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -29,30 +29,30 @@ class _SystemHash {
   }
 }
 
-abstract class _$ReviewNotifier
-    extends BuildlessAutoDisposeAsyncNotifier<LearningUiModel> {
+abstract class _$SrsReviewNotifier
+    extends BuildlessAutoDisposeAsyncNotifier<SrsStudyUiModel> {
   late final String mode;
 
-  FutureOr<LearningUiModel> build(String mode);
+  FutureOr<SrsStudyUiModel> build(String mode);
 }
 
-/// See also [ReviewNotifier].
-@ProviderFor(ReviewNotifier)
-const reviewNotifierProvider = ReviewNotifierFamily();
+/// See also [SrsReviewNotifier].
+@ProviderFor(SrsReviewNotifier)
+const srsReviewNotifierProvider = SrsReviewNotifierFamily();
 
-/// See also [ReviewNotifier].
-class ReviewNotifierFamily extends Family<AsyncValue<LearningUiModel>> {
-  /// See also [ReviewNotifier].
-  const ReviewNotifierFamily();
+/// See also [SrsReviewNotifier].
+class SrsReviewNotifierFamily extends Family<AsyncValue<SrsStudyUiModel>> {
+  /// See also [SrsReviewNotifier].
+  const SrsReviewNotifierFamily();
 
-  /// See also [ReviewNotifier].
-  ReviewNotifierProvider call(String mode) {
-    return ReviewNotifierProvider(mode);
+  /// See also [SrsReviewNotifier].
+  SrsReviewNotifierProvider call(String mode) {
+    return SrsReviewNotifierProvider(mode);
   }
 
   @override
-  ReviewNotifierProvider getProviderOverride(
-    covariant ReviewNotifierProvider provider,
+  SrsReviewNotifierProvider getProviderOverride(
+    covariant SrsReviewNotifierProvider provider,
   ) {
     return call(provider.mode);
   }
@@ -69,29 +69,32 @@ class ReviewNotifierFamily extends Family<AsyncValue<LearningUiModel>> {
       _allTransitiveDependencies;
 
   @override
-  String? get name => r'reviewNotifierProvider';
+  String? get name => r'srsReviewNotifierProvider';
 }
 
-/// See also [ReviewNotifier].
-class ReviewNotifierProvider
+/// See also [SrsReviewNotifier].
+class SrsReviewNotifierProvider
     extends
-        AutoDisposeAsyncNotifierProviderImpl<ReviewNotifier, LearningUiModel> {
-  /// See also [ReviewNotifier].
-  ReviewNotifierProvider(String mode)
+        AutoDisposeAsyncNotifierProviderImpl<
+          SrsReviewNotifier,
+          SrsStudyUiModel
+        > {
+  /// See also [SrsReviewNotifier].
+  SrsReviewNotifierProvider(String mode)
     : this._internal(
-        () => ReviewNotifier()..mode = mode,
-        from: reviewNotifierProvider,
-        name: r'reviewNotifierProvider',
+        () => SrsReviewNotifier()..mode = mode,
+        from: srsReviewNotifierProvider,
+        name: r'srsReviewNotifierProvider',
         debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
             ? null
-            : _$reviewNotifierHash,
-        dependencies: ReviewNotifierFamily._dependencies,
+            : _$srsReviewNotifierHash,
+        dependencies: SrsReviewNotifierFamily._dependencies,
         allTransitiveDependencies:
-            ReviewNotifierFamily._allTransitiveDependencies,
+            SrsReviewNotifierFamily._allTransitiveDependencies,
         mode: mode,
       );
 
-  ReviewNotifierProvider._internal(
+  SrsReviewNotifierProvider._internal(
     super._createNotifier, {
     required super.name,
     required super.dependencies,
@@ -104,17 +107,17 @@ class ReviewNotifierProvider
   final String mode;
 
   @override
-  FutureOr<LearningUiModel> runNotifierBuild(
-    covariant ReviewNotifier notifier,
+  FutureOr<SrsStudyUiModel> runNotifierBuild(
+    covariant SrsReviewNotifier notifier,
   ) {
     return notifier.build(mode);
   }
 
   @override
-  Override overrideWith(ReviewNotifier Function() create) {
+  Override overrideWith(SrsReviewNotifier Function() create) {
     return ProviderOverride(
       origin: this,
-      override: ReviewNotifierProvider._internal(
+      override: SrsReviewNotifierProvider._internal(
         () => create()..mode = mode,
         from: from,
         name: null,
@@ -127,14 +130,14 @@ class ReviewNotifierProvider
   }
 
   @override
-  AutoDisposeAsyncNotifierProviderElement<ReviewNotifier, LearningUiModel>
+  AutoDisposeAsyncNotifierProviderElement<SrsReviewNotifier, SrsStudyUiModel>
   createElement() {
-    return _ReviewNotifierProviderElement(this);
+    return _SrsReviewNotifierProviderElement(this);
   }
 
   @override
   bool operator ==(Object other) {
-    return other is ReviewNotifierProvider && other.mode == mode;
+    return other is SrsReviewNotifierProvider && other.mode == mode;
   }
 
   @override
@@ -148,20 +151,23 @@ class ReviewNotifierProvider
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin ReviewNotifierRef
-    on AutoDisposeAsyncNotifierProviderRef<LearningUiModel> {
+mixin SrsReviewNotifierRef
+    on AutoDisposeAsyncNotifierProviderRef<SrsStudyUiModel> {
   /// The parameter `mode` of this provider.
   String get mode;
 }
 
-class _ReviewNotifierProviderElement
+class _SrsReviewNotifierProviderElement
     extends
-        AutoDisposeAsyncNotifierProviderElement<ReviewNotifier, LearningUiModel>
-    with ReviewNotifierRef {
-  _ReviewNotifierProviderElement(super.provider);
+        AutoDisposeAsyncNotifierProviderElement<
+          SrsReviewNotifier,
+          SrsStudyUiModel
+        >
+    with SrsReviewNotifierRef {
+  _SrsReviewNotifierProviderElement(super.provider);
 
   @override
-  String get mode => (origin as ReviewNotifierProvider).mode;
+  String get mode => (origin as SrsReviewNotifierProvider).mode;
 }
 
 // ignore_for_file: type=lint

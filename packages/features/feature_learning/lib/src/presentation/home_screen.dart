@@ -390,7 +390,7 @@ class _BentoActionButton extends StatelessWidget {
       onTap: () {
         final mode = vm.mode == LearningMode.words ? 'word' : 'grammar';
         context.pushNamed(
-          LearningRouteNames.learning,
+          LearningRouteNames.srsStudy,
           pathParameters: {'mode': mode},
         );
       },

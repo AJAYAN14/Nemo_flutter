@@ -4,23 +4,23 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_domain/core_domain.dart';
 import 'package:core_prefs/core_prefs.dart';
-import 'learning_providers.dart';
+import 'package:feature_learning/src/srs_study/srs_study_providers.dart';
 import '../domain/learning_item.dart';
-import 'components/cards/srs_learning_card.dart';
-import 'components/cards/srs_grammar_card.dart';
-import 'components/srs_action_area.dart';
-import 'components/common/nemo_learn_header.dart';
-import 'components/common/nemo_completion_view.dart';
+import '../learning/components/cards/srs_learning_card.dart';
+import '../learning/components/cards/srs_grammar_card.dart';
+import '../learning/components/srs_action_area.dart';
+import '../learning/components/common/nemo_learn_header.dart';
+import '../learning/components/common/nemo_completion_view.dart';
 import '../domain/learning_session_state.dart';
 
-class LearningScreen extends HookConsumerWidget {
-  const LearningScreen({super.key, required this.mode});
+class SrsStudyScreen extends HookConsumerWidget {
+  const SrsStudyScreen({super.key, required this.mode});
 
   final String mode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sessionAsync = ref.watch(learningNotifierProvider(mode));
+    final sessionAsync = ref.watch(srsStudyNotifierProvider(mode));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final pageController = usePageController();
 
@@ -51,7 +51,7 @@ class LearningScreen extends HookConsumerWidget {
             body: _WaitingView(
               until: state.waitingUntil,
               onStudyNow: () {
-                ref.invalidate(learningNotifierProvider(mode));
+                ref.invalidate(srsStudyNotifierProvider(mode));
               },
             ),
           );
@@ -73,7 +73,7 @@ class LearningScreen extends HookConsumerWidget {
           }
         });
 
-        final notifier = ref.read(learningNotifierProvider(mode).notifier);
+        final notifier = ref.read(srsStudyNotifierProvider(mode).notifier);
 
         return Scaffold(
           backgroundColor: isDark ? NemoColors.bgBaseDark : NemoColors.bgBase,
@@ -148,7 +148,7 @@ class LearningScreen extends HookConsumerWidget {
                 child: SRSActionArea(
                   showAnswer: isAnswerShown,
                   onShowAnswer: () => notifier.showAnswer(currentId),
-                  onRate: (rating) => notifier.rate(rating),
+                  onRate: (rating) => notifier.submitSrsRating(rating),
                   ratingIntervals: session.ratingIntervals,
                 ),
               ),

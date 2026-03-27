@@ -2,87 +2,25 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:core_domain/core_domain.dart';
 import 'package:core_prefs/core_prefs.dart';
-import '../data/learning_repository.dart';
 import '../domain/learning_item.dart';
 import '../domain/srs_scheduler.dart';
+import '../data/learning_repository.dart';
+import '../srs_study/srs_study_providers.dart';
 import '../domain/learning_session_state.dart';
 
-part 'learning_providers.g.dart';
-
-class LearningUiModel {
-  const LearningUiModel({
-    this.sessionState = const LearningSessionEmpty(),
-    this.items = const [],
-    this.currentIndex = 0,
-    this.revealedItemIds = const {},
-    this.totalItems = 0,
-    this.completedCount = 0,
-    this.ratingIntervals = const {},
-    this.lastSnapshot,
-  });
-
-  final LearningSessionState sessionState;
-  final List<LearningItem> items;
-  final int currentIndex;
-  final Set<String> revealedItemIds;
-  final int totalItems;
-  final int completedCount;
-  final Map<SrsRating, String> ratingIntervals;
-  final SessionSnapshot? lastSnapshot;
-
-  bool get isCompleted => sessionState is LearningSessionEmpty;
-
-  String get currentId {
-    if (sessionState is! LearningSessionActive) return '';
-    final item = (sessionState as LearningSessionActive).item;
-    if (item is WordItem) return item.word.id;
-    if (item is GrammarItem) return item.grammar.id;
-    return '';
-  }
-
-  bool isRevealed(String id) => revealedItemIds.contains(id);
-
-  double get progress {
-    if (totalItems == 0) return 0;
-    return (completedCount) / totalItems;
-  }
-
-  LearningUiModel copyWith({
-    LearningSessionState? sessionState,
-    List<LearningItem>? items,
-    int? currentIndex,
-    Set<String>? revealedItemIds,
-    int? totalItems,
-    int? completedCount,
-    Map<SrsRating, String>? ratingIntervals,
-    SessionSnapshot? lastSnapshot,
-  }) {
-    return LearningUiModel(
-      sessionState: sessionState ?? this.sessionState,
-      items: items ?? this.items,
-      currentIndex: currentIndex ?? this.currentIndex,
-      revealedItemIds: revealedItemIds ?? this.revealedItemIds,
-      totalItems: totalItems ?? this.totalItems,
-      completedCount: completedCount ?? this.completedCount,
-      ratingIntervals: ratingIntervals ?? this.ratingIntervals,
-      lastSnapshot: lastSnapshot ?? this.lastSnapshot,
-    );
-  }
-
-  static const LearningUiModel initial = LearningUiModel();
-}
+part 'srs_review_providers.g.dart';
 
 @riverpod
-class LearningNotifier extends _$LearningNotifier {
+class SrsReviewNotifier extends _$SrsReviewNotifier {
   late final SrsScheduler _scheduler = SrsScheduler();
 
   @override
-  FutureOr<LearningUiModel> build(String mode) async {
+  FutureOr<SrsStudyUiModel> build(String mode) async {
     final repository = ref.watch(learningRepositoryProvider);
     final prefs = ref.watch(preferenceServiceProvider);
     
-    final savedIds = prefs.getLearningSessionItems(mode);
-    final savedIndex = prefs.getLearningSessionIndex(mode);
+    final savedIds = prefs.getLearningSessionItems('${mode}_review');
+    final savedIndex = prefs.getLearningSessionIndex('${mode}_review');
 
     if (savedIds.isNotEmpty) {
       final items = await repository.getItemsByIds(savedIds);
@@ -92,14 +30,37 @@ class LearningNotifier extends _$LearningNotifier {
       }
     }
 
-    final items = await repository.getLearningQueue(mode);
+    final items = await repository.getReviewQueue(mode);
+    
+    if (items.isEmpty) {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final limitMinutes = ref.watch(learnAheadLimitProvider);
+      
+      final upcoming = await repository.getUpcomingItems(
+        now, 
+        limitMinutes * 60 * 1000, 
+        itemType: mode,
+      );
+
+      if (upcoming.isNotEmpty) {
+        final waitingUntilMillis = upcoming.first.progress?.dueTime.toInt() ?? 0;
+        if (waitingUntilMillis > now) {
+          return _buildStateWithItems([], 0, 0).copyWith(
+            sessionState: LearningSessionWaiting(
+              waitingUntil: DateTime.fromMillisecondsSinceEpoch(waitingUntilMillis),
+            ),
+          );
+        }
+      }
+    }
+
     return _buildStateWithItems(items, 0, 0);
   }
 
-  LearningUiModel _buildStateWithItems(List<LearningItem> items, int currentIndex, int completedCount) {
+  SrsStudyUiModel _buildStateWithItems(List<LearningItem> items, int currentIndex, int completedCount) {
     if (items.isEmpty) {
       _clearSession();
-      return LearningUiModel(
+      return SrsStudyUiModel(
         sessionState: const LearningSessionEmpty(),
         items: const [],
         currentIndex: 0,
@@ -110,28 +71,10 @@ class LearningNotifier extends _$LearningNotifier {
 
     _saveSession(items, currentIndex);
 
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final learnAheadMins = ref.read(learnAheadLimitProvider);
-    final learnAheadLimitMs = learnAheadMins * 60 * 1000;
-
     final currentItem = items[currentIndex];
-    final dueTime = currentItem.progress?.dueTime.toInt() ?? 0;
-
-    if (dueTime > now + learnAheadLimitMs) {
-      return LearningUiModel(
-        sessionState: LearningSessionWaiting(
-          waitingUntil: DateTime.fromMillisecondsSinceEpoch(dueTime),
-        ),
-        items: items,
-        currentIndex: currentIndex,
-        totalItems: items.length + completedCount,
-        completedCount: completedCount,
-      );
-    }
-
     final intervals = _scheduler.getIntervalPreviews(currentProgress: currentItem.progress);
 
-    return LearningUiModel(
+    return SrsStudyUiModel(
       sessionState: LearningSessionActive(
         item: currentItem,
         currentIndex: currentIndex,
@@ -145,36 +88,27 @@ class LearningNotifier extends _$LearningNotifier {
     );
   }
 
-  void onPageChanged(int index) {
-    final value = state.valueOrNull;
-    if (value == null || index < 0 || index >= value.items.length) {
-      return;
-    }
-    state = AsyncData(_buildStateWithItems(value.items, index, value.completedCount));
-  }
-
-  Future<void> showAnswer(String id) async {
-    final value = state.valueOrNull;
-    if (value == null) return;
-
-    final next = <String>{...value.revealedItemIds};
-    final isRevealing = !next.contains(id);
+  Future<void> showAnswer() async {
+    final stateValue = state.valueOrNull;
+    if (stateValue == null) return;
     
-    if (isRevealing) {
+    final sessionState = stateValue.sessionState;
+    if (sessionState is! LearningSessionActive) return;
+
+    if (!sessionState.isRevealed) {
       final showWait = ref.read(showAnswerWaitProvider);
       if (showWait) {
         final duration = ref.read(answerWaitDurationProvider);
         await Future.delayed(Duration(milliseconds: (duration * 1000).toInt()));
       }
-      next.add(id);
-    } else {
-      next.remove(id);
     }
-    
-    state = AsyncData(value.copyWith(revealedItemIds: next));
+
+    state = AsyncData(stateValue.copyWith(
+      sessionState: sessionState.copyWith(isRevealed: true),
+    ));
   }
 
-  Future<void> rate(int score) async {
+  Future<void> submitSrsRating(int score) async {
     final value = state.valueOrNull;
     if (value == null || value.items.isEmpty) return;
 
@@ -203,10 +137,7 @@ class LearningNotifier extends _$LearningNotifier {
     }
 
     state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount + (result.isRequeue ? 0 : 1))
-      .copyWith(
-        lastSnapshot: snapshot,
-        revealedItemIds: {...value.revealedItemIds}..remove(id),
-      ));
+      .copyWith(lastSnapshot: snapshot));
   }
 
   Future<void> undo() async {
@@ -264,10 +195,10 @@ class LearningNotifier extends _$LearningNotifier {
       return 'grammar_${(item as GrammarItem).grammar.id}';
     }).toList();
     
-    prefs.saveLearningSession(mode: mode, itemIds: ids, currentIndex: currentIndex);
+    prefs.saveLearningSession(mode: '${mode}_review', itemIds: ids, currentIndex: currentIndex);
   }
 
   void _clearSession() {
-    ref.read(preferenceServiceProvider).clearLearningSession(mode);
+    ref.read(preferenceServiceProvider).clearLearningSession('${mode}_review');
   }
 }

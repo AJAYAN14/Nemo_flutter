@@ -1,12 +1,12 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'learning_providers.dart';
+part of 'srs_study_providers.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$learningNotifierHash() => r'0a032cbf39783a8526cae4d25db8994d9a14e59b';
+String _$srsStudyNotifierHash() => r'a0936e5eec834b5651528e3ddeebcce909fea849';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -29,30 +29,30 @@ class _SystemHash {
   }
 }
 
-abstract class _$LearningNotifier
-    extends BuildlessAutoDisposeAsyncNotifier<LearningUiModel> {
+abstract class _$SrsStudyNotifier
+    extends BuildlessAutoDisposeAsyncNotifier<SrsStudyUiModel> {
   late final String mode;
 
-  FutureOr<LearningUiModel> build(String mode);
+  FutureOr<SrsStudyUiModel> build(String mode);
 }
 
-/// See also [LearningNotifier].
-@ProviderFor(LearningNotifier)
-const learningNotifierProvider = LearningNotifierFamily();
+/// See also [SrsStudyNotifier].
+@ProviderFor(SrsStudyNotifier)
+const srsStudyNotifierProvider = SrsStudyNotifierFamily();
 
-/// See also [LearningNotifier].
-class LearningNotifierFamily extends Family<AsyncValue<LearningUiModel>> {
-  /// See also [LearningNotifier].
-  const LearningNotifierFamily();
+/// See also [SrsStudyNotifier].
+class SrsStudyNotifierFamily extends Family<AsyncValue<SrsStudyUiModel>> {
+  /// See also [SrsStudyNotifier].
+  const SrsStudyNotifierFamily();
 
-  /// See also [LearningNotifier].
-  LearningNotifierProvider call(String mode) {
-    return LearningNotifierProvider(mode);
+  /// See also [SrsStudyNotifier].
+  SrsStudyNotifierProvider call(String mode) {
+    return SrsStudyNotifierProvider(mode);
   }
 
   @override
-  LearningNotifierProvider getProviderOverride(
-    covariant LearningNotifierProvider provider,
+  SrsStudyNotifierProvider getProviderOverride(
+    covariant SrsStudyNotifierProvider provider,
   ) {
     return call(provider.mode);
   }
@@ -69,32 +69,32 @@ class LearningNotifierFamily extends Family<AsyncValue<LearningUiModel>> {
       _allTransitiveDependencies;
 
   @override
-  String? get name => r'learningNotifierProvider';
+  String? get name => r'srsStudyNotifierProvider';
 }
 
-/// See also [LearningNotifier].
-class LearningNotifierProvider
+/// See also [SrsStudyNotifier].
+class SrsStudyNotifierProvider
     extends
         AutoDisposeAsyncNotifierProviderImpl<
-          LearningNotifier,
-          LearningUiModel
+          SrsStudyNotifier,
+          SrsStudyUiModel
         > {
-  /// See also [LearningNotifier].
-  LearningNotifierProvider(String mode)
+  /// See also [SrsStudyNotifier].
+  SrsStudyNotifierProvider(String mode)
     : this._internal(
-        () => LearningNotifier()..mode = mode,
-        from: learningNotifierProvider,
-        name: r'learningNotifierProvider',
+        () => SrsStudyNotifier()..mode = mode,
+        from: srsStudyNotifierProvider,
+        name: r'srsStudyNotifierProvider',
         debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
             ? null
-            : _$learningNotifierHash,
-        dependencies: LearningNotifierFamily._dependencies,
+            : _$srsStudyNotifierHash,
+        dependencies: SrsStudyNotifierFamily._dependencies,
         allTransitiveDependencies:
-            LearningNotifierFamily._allTransitiveDependencies,
+            SrsStudyNotifierFamily._allTransitiveDependencies,
         mode: mode,
       );
 
-  LearningNotifierProvider._internal(
+  SrsStudyNotifierProvider._internal(
     super._createNotifier, {
     required super.name,
     required super.dependencies,
@@ -107,17 +107,17 @@ class LearningNotifierProvider
   final String mode;
 
   @override
-  FutureOr<LearningUiModel> runNotifierBuild(
-    covariant LearningNotifier notifier,
+  FutureOr<SrsStudyUiModel> runNotifierBuild(
+    covariant SrsStudyNotifier notifier,
   ) {
     return notifier.build(mode);
   }
 
   @override
-  Override overrideWith(LearningNotifier Function() create) {
+  Override overrideWith(SrsStudyNotifier Function() create) {
     return ProviderOverride(
       origin: this,
-      override: LearningNotifierProvider._internal(
+      override: SrsStudyNotifierProvider._internal(
         () => create()..mode = mode,
         from: from,
         name: null,
@@ -130,14 +130,14 @@ class LearningNotifierProvider
   }
 
   @override
-  AutoDisposeAsyncNotifierProviderElement<LearningNotifier, LearningUiModel>
+  AutoDisposeAsyncNotifierProviderElement<SrsStudyNotifier, SrsStudyUiModel>
   createElement() {
-    return _LearningNotifierProviderElement(this);
+    return _SrsStudyNotifierProviderElement(this);
   }
 
   @override
   bool operator ==(Object other) {
-    return other is LearningNotifierProvider && other.mode == mode;
+    return other is SrsStudyNotifierProvider && other.mode == mode;
   }
 
   @override
@@ -151,23 +151,23 @@ class LearningNotifierProvider
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin LearningNotifierRef
-    on AutoDisposeAsyncNotifierProviderRef<LearningUiModel> {
+mixin SrsStudyNotifierRef
+    on AutoDisposeAsyncNotifierProviderRef<SrsStudyUiModel> {
   /// The parameter `mode` of this provider.
   String get mode;
 }
 
-class _LearningNotifierProviderElement
+class _SrsStudyNotifierProviderElement
     extends
         AutoDisposeAsyncNotifierProviderElement<
-          LearningNotifier,
-          LearningUiModel
+          SrsStudyNotifier,
+          SrsStudyUiModel
         >
-    with LearningNotifierRef {
-  _LearningNotifierProviderElement(super.provider);
+    with SrsStudyNotifierRef {
+  _SrsStudyNotifierProviderElement(super.provider);
 
   @override
-  String get mode => (origin as LearningNotifierProvider).mode;
+  String get mode => (origin as SrsStudyNotifierProvider).mode;
 }
 
 // ignore_for_file: type=lint

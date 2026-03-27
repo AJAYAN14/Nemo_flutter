@@ -3,8 +3,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:core_domain/core_domain.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_prefs/core_prefs.dart';
-import 'review_providers.dart';
-import '../learning/learning_providers.dart' show LearningUiModel;
+import 'package:feature_learning/src/srs_study/srs_study_providers.dart';
+import 'package:feature_learning/src/srs_review/srs_review_providers.dart';
 import '../learning/components/cards/srs_learning_card.dart';
 import '../learning/components/cards/srs_grammar_card.dart';
 import '../learning/components/srs_action_area.dart';
@@ -13,14 +13,14 @@ import '../learning/components/common/nemo_completion_view.dart';
 import '../domain/learning_session_state.dart';
 import '../domain/learning_item.dart';
 
-class ReviewScreen extends ConsumerWidget {
-  const ReviewScreen({super.key, required this.mode});
+class SrsReviewScreen extends ConsumerWidget {
+  const SrsReviewScreen({super.key, required this.mode});
 
   final String mode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sessionAsync = ref.watch(reviewNotifierProvider(mode));
+    final sessionAsync = ref.watch(srsReviewNotifierProvider(mode));
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return sessionAsync.when(
@@ -59,7 +59,7 @@ class ReviewScreen extends ConsumerWidget {
                   Text('下一项将在 ${state.waitingUntil.difference(DateTime.now()).inMinutes} 分钟后开始'),
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: () => ref.invalidate(reviewNotifierProvider(mode)),
+                    onPressed: () => ref.invalidate(srsReviewNotifierProvider(mode)),
                     child: const Text('刷新'),
                   ),
                 ],
@@ -76,7 +76,7 @@ class ReviewScreen extends ConsumerWidget {
         final showAnswerWait = ref.watch(showAnswerWaitProvider);
         final answerWaitDuration = ref.watch(answerWaitDurationProvider);
 
-        final notifier = ref.read(reviewNotifierProvider(mode).notifier);
+        final notifier = ref.read(srsReviewNotifierProvider(mode).notifier);
 
         return Scaffold(
           backgroundColor: isDark ? NemoColors.bgBaseDark : NemoColors.bgBase,
@@ -134,7 +134,7 @@ class ReviewScreen extends ConsumerWidget {
                 child: SRSActionArea(
                   showAnswer: isAnswerShown,
                   onShowAnswer: () => notifier.showAnswer(),
-                  onRate: (score) => notifier.rate(score),
+                  onRate: (score) => notifier.submitSrsRating(score),
                   ratingIntervals: session.ratingIntervals,
                 ),
               ),

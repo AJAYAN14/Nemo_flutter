@@ -5,11 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:core_storage/core_storage.dart';
 
-import 'category_card_learning_providers.dart';
-import 'typing_practice_dialog.dart';
+import 'category_material_browser_providers.dart';
+import '../learning/typing_practice_dialog.dart';
 
-class CategoryCardLearningScreen extends ConsumerWidget {
-  const CategoryCardLearningScreen({
+class CategoryMaterialBrowserScreen extends ConsumerWidget {
+  const CategoryMaterialBrowserScreen({
     super.key,
     required this.categoryId,
     required this.categoryTitle,
@@ -20,8 +20,8 @@ class CategoryCardLearningScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final uiState = ref.watch(categoryCardLearningNotifierProvider(categoryId));
-    final notifier = ref.read(categoryCardLearningNotifierProvider(categoryId).notifier);
+    final uiState = ref.watch(categoryMaterialBrowserNotifierProvider(categoryId));
+    final notifier = ref.read(categoryMaterialBrowserNotifierProvider(categoryId).notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // UI/UX PRO: Get theme color for category
@@ -71,8 +71,8 @@ class CategoryCardLearningScreen extends ConsumerWidget {
   Widget _buildContent(
     BuildContext context,
     WidgetRef ref,
-    CategoryCardLearningUiState uiState,
-    CategoryCardLearningNotifier notifier,
+    CategoryMaterialBrowserUiState uiState,
+    CategoryMaterialBrowserNotifier notifier,
     Color themeColor,
   ) {
     if (uiState.isLoading) {
@@ -89,7 +89,7 @@ class CategoryCardLearningScreen extends ConsumerWidget {
             Text(uiState.error!),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => ref.invalidate(categoryCardLearningNotifierProvider(categoryId)),
+              onPressed: () => ref.invalidate(categoryMaterialBrowserNotifierProvider(categoryId)),
               child: const Text('重试'),
             ),
           ],
@@ -189,7 +189,7 @@ class CategoryCardLearningScreen extends ConsumerWidget {
     );
   }
 
-  void _showAnswerSheet(BuildContext context, WidgetRef ref, CategoryCardLearningUiState uiState, Color themeColor) {
+  void _showAnswerSheet(BuildContext context, WidgetRef ref, CategoryMaterialBrowserUiState uiState, Color themeColor) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -200,11 +200,11 @@ class CategoryCardLearningScreen extends ConsumerWidget {
         canGoBack: uiState.canGoBack,
         themeColor: themeColor,
         onWordSelected: (seq) {
-          ref.read(categoryCardLearningNotifierProvider(categoryId).notifier).jumpToWord(seq);
+          ref.read(categoryMaterialBrowserNotifierProvider(categoryId).notifier).jumpToWord(seq);
           Navigator.pop(context);
         },
         onGoBack: () {
-          ref.read(categoryCardLearningNotifierProvider(categoryId).notifier).goBack();
+          ref.read(categoryMaterialBrowserNotifierProvider(categoryId).notifier).goBack();
         },
       ),
     );

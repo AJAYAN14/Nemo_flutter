@@ -1,13 +1,13 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'category_card_learning_providers.dart';
+part of 'category_material_browser_providers.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$categoryCardLearningNotifierHash() =>
-    r'6a7725d95a119158346fa60c5e4b1b49bb96fee6';
+String _$categoryMaterialBrowserNotifierHash() =>
+    r'd4e351ba7e9d8d38124b38342aed90e3faf91551';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -30,32 +30,32 @@ class _SystemHash {
   }
 }
 
-abstract class _$CategoryCardLearningNotifier
-    extends BuildlessAutoDisposeNotifier<CategoryCardLearningUiState> {
+abstract class _$CategoryMaterialBrowserNotifier
+    extends BuildlessAutoDisposeNotifier<CategoryMaterialBrowserUiState> {
   late final String categoryId;
 
-  CategoryCardLearningUiState build(String categoryId);
+  CategoryMaterialBrowserUiState build(String categoryId);
 }
 
-/// See also [CategoryCardLearningNotifier].
-@ProviderFor(CategoryCardLearningNotifier)
-const categoryCardLearningNotifierProvider =
-    CategoryCardLearningNotifierFamily();
+/// See also [CategoryMaterialBrowserNotifier].
+@ProviderFor(CategoryMaterialBrowserNotifier)
+const categoryMaterialBrowserNotifierProvider =
+    CategoryMaterialBrowserNotifierFamily();
 
-/// See also [CategoryCardLearningNotifier].
-class CategoryCardLearningNotifierFamily
-    extends Family<CategoryCardLearningUiState> {
-  /// See also [CategoryCardLearningNotifier].
-  const CategoryCardLearningNotifierFamily();
+/// See also [CategoryMaterialBrowserNotifier].
+class CategoryMaterialBrowserNotifierFamily
+    extends Family<CategoryMaterialBrowserUiState> {
+  /// See also [CategoryMaterialBrowserNotifier].
+  const CategoryMaterialBrowserNotifierFamily();
 
-  /// See also [CategoryCardLearningNotifier].
-  CategoryCardLearningNotifierProvider call(String categoryId) {
-    return CategoryCardLearningNotifierProvider(categoryId);
+  /// See also [CategoryMaterialBrowserNotifier].
+  CategoryMaterialBrowserNotifierProvider call(String categoryId) {
+    return CategoryMaterialBrowserNotifierProvider(categoryId);
   }
 
   @override
-  CategoryCardLearningNotifierProvider getProviderOverride(
-    covariant CategoryCardLearningNotifierProvider provider,
+  CategoryMaterialBrowserNotifierProvider getProviderOverride(
+    covariant CategoryMaterialBrowserNotifierProvider provider,
   ) {
     return call(provider.categoryId);
   }
@@ -72,32 +72,32 @@ class CategoryCardLearningNotifierFamily
       _allTransitiveDependencies;
 
   @override
-  String? get name => r'categoryCardLearningNotifierProvider';
+  String? get name => r'categoryMaterialBrowserNotifierProvider';
 }
 
-/// See also [CategoryCardLearningNotifier].
-class CategoryCardLearningNotifierProvider
+/// See also [CategoryMaterialBrowserNotifier].
+class CategoryMaterialBrowserNotifierProvider
     extends
         AutoDisposeNotifierProviderImpl<
-          CategoryCardLearningNotifier,
-          CategoryCardLearningUiState
+          CategoryMaterialBrowserNotifier,
+          CategoryMaterialBrowserUiState
         > {
-  /// See also [CategoryCardLearningNotifier].
-  CategoryCardLearningNotifierProvider(String categoryId)
+  /// See also [CategoryMaterialBrowserNotifier].
+  CategoryMaterialBrowserNotifierProvider(String categoryId)
     : this._internal(
-        () => CategoryCardLearningNotifier()..categoryId = categoryId,
-        from: categoryCardLearningNotifierProvider,
-        name: r'categoryCardLearningNotifierProvider',
+        () => CategoryMaterialBrowserNotifier()..categoryId = categoryId,
+        from: categoryMaterialBrowserNotifierProvider,
+        name: r'categoryMaterialBrowserNotifierProvider',
         debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
             ? null
-            : _$categoryCardLearningNotifierHash,
-        dependencies: CategoryCardLearningNotifierFamily._dependencies,
+            : _$categoryMaterialBrowserNotifierHash,
+        dependencies: CategoryMaterialBrowserNotifierFamily._dependencies,
         allTransitiveDependencies:
-            CategoryCardLearningNotifierFamily._allTransitiveDependencies,
+            CategoryMaterialBrowserNotifierFamily._allTransitiveDependencies,
         categoryId: categoryId,
       );
 
-  CategoryCardLearningNotifierProvider._internal(
+  CategoryMaterialBrowserNotifierProvider._internal(
     super._createNotifier, {
     required super.name,
     required super.dependencies,
@@ -110,17 +110,17 @@ class CategoryCardLearningNotifierProvider
   final String categoryId;
 
   @override
-  CategoryCardLearningUiState runNotifierBuild(
-    covariant CategoryCardLearningNotifier notifier,
+  CategoryMaterialBrowserUiState runNotifierBuild(
+    covariant CategoryMaterialBrowserNotifier notifier,
   ) {
     return notifier.build(categoryId);
   }
 
   @override
-  Override overrideWith(CategoryCardLearningNotifier Function() create) {
+  Override overrideWith(CategoryMaterialBrowserNotifier Function() create) {
     return ProviderOverride(
       origin: this,
-      override: CategoryCardLearningNotifierProvider._internal(
+      override: CategoryMaterialBrowserNotifierProvider._internal(
         () => create()..categoryId = categoryId,
         from: from,
         name: null,
@@ -134,16 +134,16 @@ class CategoryCardLearningNotifierProvider
 
   @override
   AutoDisposeNotifierProviderElement<
-    CategoryCardLearningNotifier,
-    CategoryCardLearningUiState
+    CategoryMaterialBrowserNotifier,
+    CategoryMaterialBrowserUiState
   >
   createElement() {
-    return _CategoryCardLearningNotifierProviderElement(this);
+    return _CategoryMaterialBrowserNotifierProviderElement(this);
   }
 
   @override
   bool operator ==(Object other) {
-    return other is CategoryCardLearningNotifierProvider &&
+    return other is CategoryMaterialBrowserNotifierProvider &&
         other.categoryId == categoryId;
   }
 
@@ -158,24 +158,24 @@ class CategoryCardLearningNotifierProvider
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin CategoryCardLearningNotifierRef
-    on AutoDisposeNotifierProviderRef<CategoryCardLearningUiState> {
+mixin CategoryMaterialBrowserNotifierRef
+    on AutoDisposeNotifierProviderRef<CategoryMaterialBrowserUiState> {
   /// The parameter `categoryId` of this provider.
   String get categoryId;
 }
 
-class _CategoryCardLearningNotifierProviderElement
+class _CategoryMaterialBrowserNotifierProviderElement
     extends
         AutoDisposeNotifierProviderElement<
-          CategoryCardLearningNotifier,
-          CategoryCardLearningUiState
+          CategoryMaterialBrowserNotifier,
+          CategoryMaterialBrowserUiState
         >
-    with CategoryCardLearningNotifierRef {
-  _CategoryCardLearningNotifierProviderElement(super.provider);
+    with CategoryMaterialBrowserNotifierRef {
+  _CategoryMaterialBrowserNotifierProviderElement(super.provider);
 
   @override
   String get categoryId =>
-      (origin as CategoryCardLearningNotifierProvider).categoryId;
+      (origin as CategoryMaterialBrowserNotifierProvider).categoryId;
 }
 
 // ignore_for_file: type=lint

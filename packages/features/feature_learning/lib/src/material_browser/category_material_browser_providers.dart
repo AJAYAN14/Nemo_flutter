@@ -1,16 +1,17 @@
+import 'dart:async';
 import 'package:core_storage/core_storage.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'category_card_learning_providers.g.dart';
+part 'category_material_browser_providers.g.dart';
 
 enum SlideDirection {
   forward, // 下一个
   backward, // 上一个
 }
 
-class CategoryCardLearningUiState {
-  const CategoryCardLearningUiState({
+class CategoryMaterialBrowserUiState {
+  const CategoryMaterialBrowserUiState({
     this.isLoading = true,
     this.words = const [],
     this.currentWordIndex = 0,
@@ -35,7 +36,7 @@ class CategoryCardLearningUiState {
   bool get hasPrevious => currentWordIndex > 0;
   bool get canGoBack => navigationHistory.isNotEmpty;
 
-  CategoryCardLearningUiState copyWith({
+  CategoryMaterialBrowserUiState copyWith({
     bool? isLoading,
     List<WordEntry>? words,
     int? currentWordIndex,
@@ -45,7 +46,7 @@ class CategoryCardLearningUiState {
     String? error,
     List<int>? navigationHistory,
   }) {
-    return CategoryCardLearningUiState(
+    return CategoryMaterialBrowserUiState(
       isLoading: isLoading ?? this.isLoading,
       words: words ?? this.words,
       currentWordIndex: currentWordIndex ?? this.currentWordIndex,
@@ -59,26 +60,26 @@ class CategoryCardLearningUiState {
 }
 
 @riverpod
-class CategoryCardLearningNotifier extends _$CategoryCardLearningNotifier {
+class CategoryMaterialBrowserNotifier extends _$CategoryMaterialBrowserNotifier {
   @override
-  CategoryCardLearningUiState build(String categoryId) {
+  CategoryMaterialBrowserUiState build(String categoryId) {
     // Watch the words stream and update the state accordingly
     final wordsAsync = ref.watch(wordsByCategoryProvider(categoryId));
 
     return wordsAsync.when(
-      data: (words) => CategoryCardLearningUiState(
+      data: (words) => CategoryMaterialBrowserUiState(
         isLoading: false,
         words: words,
         // Preserve current state if we're just updating the list
         currentWordIndex: stateOrNull?.currentWordIndex ?? 0,
         navigationHistory: stateOrNull?.navigationHistory ?? [0],
       ),
-      loading: () => const CategoryCardLearningUiState(isLoading: true),
-      error: (e, _) => CategoryCardLearningUiState(isLoading: false, error: e.toString()),
+      loading: () => const CategoryMaterialBrowserUiState(isLoading: true),
+      error: (e, _) => CategoryMaterialBrowserUiState(isLoading: false, error: e.toString()),
     );
   }
 
-  CategoryCardLearningUiState? get stateOrNull {
+  CategoryMaterialBrowserUiState? get stateOrNull {
     try {
       return state;
     } catch (_) {
@@ -137,7 +138,7 @@ class CategoryCardLearningNotifier extends _$CategoryCardLearningNotifier {
         isProcessingClick: true,
         slideDirection: direction,
         navigationHistory: newHistory,
-      );
+       );
 
       _resetProcessingState();
     }
@@ -162,9 +163,6 @@ class CategoryCardLearningNotifier extends _$CategoryCardLearningNotifier {
 
   void _resetProcessingState() {
     Future.delayed(const Duration(milliseconds: 400), () {
-      // Check if the notifier/state is still mounted
-      // This is a bit tricky with riverpod_generator without manual state management
-      // But typically we can check ref.exists or just try-catch
       try {
         state = state.copyWith(isProcessingClick: false);
       } catch (_) {}
