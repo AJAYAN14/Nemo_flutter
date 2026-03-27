@@ -2,6 +2,7 @@ import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:feature_learning/feature_learning.dart';
 import '../../routes/library_routes.dart';
 
 /// 专项分类主题颜色
@@ -215,9 +216,9 @@ class CategoryClassificationScreen extends StatelessWidget {
 
   void _onCategorySelected(BuildContext context, _CategoryItem item) {
     if (source == 'practice') {
-      // Use the named route 'learning-category' defined in LearningRoutes
+      // Use the named route
       context.pushNamed(
-        'learning-category',
+        LearningRouteNames.materialBrowser,
         pathParameters: {'categoryId': item.id},
         queryParameters: {'title': item.title},
       );

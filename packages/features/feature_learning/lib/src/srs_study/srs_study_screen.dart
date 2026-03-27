@@ -60,7 +60,7 @@ class SrsStudyScreen extends HookConsumerWidget {
         final activeState = state as LearningSessionActive;
         final currentIndex = activeState.currentIndex;
         final currentId = session.currentId;
-        final isAnswerShown = activeState.isRevealed;
+        final isAnswerShown = session.isRevealed(currentId);
         
         final autoSpeak = ref.watch(autoSpeakProvider);
         final showAnswerWait = ref.watch(showAnswerWaitProvider);

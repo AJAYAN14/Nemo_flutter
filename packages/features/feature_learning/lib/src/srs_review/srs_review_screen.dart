@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:core_domain/core_domain.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_prefs/core_prefs.dart';
-import 'package:feature_learning/src/srs_study/srs_study_providers.dart';
 import 'package:feature_learning/src/srs_review/srs_review_providers.dart';
 import '../learning/components/cards/srs_learning_card.dart';
 import '../learning/components/cards/srs_grammar_card.dart';
@@ -70,7 +68,7 @@ class SrsReviewScreen extends ConsumerWidget {
 
         final activeState = state as LearningSessionActive;
         final currentIndex = activeState.currentIndex;
-        final isAnswerShown = activeState.isRevealed;
+        final isAnswerShown = session.isRevealed(session.currentId);
         
         final autoSpeak = ref.watch(autoSpeakProvider);
         final showAnswerWait = ref.watch(showAnswerWaitProvider);

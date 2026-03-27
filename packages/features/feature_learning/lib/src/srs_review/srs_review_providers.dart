@@ -89,23 +89,25 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
   }
 
   Future<void> showAnswer() async {
-    final stateValue = state.valueOrNull;
-    if (stateValue == null) return;
-    
-    final sessionState = stateValue.sessionState;
-    if (sessionState is! LearningSessionActive) return;
+    final value = state.valueOrNull;
+    if (value == null) return;
 
-    if (!sessionState.isRevealed) {
+    final String id = value.currentId;
+    final next = <String>{...value.revealedItemIds};
+    final isRevealing = !next.contains(id);
+    
+    if (isRevealing) {
       final showWait = ref.read(showAnswerWaitProvider);
       if (showWait) {
         final duration = ref.read(answerWaitDurationProvider);
         await Future.delayed(Duration(milliseconds: (duration * 1000).toInt()));
       }
+      next.add(id);
+    } else {
+      next.remove(id);
     }
-
-    state = AsyncData(stateValue.copyWith(
-      sessionState: sessionState.copyWith(isRevealed: true),
-    ));
+    
+    state = AsyncData(value.copyWith(revealedItemIds: next));
   }
 
   Future<void> submitSrsRating(int score) async {
@@ -137,7 +139,10 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
     }
 
     state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount + (result.isRequeue ? 0 : 1))
-      .copyWith(lastSnapshot: snapshot));
+      .copyWith(
+        lastSnapshot: snapshot,
+        revealedItemIds: {...value.revealedItemIds}..remove(id),
+      ));
   }
 
   Future<void> undo() async {
