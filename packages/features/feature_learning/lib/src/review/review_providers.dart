@@ -16,7 +16,7 @@ class ReviewNotifier extends _$ReviewNotifier {
 
   @override
   FutureOr<ReviewSession> build(String mode) async {
-    final rawItems = await ref.watch(learningRepositoryProvider).getLearningQueue(mode);
+    final rawItems = await ref.watch(learningRepositoryProvider).getReviewQueue(mode);
     
     // Cache progress
     for (int i = 0; i < rawItems.length; i++) {

@@ -3,10 +3,11 @@ import 'package:go_router/go_router.dart';
 
 import '../presentation/home_screen.dart';
 import '../kana/kana_chart_screen.dart';
-import '../learning/learning_screen.dart';
-import '../review/review_screen.dart';
+import '../learning/learning_screen.dart' deferred as learning;
+import '../review/review_screen.dart' deferred as review;
 import '../session/session_prep_screen.dart';
 import '../learning/category_card_learning_screen.dart';
+import '../util/deferred_widget.dart';
 
 abstract final class LearningRoutePaths {
   static const String home = '/home';
@@ -32,9 +33,15 @@ abstract final class LearningRoutes {
 
   static Widget buildSessionPrepScreen() => const SessionPrepScreen();
 
-  static Widget buildLearningScreen(String mode) => LearningScreen(mode: mode);
+  static Widget buildLearningScreen(String mode) => DeferredWidget(
+        loader: learning.loadLibrary,
+        builder: () => learning.LearningScreen(mode: mode),
+      );
 
-  static Widget buildReviewScreen(String mode) => ReviewScreen(mode: mode);
+  static Widget buildReviewScreen(String mode) => DeferredWidget(
+        loader: review.loadLibrary,
+        builder: () => review.ReviewScreen(mode: mode),
+      );
 
   static List<RouteBase> rootRoutes() {
     return [
@@ -51,15 +58,15 @@ abstract final class LearningRoutes {
       GoRoute(
         path: '/home/learning/:mode',
         name: LearningRouteNames.learning,
-        builder: (context, state) => LearningScreen(
-          mode: state.pathParameters['mode'] ?? 'word',
+        builder: (context, state) => buildLearningScreen(
+          state.pathParameters['mode'] ?? 'word',
         ),
       ),
       GoRoute(
         path: '/home/review/:mode',
         name: LearningRouteNames.review,
-        builder: (context, state) => ReviewScreen(
-          mode: state.pathParameters['mode'] ?? 'word',
+        builder: (context, state) => buildReviewScreen(
+          state.pathParameters['mode'] ?? 'word',
         ),
       ),
       GoRoute(
@@ -90,5 +97,4 @@ abstract final class LearningRoutes {
       ),
     ];
   }
-
 }

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-import '../mock/session_prep_mock_data.dart';
 import '../routes/learning_routes.dart';
 import 'session_prep_providers.dart';
 
@@ -13,71 +12,93 @@ class SessionPrepScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sessionData = ref.watch(sessionPrepViewModelProvider);
+    final sessionDataAsync = ref.watch(sessionPrepViewModelProvider);
 
     return Scaffold(
       backgroundColor: NemoColors.bgBase,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          SliverAppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: NemoColors.textMain, size: 20),
-              onPressed: () => Navigator.of(context).pop(),
+      body: sessionDataAsync.when(
+        data: (sessionData) => CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: NemoColors.textMain, size: 20),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              title: Text(
+                '复习准备',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: NemoColors.textMain,
+                    ),
+              ),
+              centerTitle: true,
+              pinned: true,
             ),
-            title: Text(
-              '复习准备',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: NemoColors.textMain,
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  _SummaryStatCard(
+                    totalCount: sessionData.totalCount,
+                    reviewedCount: sessionData.reviewedCount,
+                    remainingCount: sessionData.remainingCount,
                   ),
+                  const SizedBox(height: 28),
+                  Row(
+                    children: [
+                      Text(
+                        '内容预览',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: NemoColors.textMain,
+                            ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${sessionData.words.length} 条待复习',
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: NemoColors.textMuted,
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  ...sessionData.words.map((item) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _WordCard(item: item),
+                      )),
+                  const SizedBox(height: 100),
+                ]),
+              ),
             ),
-            centerTitle: true,
-            pinned: true,
+          ],
+        ),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: NemoColors.brandBlue),
+        ),
+        error: (err, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline_rounded, color: NemoColors.accentOrange, size: 48),
+              const SizedBox(height: 16),
+              Text('加载失败: $err', style: const TextStyle(color: NemoColors.textMain)),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(sessionPrepViewModelProvider),
+                child: const Text('重试'),
+              ),
+            ],
           ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _SummaryStatCard(
-                  totalCount: sessionData.totalCount,
-                  reviewedCount: sessionData.reviewedCount,
-                  remainingCount: sessionData.remainingCount,
-                ),
-                const SizedBox(height: 28),
-                Row(
-                  children: [
-                    Text(
-                      '内容预览',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w900,
-                            color: NemoColors.textMain,
-                          ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '${sessionData.words.length} 条待复习',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: NemoColors.textMuted,
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                ...sessionData.words.map((item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _WordCard(item: item),
-                    )),
-                const SizedBox(height: 100),
-              ]),
-            ),
-          ),
-        ],
+        ),
       ),
-      floatingActionButton: _FloatingStartButton(),
+      floatingActionButton: sessionDataAsync.valueOrNull?.words.isNotEmpty == true 
+          ? _FloatingStartButton() 
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
@@ -93,7 +114,10 @@ class _FloatingStartButton extends StatelessWidget {
         height: 58,
         child: ElevatedButton(
           onPressed: () {
-            context.pushNamed(LearningRouteNames.review);
+            context.pushNamed(
+              LearningRouteNames.review,
+              pathParameters: {'mode': 'word'},
+            );
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: NemoColors.brandBlue,

@@ -41,31 +41,10 @@ class LearningRepository {
         _randomContent = randomContent;
 
   Future<List<LearningItem>> getLearningQueue(String mode) async {
-    final now = DateTime.now().millisecondsSinceEpoch;
     final dayStartMillis = DateTimeUtils.getLearningDayStart(_resetHour);
     final dayEndMillis = DateTimeUtils.getLearningDayEnd(_resetHour);
 
-    final List<LearningItem> items = [];
-
-    // 1. Get due items (filtered by mode)
-    final dueProgress = await _learningDao.getDueItems(now);
-    for (final progress in dueProgress) {
-      if (progress.itemType != mode) continue;
-
-      if (progress.itemType == 'word') {
-        final idStr = progress.id.replaceFirst('word_', '');
-        final word = await _wordDao.getWordWithExamples(idStr);
-        if (word != null) {
-          items.add(WordItem(word.toDomain(), progress: progress));
-        }
-      } else {
-        final idStr = progress.id.replaceFirst('grammar_', '');
-        final grammar = await _grammarDao.getGrammarWithDetails(idStr);
-        if (grammar != null) {
-          items.add(GrammarItem(grammar.toDomain(), progress: progress));
-        }
-      }
-    }
+    final List<LearningItem> items = await getReviewQueue(mode);
 
     // 2. Get new items (if mode matches)
     if (mode == 'word') {
@@ -114,6 +93,32 @@ class LearningRepository {
       }
     }
 
+    return items;
+  }
+
+  Future<List<LearningItem>> getReviewQueue(String mode) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final List<LearningItem> items = [];
+
+    // 1. Get due items (filtered by mode)
+    final dueProgress = await _learningDao.getDueItems(now);
+    for (final progress in dueProgress) {
+      if (progress.itemType != mode) continue;
+
+      if (progress.itemType == 'word') {
+        final idStr = progress.id.replaceFirst('word_', '');
+        final word = await _wordDao.getWordWithExamples(idStr);
+        if (word != null) {
+          items.add(WordItem(word.toDomain(), progress: progress));
+        }
+      } else {
+        final idStr = progress.id.replaceFirst('grammar_', '');
+        final grammar = await _grammarDao.getGrammarWithDetails(idStr);
+        if (grammar != null) {
+          items.add(GrammarItem(grammar.toDomain(), progress: progress));
+        }
+      }
+    }
     return items;
   }
 

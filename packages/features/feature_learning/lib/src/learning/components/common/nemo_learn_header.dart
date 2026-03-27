@@ -139,27 +139,88 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                       const SizedBox(width: 8),
   
                       if (showMoreMenu)
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: navGroupBg,
-                            shape: BoxShape.circle,
-                            boxShadow: isDark ? null : [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                        Theme(
+                          data: theme.copyWith(
+                            hoverColor: Colors.transparent,
+                            splashColor: Colors.transparent,
+                            highlightColor: Colors.transparent,
                           ),
-                          child: IconButton(
-                            onPressed: () {
-                              // Show Menu
-                            },
-                            icon: const Icon(Icons.more_vert_rounded),
-                            color: contentColor,
-                            iconSize: 24,
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: navGroupBg,
+                              shape: BoxShape.circle,
+                              boxShadow: isDark ? null : [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: PopupMenuButton<int>(
+                              icon: Icon(
+                                Icons.more_vert_rounded,
+                                color: contentColor,
+                                size: 24,
+                              ),
+                              onSelected: (value) {
+                                // 业务逻辑暂未实现
+                              },
+                              offset: const Offset(0, 48),
+                              color: isDark ? theme.colorScheme.surface : Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              itemBuilder: (context) => [
+                                _buildMenuItem(
+                                  value: 1,
+                                  icon: Icons.undo_rounded,
+                                  text: '撤销上一次评分',
+                                  theme: theme,
+                                ),
+                                const PopupMenuDivider(),
+                                _buildMenuItem(
+                                  value: 2,
+                                  icon: Icons.check_circle_outline_rounded,
+                                  text: '评分说明（新学/复习）',
+                                  theme: theme,
+                                ),
+                                const PopupMenuDivider(),
+                                _buildMenuItem(
+                                  value: 3,
+                                  icon: Icons.pause_rounded,
+                                  text: '暂停此卡片 (Suspend)',
+                                  theme: theme,
+                                ),
+                                _buildMenuItem(
+                                  value: 4,
+                                  icon: Icons.access_time_rounded,
+                                  text: '今日暂缓此项 (Bury)',
+                                  theme: theme,
+                                ),
+                                const PopupMenuDivider(),
+                                _buildSwitchMenuItem(
+                                  value: 5,
+                                  text: '翻面自动朗读',
+                                  initialValue: true,
+                                  theme: theme,
+                                ),
+                                _buildSwitchMenuItem(
+                                  value: 6,
+                                  text: '显示答案等待',
+                                  initialValue: false,
+                                  theme: theme,
+                                ),
+                                _buildMenuItem(
+                                  value: 7,
+                                  icon: Icons.timer_rounded,
+                                  text: '等待时长: 1.0s',
+                                  theme: theme,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       const SizedBox(width: 4),
@@ -183,6 +244,72 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                   valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
                 ),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  PopupMenuItem<int> _buildMenuItem({
+    required int value,
+    required IconData icon,
+    required String text,
+    required ThemeData theme,
+  }) {
+    final isDark = theme.brightness == Brightness.dark;
+    return PopupMenuItem<int>(
+      value: value,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Icon(
+            icon, 
+            size: 20, 
+            color: const Color(0xFF0E68FF), // Nemo brand blue
+          ),
+          const SizedBox(width: 12),
+          Text(
+            text, 
+            style: TextStyle(
+              fontSize: 14,
+              color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  PopupMenuItem<int> _buildSwitchMenuItem({
+    required int value,
+    required String text,
+    required bool initialValue,
+    required ThemeData theme,
+  }) {
+    return PopupMenuItem<int>(
+      value: value,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            text, 
+            style: TextStyle(
+              fontSize: 14,
+              color: theme.brightness == Brightness.dark 
+                  ? Colors.white.withOpacity(0.9) 
+                  : Colors.black87,
+            ),
+          ),
+          const SizedBox(width: 24),
+          SizedBox(
+            height: 24,
+            width: 40,
+            child: Switch(
+              value: initialValue,
+              onChanged: (val) {},
+              activeColor: const Color(0xFF0E68FF), // 使用 NemoColors.brandBlue
             ),
           ),
         ],
