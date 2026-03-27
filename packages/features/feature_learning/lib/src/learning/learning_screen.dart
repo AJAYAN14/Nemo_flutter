@@ -8,6 +8,7 @@ import 'components/cards/srs_learning_card.dart';
 import 'components/cards/srs_grammar_card.dart';
 import 'components/srs_action_area.dart';
 import 'components/common/nemo_learn_header.dart';
+import 'components/common/nemo_completion_view.dart';
 
 class LearningScreen extends HookConsumerWidget {
   const LearningScreen({super.key, required this.mode});
@@ -26,16 +27,9 @@ class LearningScreen extends HookConsumerWidget {
       data: (session) {
         if (session.items.isEmpty) {
           return Scaffold(
-            backgroundColor: isDark ? NemoColors.bgBaseDark : NemoColors.bgBase,
-            appBar: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.close, color: NemoColors.textMain),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
+            body: NemoCompletionView(
+              onClose: () => Navigator.of(context).pop(),
             ),
-            body: const Center(child: Text('今日学习任务已完成！', style: TextStyle(color: NemoColors.textSub))),
           );
         }
 

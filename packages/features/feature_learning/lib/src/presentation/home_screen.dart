@@ -24,43 +24,65 @@ class HomeScreen extends ConsumerWidget {
     final topPadding = mediaQuery.padding.top + 16.0;
     final bottomPadding = mediaQuery.padding.bottom + 104.0;
 
+    Widget buildBody(HomeViewModel vm) {
+      return CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(16, topPadding, 16, bottomPadding),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                _Header(vm: vm),
+                const SizedBox(height: 20),
+                _BentoControlCard(vm: vm, ref: ref),
+                const SizedBox(height: kGridGap),
+                _BentoMiddleGrid(vm: vm),
+                const SizedBox(height: kGridGap),
+                _BentoActionButton(vm: vm),
+                const SizedBox(height: 32),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    '学习资源',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: NemoColors.textSub,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _ResourceSection(),
+              ]),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Scaffold(
       backgroundColor: NemoColors.bgBase,
       body: homeAsync.when(
-        data: (vm) => CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding: EdgeInsets.fromLTRB(16, topPadding, 16, bottomPadding),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _Header(vm: vm),
-                  const SizedBox(height: 20),
-                  _BentoControlCard(vm: vm, ref: ref),
-                  const SizedBox(height: kGridGap),
-                  _BentoMiddleGrid(vm: vm),
-                  const SizedBox(height: kGridGap),
-                  _BentoActionButton(vm: vm),
-                  const SizedBox(height: 32),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      '学习资源',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: NemoColors.textSub,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _ResourceSection(),
-                ]),
-              ),
-            ),
-          ],
-        ),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        skipLoadingOnReload: true,
+        skipLoadingOnRefresh: true,
+        data: (vm) => buildBody(vm),
+        loading: () {
+          // 提供一个带有默认值的骨架，避免闪烁且保持初始 UI 处于原位
+          final dummyVm = HomeViewModel(
+            mode: LearningMode.words,
+            dateText: '...',
+            greeting: '...',
+            learned: 0,
+            goal: 0,
+            reviewed: 0,
+            reviewDue: 0,
+            accuracy: 0,
+            progress: 0.0,
+            levelLabel: '-',
+            highlightColor: NemoColors.wordsPrimary,
+          );
+          return buildBody(dummyVm);
+        },
         error: (err, stack) => Center(child: Text('加载失败: $err')),
       ),
     );

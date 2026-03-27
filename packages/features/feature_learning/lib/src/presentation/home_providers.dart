@@ -125,6 +125,7 @@ FutureOr<HomeViewModel> homeViewModel(HomeViewModelRef ref) async {
     accuracy: 0, // Accuracy logic not implemented yet
     progress: goal > 0 ? (learnedCount / goal).clamp(0.0, 1.0) : 0.0,
     levelLabel: selectedLevel,
-    highlightColor: mode == LearningMode.words ? const Color(0xFF0E68FF) : const Color(0xFF34C759),
+    // Restored original BentoColors: Primary (0xFFF97316) for words, GrammarPrimary (0xFF059669) for grammar
+    highlightColor: mode == LearningMode.words ? const Color(0xFFF97316) : const Color(0xFF059669),
   );
 }

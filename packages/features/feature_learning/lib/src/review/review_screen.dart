@@ -7,6 +7,7 @@ import '../learning/components/cards/srs_learning_card.dart';
 import '../learning/components/cards/srs_grammar_card.dart';
 import '../learning/components/srs_action_area.dart';
 import '../learning/components/common/nemo_learn_header.dart';
+import '../learning/components/common/nemo_completion_view.dart';
 import '../domain/srs_scheduler.dart';
 
 class ReviewScreen extends ConsumerWidget {
@@ -25,16 +26,10 @@ class ReviewScreen extends ConsumerWidget {
       data: (session) {
         if (session.isCompleted) {
           return Scaffold(
-            backgroundColor: isDark ? NemoColors.bgBaseDark : NemoColors.bgBase,
-            appBar: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.close, color: NemoColors.textMain),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
+            body: NemoCompletionView(
+              title: '复习完成！',
+              onClose: () => Navigator.of(context).pop(),
             ),
-            body: const Center(child: Text('复学完成！', style: TextStyle(color: NemoColors.textSub, fontSize: 18))),
           );
         }
 
