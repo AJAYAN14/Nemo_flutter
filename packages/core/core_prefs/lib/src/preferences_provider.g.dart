@@ -180,5 +180,53 @@ final randomContentProvider =
     );
 
 typedef _$RandomContent = AutoDisposeNotifier<bool>;
+String _$autoSpeakHash() => r'45d56005c911fd93b24ea4c275a8bda0e34c5923';
+
+/// See also [AutoSpeak].
+@ProviderFor(AutoSpeak)
+final autoSpeakProvider = AutoDisposeNotifierProvider<AutoSpeak, bool>.internal(
+  AutoSpeak.new,
+  name: r'autoSpeakProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$autoSpeakHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$AutoSpeak = AutoDisposeNotifier<bool>;
+String _$showAnswerWaitHash() => r'5d3efbc1e117ad69c01a8ad42ebcf50abd427ece';
+
+/// See also [ShowAnswerWait].
+@ProviderFor(ShowAnswerWait)
+final showAnswerWaitProvider =
+    AutoDisposeNotifierProvider<ShowAnswerWait, bool>.internal(
+      ShowAnswerWait.new,
+      name: r'showAnswerWaitProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$showAnswerWaitHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+typedef _$ShowAnswerWait = AutoDisposeNotifier<bool>;
+String _$answerWaitDurationHash() =>
+    r'd3bb9e39ac80e22e5c658813a879f7d1508cff46';
+
+/// See also [AnswerWaitDuration].
+@ProviderFor(AnswerWaitDuration)
+final answerWaitDurationProvider =
+    AutoDisposeNotifierProvider<AnswerWaitDuration, double>.internal(
+      AnswerWaitDuration.new,
+      name: r'answerWaitDurationProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$answerWaitDurationHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+typedef _$AnswerWaitDuration = AutoDisposeNotifier<double>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

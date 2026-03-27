@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:core_domain/core_domain.dart';
 import 'package:core_prefs/core_prefs.dart';
+import '../data/learning_repository.dart';
 import '../domain/learning_item.dart';
 import '../domain/srs_scheduler.dart';
-import '../data/learning_repository.dart';
 import '../domain/learning_session_state.dart';
 
 part 'learning_providers.g.dart';
@@ -72,34 +74,50 @@ class LearningUiModel {
 
 @riverpod
 class LearningNotifier extends _$LearningNotifier {
-  final SrsScheduler _scheduler = SrsScheduler();
+  late final SrsScheduler _scheduler = SrsScheduler();
 
   @override
   FutureOr<LearningUiModel> build(String mode) async {
-    final items = await ref.watch(learningRepositoryProvider).getLearningQueue(mode);
+    final repository = ref.watch(learningRepositoryProvider);
+    final prefs = ref.watch(preferenceServiceProvider);
+    
+    final savedIds = prefs.getLearningSessionItems(mode);
+    final savedIndex = prefs.getLearningSessionIndex(mode);
+
+    if (savedIds.isNotEmpty) {
+      final items = await repository.getItemsByIds(savedIds);
+      if (items.isNotEmpty) {
+        final index = savedIndex.clamp(0, items.length - 1);
+        return _buildStateWithItems(items, index, 0);
+      }
+    }
+
+    final items = await repository.getLearningQueue(mode);
     return _buildStateWithItems(items, 0, 0);
   }
 
   LearningUiModel _buildStateWithItems(List<LearningItem> items, int currentIndex, int completedCount) {
     if (items.isEmpty) {
+      _clearSession();
       return LearningUiModel(
         sessionState: const LearningSessionEmpty(),
-        items: [],
+        items: const [],
         currentIndex: 0,
         totalItems: completedCount,
         completedCount: completedCount,
       );
     }
 
-    final now = DateTime.now().millisecondsSinceEpoch;
-    // P1: learn-ahead logic (default 20 mins)
-    final learnAheadLimit = ref.read(learnAheadLimitProvider).inMilliseconds;
+    _saveSession(items, currentIndex);
 
-    // Check if the current item is actually due
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final learnAheadMins = ref.read(learnAheadLimitProvider);
+    final learnAheadLimitMs = learnAheadMins * 60 * 1000;
+
     final currentItem = items[currentIndex];
     final dueTime = currentItem.progress?.dueTime.toInt() ?? 0;
 
-    if (dueTime > now + learnAheadLimit) {
+    if (dueTime > now + learnAheadLimitMs) {
       return LearningUiModel(
         sessionState: LearningSessionWaiting(
           waitingUntil: DateTime.fromMillisecondsSinceEpoch(dueTime),
@@ -135,35 +153,35 @@ class LearningNotifier extends _$LearningNotifier {
     state = AsyncData(_buildStateWithItems(value.items, index, value.completedCount));
   }
 
-  void toggleReveal(String id) {
+  Future<void> showAnswer(String id) async {
     final value = state.valueOrNull;
     if (value == null) return;
 
     final next = <String>{...value.revealedItemIds};
-    if (next.contains(id)) {
-      next.remove(id);
-    } else {
+    final isRevealing = !next.contains(id);
+    
+    if (isRevealing) {
+      final showWait = ref.read(showAnswerWaitProvider);
+      if (showWait) {
+        final duration = ref.read(answerWaitDurationProvider);
+        await Future.delayed(Duration(milliseconds: (duration * 1000).toInt()));
+      }
       next.add(id);
+    } else {
+      next.remove(id);
     }
+    
     state = AsyncData(value.copyWith(revealedItemIds: next));
   }
 
-  Future<void> onRate(int score) async {
+  Future<void> rate(int score) async {
     final value = state.valueOrNull;
     if (value == null || value.items.isEmpty) return;
 
     final item = value.items[value.currentIndex];
-    final String id;
-    final String type;
-    if (item is WordItem) {
-      id = item.word.id;
-      type = 'word';
-    } else {
-      id = (item as GrammarItem).grammar.id;
-      type = 'grammar';
-    }
+    final String id = item is WordItem ? item.word.id : (item as GrammarItem).grammar.id;
+    final String type = item is WordItem ? 'word' : 'grammar';
 
-    // Save snapshot for Undo
     final snapshot = SessionSnapshot(
       items: List.from(value.items),
       currentIndex: value.currentIndex,
@@ -184,14 +202,11 @@ class LearningNotifier extends _$LearningNotifier {
       nextItems.add(reItem);
     }
 
-    state = AsyncData(_buildStateWithItems(
-      nextItems, 
-      0, // Always go back to 0 to find the next most due item if sorted
-      value.completedCount + (result.isRequeue ? 0 : 1),
-    ).copyWith(
-      lastSnapshot: snapshot,
-      revealedItemIds: {...value.revealedItemIds}..remove(id),
-    ));
+    state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount + (result.isRequeue ? 0 : 1))
+      .copyWith(
+        lastSnapshot: snapshot,
+        revealedItemIds: {...value.revealedItemIds}..remove(id),
+      ));
   }
 
   Future<void> undo() async {
@@ -200,28 +215,13 @@ class LearningNotifier extends _$LearningNotifier {
 
     final snapshot = value.lastSnapshot!;
     final item = snapshot.items[snapshot.currentIndex];
-    
-    final String id;
-    final String type;
-    if (item is WordItem) {
-      id = item.word.id;
-      type = 'word';
-    } else {
-      id = (item as GrammarItem).grammar.id;
-      type = 'grammar';
-    }
+    final String id = item is WordItem ? item.word.id : (item as GrammarItem).grammar.id;
+    final String type = item is WordItem ? 'word' : 'grammar';
 
-    await ref.read(learningRepositoryProvider).undoUpdateProgress(
-      id, 
-      type, 
-      snapshot.previousProgress,
-    );
+    await ref.read(learningRepositoryProvider).undoUpdateProgress(id, type, snapshot.previousProgress);
 
-    state = AsyncData(_buildStateWithItems(
-      snapshot.items,
-      snapshot.currentIndex,
-      snapshot.completedCount,
-    ).copyWith(lastSnapshot: null));
+    state = AsyncData(_buildStateWithItems(snapshot.items, snapshot.currentIndex, snapshot.completedCount)
+      .copyWith(lastSnapshot: null));
   }
 
   Future<void> suspendCurrent() async {
@@ -256,10 +256,18 @@ class LearningNotifier extends _$LearningNotifier {
 
     state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount));
   }
-}
 
-@riverpod
-Duration learnAheadLimit(LearnAheadLimitRef ref) {
-  // Can be connected to SharedPreferences later
-  return const Duration(minutes: 20);
+  void _saveSession(List<LearningItem> items, int currentIndex) {
+    final prefs = ref.read(preferenceServiceProvider);
+    final ids = items.map((item) {
+      if (item is WordItem) return 'word_${item.word.id}';
+      return 'grammar_${(item as GrammarItem).grammar.id}';
+    }).toList();
+    
+    prefs.saveLearningSession(mode: mode, itemIds: ids, currentIndex: currentIndex);
+  }
+
+  void _clearSession() {
+    ref.read(preferenceServiceProvider).clearLearningSession(mode);
+  }
 }

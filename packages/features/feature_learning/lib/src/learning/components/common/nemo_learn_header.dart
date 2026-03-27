@@ -17,6 +17,9 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
     this.onBury,
     this.onToggleAutoRead,
     this.autoReadEnabled = true,
+    this.onToggleShowAnswerWait,
+    this.showAnswerWaitEnabled = false,
+    this.answerWaitDuration = 1.0,
   });
 
   final String title;
@@ -33,6 +36,9 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onBury;
   final ValueChanged<bool>? onToggleAutoRead;
   final bool autoReadEnabled;
+  final ValueChanged<bool>? onToggleShowAnswerWait;
+  final bool showAnswerWaitEnabled;
+  final double answerWaitDuration;
 
   @override
   Size get preferredSize => const Size.fromHeight(88); // 56 (Content) + 32 (Progress area)
@@ -180,7 +186,6 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                                   case 1: onUndo?.call(); break;
                                   case 3: onSuspend?.call(); break;
                                   case 4: onBury?.call(); break;
-                                  case 5: onToggleAutoRead?.call(!autoReadEnabled); break;
                                 }
                               },
                               offset: const Offset(0, 48),
@@ -222,17 +227,19 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                                   text: '翻面自动朗读',
                                   initialValue: autoReadEnabled,
                                   theme: theme,
+                                  onChanged: (val) => onToggleAutoRead?.call(val),
                                 ),
                                 _buildSwitchMenuItem(
                                   value: 6,
                                   text: '显示答案等待',
-                                  initialValue: false,
+                                  initialValue: showAnswerWaitEnabled,
                                   theme: theme,
+                                  onChanged: (val) => onToggleShowAnswerWait?.call(val),
                                 ),
                                 _buildMenuItem(
                                   value: 7,
                                   icon: Icons.timer_rounded,
-                                  text: '等待时长: 1.0s',
+                                  text: '等待时长: ${answerWaitDuration.toStringAsFixed(1)}s',
                                   theme: theme,
                                 ),
                               ],
@@ -304,6 +311,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
     required String text,
     required bool initialValue,
     required ThemeData theme,
+    required ValueChanged<bool> onChanged,
   }) {
     return PopupMenuItem<int>(
       value: value,
@@ -326,8 +334,8 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
             width: 40,
             child: Switch(
               value: initialValue,
-              onChanged: (val) {},
-              activeColor: const Color(0xFF0E68FF), // 使用 NemoColors.brandBlue
+              onChanged: onChanged,
+              activeColor: const Color(0xFF0E68FF), 
             ),
           ),
         ],

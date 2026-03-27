@@ -293,6 +293,20 @@ class LearningDao extends DatabaseAccessor<NemoDatabase> with _$LearningDaoMixin
     return query.get();
   }
 
+  Future<List<LearningProgressData>> getUpcomingItems(int now, int withinMillis, {String? itemType}) {
+    final query = select(learningProgress)
+      ..where((t) => t.dueTime.isBiggerThanValue(BigInt.from(now)))
+      ..where((t) => t.dueTime.isSmallerOrEqualValue(BigInt.from(now + withinMillis)))
+      ..where((t) => t.isSuspended.equals(false))
+      ..orderBy([(t) => OrderingTerm(expression: t.dueTime, mode: OrderingMode.asc)]);
+    
+    if (itemType != null) {
+      query.where((t) => t.itemType.equals(itemType));
+    }
+    
+    return query.get();
+  }
+
   Future<void> setSuspended(String id, bool isSuspended) {
     return (update(learningProgress)..where((t) => t.id.equals(id)))
         .write(LearningProgressCompanion(isSuspended: Value(isSuspended)));

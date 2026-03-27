@@ -1,4 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:core_domain/core_domain.dart';
+import 'package:core_storage/core_storage.dart';
+import 'package:core_prefs/core_prefs.dart';
 import '../data/learning_repository.dart';
 import '../domain/learning_item.dart';
 
@@ -40,16 +43,16 @@ class SessionPrepViewModel {
 
 @riverpod
 Future<List<SessionPrepWordItem>> sessionPrepWords(SessionPrepWordsRef ref) async {
-  // For P0, we default to 'word' mode. This can be parameterized later if needed.
   final repository = ref.watch(learningRepositoryProvider);
-  final items = await repository.getReviewQueue('word');
+  // Default to 'all' to align with Kotlin unified review experience
+  final items = await repository.getReviewQueue('all');
   
   return items.map((item) {
     if (item is WordItem) {
       return SessionPrepWordItem(
         japanese: item.word.japanese,
         hiragana: item.word.hiragana,
-        meaning: item.word.chinese,
+        meaning: item.word.chinese, // In WordDomain, chinese is the meaning
         level: item.word.level,
         example: item.word.examples.isNotEmpty ? item.word.examples.first.japanese : '',
       );
@@ -71,6 +74,18 @@ Future<List<SessionPrepWordItem>> sessionPrepWords(SessionPrepWordsRef ref) asyn
 @riverpod
 Future<SessionPrepViewModel> sessionPrepViewModel(SessionPrepViewModelRef ref) async {
   final wordsAsync = ref.watch(sessionPrepWordsProvider);
+  final learningDao = ref.watch(learningDaoProvider);
+  final resetHour = ref.watch(resetHourProvider);
+  
+  final dayStart = DateTimeUtils.getLearningDayStart(resetHour);
+  final dayEnd = DateTimeUtils.getLearningDayEnd(resetHour);
+
+  // Fetch real counts across all types
+  final reviewedToday = await learningDao.getReviewedItemsCount('word', dayStart, dayEnd) + 
+                       await learningDao.getReviewedItemsCount('grammar', dayStart, dayEnd);
+  
+  // Note: getDueItemsCount is already used via sessionPrepWords for the 'remaining' / 'total' count in this session.
+  // However, totalCount in preparation usually refers to the total number of items assigned for the session.
   
   return wordsAsync.when(
     data: (words) => SessionPrepViewModel(
@@ -78,7 +93,7 @@ Future<SessionPrepViewModel> sessionPrepViewModel(SessionPrepViewModelRef ref) a
       subtitle: '即将复习 ${words.length} 个内容',
       words: words,
       totalCount: words.length,
-      reviewedCount: 0,
+      reviewedCount: reviewedToday,
       remainingCount: words.length,
     ),
     loading: () => const SessionPrepViewModel(

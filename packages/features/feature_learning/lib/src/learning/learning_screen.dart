@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_domain/core_domain.dart';
+import 'package:core_prefs/core_prefs.dart';
 import 'learning_providers.dart';
 import '../domain/learning_item.dart';
 import 'components/cards/srs_learning_card.dart';
@@ -50,8 +51,6 @@ class LearningScreen extends HookConsumerWidget {
             body: _WaitingView(
               until: state.waitingUntil,
               onStudyNow: () {
-                // Learn ahead by overriding the local check if we want, 
-                // but for now just refresh or wait.
                 ref.invalidate(learningNotifierProvider(mode));
               },
             ),
@@ -63,8 +62,9 @@ class LearningScreen extends HookConsumerWidget {
         final currentId = session.currentId;
         final isAnswerShown = activeState.isRevealed;
         
-        final item = activeState.item;
-        final title = item is WordItem ? '单词学习' : '语法学习';
+        final autoSpeak = ref.watch(autoSpeakProvider);
+        final showAnswerWait = ref.watch(showAnswerWaitProvider);
+        final answerWaitDuration = ref.watch(answerWaitDurationProvider);
 
         // Synchronize PageController with state
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -78,7 +78,7 @@ class LearningScreen extends HookConsumerWidget {
         return Scaffold(
           backgroundColor: isDark ? NemoColors.bgBaseDark : NemoColors.bgBase,
           appBar: NemoLearnHeader(
-            title: title,
+            title: activeState.item is WordItem ? '单词学习' : '语法学习',
             remainingCount: session.items.length,
             progress: session.progress,
             onClose: () => Navigator.of(context).pop(),
@@ -103,6 +103,11 @@ class LearningScreen extends HookConsumerWidget {
             onUndo: session.lastSnapshot != null ? () => notifier.undo() : null,
             onSuspend: () => notifier.suspendCurrent(),
             onBury: () => notifier.buryCurrent(),
+            autoReadEnabled: autoSpeak,
+            onToggleAutoRead: (val) => ref.read(autoSpeakProvider.notifier).toggle(),
+            showAnswerWaitEnabled: showAnswerWait,
+            onToggleShowAnswerWait: (val) => ref.read(showAnswerWaitProvider.notifier).toggle(),
+            answerWaitDuration: answerWaitDuration.toDouble(),
           ),
           body: Stack(
             children: [
@@ -123,16 +128,13 @@ class LearningScreen extends HookConsumerWidget {
                       return SRSLearningCard(
                         word: item.word,
                         isAnswerShown: isShown,
-                        badge: item.progress == null ? CardBadge.fresh : CardBadge.review,
-                        onSpeakWord: () => _handleSpeak(item.word.japanese),
-                        onSpeakExample: (jp, cn, id) => _handleSpeak(jp),
-                        onPracticeClick: () => _handlePractice(item.word),
+                        badge: item.badge,
                       );
                     } else if (item is GrammarItem) {
                       return SRSGrammarCard(
                         grammar: item.grammar,
                         isAnswerShown: isShown,
-                        onSpeakExample: (jp, cn, id) => _handleSpeak(jp),
+                        badge: item.badge,
                       );
                     }
                     return const SizedBox.shrink();
@@ -145,8 +147,8 @@ class LearningScreen extends HookConsumerWidget {
                 bottom: 0,
                 child: SRSActionArea(
                   showAnswer: isAnswerShown,
-                  onShowAnswer: () => notifier.toggleReveal(currentId),
-                  onRate: (rating) => notifier.onRate(rating),
+                  onShowAnswer: () => notifier.showAnswer(currentId),
+                  onRate: (rating) => notifier.rate(rating),
                   ratingIntervals: session.ratingIntervals,
                 ),
               ),
@@ -155,16 +157,6 @@ class LearningScreen extends HookConsumerWidget {
         );
       },
     );
-  }
-
-  void _handleSpeak(String text) {
-    // TODO: Connect to TTS Service
-    debugPrint('Speaking: $text');
-  }
-
-  void _handlePractice(Word word) {
-    // TODO: Open practice dialog or screen
-    debugPrint('Practice for: ${word.japanese}');
   }
 }
 

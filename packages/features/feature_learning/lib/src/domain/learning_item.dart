@@ -1,8 +1,26 @@
 import 'package:core_domain/core_domain.dart';
 import 'package:core_storage/core_storage.dart';
+import 'card_badge.dart';
 
 abstract class LearningItem {
   LearningProgressData? get progress;
+
+  CardBadge get badge {
+    final prog = progress;
+    if (prog == null) return CardBadge.fresh;
+    
+    // 如果从来没学过（重复次数为0且不在学习步进中）
+    if (prog.repetitionCount == 0 && prog.step == 0) {
+      return CardBadge.fresh;
+    }
+    
+    // 如果间隔为0，通常意味着在学习/复习失败后的重新学习阶段
+    if (prog.interval == 0) {
+      return CardBadge.relearn;
+    }
+    
+    return CardBadge.review;
+  }
 }
 
 class WordItem extends LearningItem {

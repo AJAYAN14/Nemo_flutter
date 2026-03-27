@@ -116,7 +116,7 @@ class _FloatingStartButton extends StatelessWidget {
           onPressed: () {
             context.pushNamed(
               LearningRouteNames.review,
-              pathParameters: {'mode': 'word'},
+              pathParameters: {'mode': 'all'}, // Unified review mode (word + grammar)
             );
           },
           style: ElevatedButton.styleFrom(

@@ -124,6 +124,54 @@ class LearningRepository {
     return items;
   }
 
+  Future<List<LearningItem>> getUpcomingItems(int now, int withinMillis, {String? itemType}) async {
+    final List<LearningItem> items = [];
+    final upcomingProgress = await _learningDao.getUpcomingItems(
+      now, 
+      withinMillis,
+      itemType: itemType == 'all' ? null : itemType,
+    );
+    
+    for (final progress in upcomingProgress) {
+      if (progress.itemType == 'word') {
+        final idStr = progress.id.replaceFirst('word_', '');
+        final word = await _wordDao.getWordWithExamples(idStr);
+        if (word != null) {
+          items.add(WordItem(word.toDomain(), progress: progress));
+        }
+      } else {
+        final idStr = progress.id.replaceFirst('grammar_', '');
+        final grammar = await _grammarDao.getGrammarWithDetails(idStr);
+        if (grammar != null) {
+          items.add(GrammarItem(grammar.toDomain(), progress: progress));
+        }
+      }
+    }
+    return items;
+  }
+
+  Future<List<LearningItem>> getItemsByIds(List<String> ids) async {
+    final List<LearningItem> items = [];
+    for (final id in ids) {
+      if (id.startsWith('word_')) {
+        final idStr = id.replaceFirst('word_', '');
+        final word = await _wordDao.getWordWithExamples(idStr);
+        final progress = await _learningDao.getProgress(id);
+        if (word != null) {
+          items.add(WordItem(word.toDomain(), progress: progress));
+        }
+      } else if (id.startsWith('grammar_')) {
+        final idStr = id.replaceFirst('grammar_', '');
+        final grammar = await _grammarDao.getGrammarWithDetails(idStr);
+        final progress = await _learningDao.getProgress(id);
+        if (grammar != null) {
+          items.add(GrammarItem(grammar.toDomain(), progress: progress));
+        }
+      }
+    }
+    return items;
+  }
+
   Future<SrsFinalResult> updateProgress(String id, String itemType, SrsRating rating) async {
     final fullId = '${itemType}_$id';
     final currentProgress = await _learningDao.getProgress(fullId);

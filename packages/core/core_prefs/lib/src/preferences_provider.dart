@@ -28,6 +28,23 @@ class PreferenceService {
   static const _keyResetHour = 'reset_hour';
   static const _keyRandomContent = 'random_content';
   static const _keyLastLearningMode = 'last_learning_mode';
+  static const _keyLearnAheadLimit = 'learn_ahead_limit';
+  static const _keyAutoSpeak = 'learning_auto_speak';
+  static const _keyShowAnswerWait = 'learning_show_answer_wait';
+  static const _keyAnswerWaitDuration = 'learning_answer_wait_duration';
+
+  // Session keys
+  static const _keyWordSessionIds = 'word_session_ids';
+  static const _keyWordSessionIndex = 'word_session_index';
+  static const _keyWordSessionLevel = 'word_session_level';
+  static const _keyWordSessionSteps = 'word_session_steps';
+  static const _keyWordSessionWaitingUntil = 'word_session_waiting_until';
+
+  static const _keyGrammarSessionIds = 'grammar_session_ids';
+  static const _keyGrammarSessionIndex = 'grammar_session_index';
+  static const _keyGrammarSessionLevel = 'grammar_session_level';
+  static const _keyGrammarSessionSteps = 'grammar_session_steps';
+  static const _keyGrammarSessionWaitingUntil = 'grammar_session_waiting_until';
 
   int get wordGoal => _prefs.getInt(_keyWordGoal) ?? 20;
   Future<void> setWordGoal(int value) => _prefs.setInt(_keyWordGoal, value);
@@ -55,6 +72,109 @@ class PreferenceService {
 
   String get lastLearningMode => _prefs.getString(_keyLastLearningMode) ?? 'words';
   Future<void> setLastLearningMode(String value) => _prefs.setString(_keyLastLearningMode, value);
+
+  int get learnAheadLimit => _prefs.getInt(_keyLearnAheadLimit) ?? 120;
+  Future<void> setLearnAheadLimit(int value) => _prefs.setInt(_keyLearnAheadLimit, value);
+
+  bool get autoSpeak => _prefs.getBool(_keyAutoSpeak) ?? true;
+  Future<void> setAutoSpeak(bool value) => _prefs.setBool(_keyAutoSpeak, value);
+
+  bool get showAnswerWait => _prefs.getBool(_keyShowAnswerWait) ?? false;
+  Future<void> setShowAnswerWait(bool value) => _prefs.setBool(_keyShowAnswerWait, value);
+
+  double get answerWaitDuration => _prefs.getDouble(_keyAnswerWaitDuration) ?? 1.0;
+  Future<void> setAnswerWaitDuration(double value) => _prefs.setDouble(_keyAnswerWaitDuration, value);
+
+  // Word Session
+  Future<void> saveWordSession(List<String> ids, int index, String level, String stepsJson, int waitingUntil) async {
+    await _prefs.setStringList(_keyWordSessionIds, ids);
+    await _prefs.setInt(_keyWordSessionIndex, index);
+    await _prefs.setString(_keyWordSessionLevel, level);
+    await _prefs.setString(_keyWordSessionSteps, stepsJson);
+    await _prefs.setInt(_keyWordSessionWaitingUntil, waitingUntil);
+  }
+
+  Map<String, dynamic>? getWordSession() {
+    final ids = _prefs.getStringList(_keyWordSessionIds);
+    if (ids == null) return null;
+    return {
+      'ids': ids,
+      'currentIndex': _prefs.getInt(_keyWordSessionIndex) ?? 0,
+      'level': _prefs.getString(_keyWordSessionLevel) ?? '',
+      'steps': _prefs.getString(_keyWordSessionSteps) ?? '{}',
+      'waitingUntil': _prefs.getInt(_keyWordSessionWaitingUntil) ?? 0,
+    };
+  }
+
+  Future<void> clearWordSession() async {
+    await _prefs.remove(_keyWordSessionIds);
+    await _prefs.remove(_keyWordSessionIndex);
+    await _prefs.remove(_keyWordSessionLevel);
+    await _prefs.remove(_keyWordSessionSteps);
+    await _prefs.remove(_keyWordSessionWaitingUntil);
+  }
+
+  // Grammar Session
+  Future<void> saveGrammarSession(List<String> ids, int index, String level, String stepsJson, int waitingUntil) async {
+    await _prefs.setStringList(_keyGrammarSessionIds, ids);
+    await _prefs.setInt(_keyGrammarSessionIndex, index);
+    await _prefs.setString(_keyGrammarSessionLevel, level);
+    await _prefs.setString(_keyGrammarSessionSteps, stepsJson);
+    await _prefs.setInt(_keyGrammarSessionWaitingUntil, waitingUntil);
+  }
+
+  Map<String, dynamic>? getGrammarSession() {
+    final ids = _prefs.getStringList(_keyGrammarSessionIds);
+    if (ids == null) return null;
+    return {
+      'ids': ids,
+      'currentIndex': _prefs.getInt(_keyGrammarSessionIndex) ?? 0,
+      'level': _prefs.getString(_keyGrammarLevel) ?? '',
+      'steps': _prefs.getString(_keyGrammarSessionSteps) ?? '{}',
+      'waitingUntil': _prefs.getInt(_keyGrammarSessionWaitingUntil) ?? 0,
+    };
+  }
+
+  Future<void> clearGrammarSession() async {
+    await _prefs.remove(_keyGrammarSessionIds);
+    await _prefs.remove(_keyGrammarSessionIndex);
+    await _prefs.remove(_keyGrammarSessionLevel);
+    await _prefs.remove(_keyGrammarSessionSteps);
+    await _prefs.remove(_keyGrammarSessionWaitingUntil);
+  }
+
+  // Unified Session API
+  List<String> getLearningSessionItems(String mode) {
+    final key = mode == 'word' ? _keyWordSessionIds : _keyGrammarSessionIds;
+    return _prefs.getStringList(key) ?? [];
+  }
+
+  int getLearningSessionIndex(String mode) {
+    final key = mode == 'word' ? _keyWordSessionIndex : _keyGrammarSessionIndex;
+    return _prefs.getInt(key) ?? 0;
+  }
+
+  Future<void> saveLearningSession({
+    required String mode,
+    required List<String> itemIds,
+    required int currentIndex,
+  }) async {
+    if (mode == 'word') {
+      await _prefs.setStringList(_keyWordSessionIds, itemIds);
+      await _prefs.setInt(_keyWordSessionIndex, currentIndex);
+    } else {
+      await _prefs.setStringList(_keyGrammarSessionIds, itemIds);
+      await _prefs.setInt(_keyGrammarSessionIndex, currentIndex);
+    }
+  }
+
+  Future<void> clearLearningSession(String mode) async {
+    if (mode == 'word') {
+      await clearWordSession();
+    } else {
+      await clearGrammarSession();
+    }
+  }
 }
 
 @riverpod
@@ -188,6 +308,53 @@ class RandomContent extends _$RandomContent {
   Future<void> toggle(bool value) async {
     final service = ref.read(preferenceServiceProvider);
     await service.setRandomContent(value);
+    ref.invalidateSelf();
+  }
+}
+
+final learnAheadLimitProvider = Provider<int>((ref) {
+  final service = ref.watch(preferenceServiceProvider);
+  return service.learnAheadLimit;
+});
+
+@riverpod
+class AutoSpeak extends _$AutoSpeak {
+  @override
+  bool build() {
+    return ref.watch(preferenceServiceProvider).autoSpeak;
+  }
+
+  Future<void> toggle() async {
+    final service = ref.read(preferenceServiceProvider);
+    await service.setAutoSpeak(!state);
+    ref.invalidateSelf();
+  }
+}
+
+@riverpod
+class ShowAnswerWait extends _$ShowAnswerWait {
+  @override
+  bool build() {
+    return ref.watch(preferenceServiceProvider).showAnswerWait;
+  }
+
+  Future<void> toggle() async {
+    final service = ref.read(preferenceServiceProvider);
+    await service.setShowAnswerWait(!state);
+    ref.invalidateSelf();
+  }
+}
+
+@riverpod
+class AnswerWaitDuration extends _$AnswerWaitDuration {
+  @override
+  double build() {
+    return ref.watch(preferenceServiceProvider).answerWaitDuration;
+  }
+
+  Future<void> set(double value) async {
+    final service = ref.read(preferenceServiceProvider);
+    await service.setAnswerWaitDuration(value);
     ref.invalidateSelf();
   }
 }
