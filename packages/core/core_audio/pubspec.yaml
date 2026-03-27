@@ -1,0 +1,23 @@
+name: core_audio
+description: "A new Flutter package for TTS and Audio handling."
+version: 0.0.1
+environment:
+  sdk: ^3.10.8
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_tts: ^4.2.2
+  hooks_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+  core_prefs:
+    path: ../core_prefs
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.4.9
+  riverpod_generator: ^2.6.2
+
+flutter:

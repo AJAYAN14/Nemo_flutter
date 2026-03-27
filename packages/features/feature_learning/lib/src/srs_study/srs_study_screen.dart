@@ -11,6 +11,8 @@ import '../learning/components/srs_action_area.dart';
 import '../learning/components/common/nemo_learn_header.dart';
 import '../learning/components/common/nemo_completion_view.dart';
 import '../domain/learning_session_state.dart';
+import '../learning/typing_practice_dialog.dart';
+import 'package:core_storage/core_storage.dart';
 
 class SrsStudyScreen extends HookConsumerWidget {
   const SrsStudyScreen({super.key, required this.mode});
@@ -128,12 +130,30 @@ class SrsStudyScreen extends HookConsumerWidget {
                         word: item.word,
                         isAnswerShown: isShown,
                         badge: item.badge,
+                        onSpeakWord: () => notifier.playWordAudio(item.word.hiragana),
+                        onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp),
+                        onPracticeClick: () {
+                          // Note: showTypingPracticeDialog needs a WordEntry
+                          // Word domain object needs to be converted or we need to find the entry.
+                          // For now, I'll assume we can pass the word or implement a conversion.
+                          // Based on typing_practice_dialog.dart, it takes WordEntry.
+                          // I'll check if the item contains the entry.
+                          showTypingPracticeDialog(context, ref, word: WordEntry(
+                            id: item.word.id,
+                            japanese: item.word.japanese,
+                            hiragana: item.word.hiragana,
+                            chinese: item.word.chinese,
+                            level: item.word.level,
+                            isFavorite: false, // Defaulting as we don't have it in the card model yet
+                          ));
+                        },
                       );
                     } else if (item is GrammarItem) {
                       return SRSGrammarCard(
                         grammar: item.grammar,
                         isAnswerShown: isShown,
                         badge: item.badge,
+                        onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp),
                       );
                     }
                     return const SizedBox.shrink();

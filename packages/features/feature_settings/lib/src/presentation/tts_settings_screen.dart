@@ -2,39 +2,21 @@ import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:core_prefs/core_prefs.dart';
+import 'package:core_audio/core_audio.dart';
 import 'components/settings_components.dart';
 
-// --- TTS State Providers (Aligned with SettingsScreen Notifier Pattern) ---
-class TtsVoiceNameNotifier extends Notifier<String?> {
-  @override
-  String? build() => null;
-  void set(String? value) => state = value;
-}
-final ttsVoiceNameProvider = NotifierProvider<TtsVoiceNameNotifier, String?>(TtsVoiceNameNotifier.new);
-
-class TtsSpeedNotifier extends Notifier<double> {
-  @override
-  double build() => 1.0;
-  void set(double value) => state = value;
-}
-final ttsSpeedProvider = NotifierProvider<TtsSpeedNotifier, double>(TtsSpeedNotifier.new);
-
-class TtsPitchNotifier extends Notifier<double> {
-  @override
-  double build() => 1.0;
-  void set(double value) => state = value;
-}
-final ttsPitchProvider = NotifierProvider<TtsPitchNotifier, double>(TtsPitchNotifier.new);
-// ----------------------------------------------
+// Real providers from core_prefs will be used.
 
 class TtsSettingsScreen extends HookConsumerWidget {
   const TtsSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final voiceName = ref.watch(ttsVoiceNameProvider);
-    final speed = ref.watch(ttsSpeedProvider);
-    final pitch = ref.watch(ttsPitchProvider);
+    final prefs = ref.watch(preferenceServiceProvider);
+    final voiceName = prefs.getTtsVoiceName();
+    final speed = prefs.getTtsSpeed();
+    final pitch = prefs.getTtsPitch();
 
     const accentColor = Color(0xFFAF52DE); // NemoPurple
     const secondaryAccent = Color(0xFF00C7BE); // NemoCyan
@@ -69,10 +51,14 @@ class TtsSettingsScreen extends HookConsumerWidget {
               onClick: () => context.showNemoBottomSheet(
                 child: VoiceSelectionBottomSheet(
                   currentVoiceName: voiceName,
-                  voices: const ['系统默认', 'Google 语音 1', 'Google 语音 2 (Network)', 'Siri 日本语'],
-                  onVoiceSelected: (val) => ref.read(ttsVoiceNameProvider.notifier).set(val),
+                  voices: const ['系统默认'], // TODO: Fetch real voices from TtsService
+                  onVoiceSelected: (val) async {
+                    await prefs.setTtsVoiceName(val == '系统默认' ? null : val);
+                    ref.read(ttsServiceProvider).updateSettings();
+                    ref.invalidate(preferenceServiceProvider);
+                  },
                   onPreviewVoice: (val) {
-                    // TODO: Mock preview
+                    ref.read(ttsServiceProvider).speak('こんにちは、これはプレビューです');
                   },
                 ),
               ),
@@ -94,7 +80,11 @@ class TtsSettingsScreen extends HookConsumerWidget {
               title: '语速 (Speed)',
               value: speed,
               valueDisplay: '${speed.toStringAsFixed(1)}x',
-              onChanged: (val) => ref.read(ttsSpeedProvider.notifier).set(val),
+              onChanged: (val) async {
+                await prefs.setTtsSpeed(val);
+                ref.read(ttsServiceProvider).updateSettings();
+                ref.invalidate(preferenceServiceProvider);
+              },
               min: 0.5,
               max: 2.0,
               divisions: 15,
@@ -117,7 +107,11 @@ class TtsSettingsScreen extends HookConsumerWidget {
               title: '音调 (Pitch)',
               value: pitch,
               valueDisplay: '${pitch.toStringAsFixed(1)}x',
-              onChanged: (val) => ref.read(ttsPitchProvider.notifier).set(val),
+              onChanged: (val) async {
+                await prefs.setTtsPitch(val);
+                ref.read(ttsServiceProvider).updateSettings();
+                ref.invalidate(preferenceServiceProvider);
+              },
               min: 0.5,
               max: 2.0,
               divisions: 15,
@@ -140,7 +134,7 @@ class TtsSettingsScreen extends HookConsumerWidget {
                   icon: Icons.play_arrow_rounded,
                   color: accentColor,
                   onClick: () {
-                    // TODO: Trigger TTS preview
+                    ref.read(ttsServiceProvider).speak('こんにちは、日本語の学習を始めましょう。');
                     HapticFeedback.lightImpact();
                   },
                 ),
@@ -148,9 +142,11 @@ class TtsSettingsScreen extends HookConsumerWidget {
                 _FlatTextButton(
                   text: '重置为默认值',
                   color: Colors.grey,
-                  onClick: () {
-                    ref.read(ttsSpeedProvider.notifier).set(1.0);
-                    ref.read(ttsPitchProvider.notifier).set(1.0);
+                  onClick: () async {
+                    await prefs.setTtsSpeed(1.0);
+                    await prefs.setTtsPitch(1.0);
+                    ref.read(ttsServiceProvider).updateSettings();
+                    ref.invalidate(preferenceServiceProvider);
                   },
                 ),
               ],

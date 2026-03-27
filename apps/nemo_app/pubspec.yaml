@@ -40,6 +40,8 @@ dependencies:
     path: ../../packages/core/core_ui
   core_domain:
     path: ../../packages/core/core_domain
+  core_audio:
+    path: ../../packages/core/core_audio
   feature_learning:
     path: ../../packages/features/feature_learning
   feature_library:

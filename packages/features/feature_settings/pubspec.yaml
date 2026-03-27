@@ -19,6 +19,8 @@ dependencies:
     path: ../../core/core_ui
   core_prefs:
     path: ../../core/core_prefs
+  core_audio:
+    path: ../../core/core_audio
 
 dev_dependencies:
   flutter_test:

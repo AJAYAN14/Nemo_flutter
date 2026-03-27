@@ -10,6 +10,8 @@ import '../learning/components/common/nemo_learn_header.dart';
 import '../learning/components/common/nemo_completion_view.dart';
 import '../domain/learning_session_state.dart';
 import '../domain/learning_item.dart';
+import '../learning/typing_practice_dialog.dart';
+import 'package:core_storage/core_storage.dart';
 
 class SrsReviewScreen extends ConsumerWidget {
   const SrsReviewScreen({super.key, required this.mode});
@@ -112,12 +114,25 @@ class SrsReviewScreen extends ConsumerWidget {
                           word: item.word,
                           isAnswerShown: isAnswerShown,
                           badge: item.badge,
+                          onSpeakWord: () => notifier.playWordAudio(item.word.hiragana),
+                          onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp),
+                          onPracticeClick: () {
+                            showTypingPracticeDialog(context, ref, word: WordEntry(
+                              id: item.word.id,
+                              japanese: item.word.japanese,
+                              hiragana: item.word.hiragana,
+                              chinese: item.word.chinese,
+                              level: item.word.level,
+                              isFavorite: false,
+                            ));
+                          },
                         );
                       } else if (item is GrammarItem) {
                         return SRSGrammarCard(
                           grammar: item.grammar,
                           isAnswerShown: isAnswerShown,
                           badge: item.badge,
+                          onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp),
                         );
                       }
                       return const SizedBox.shrink();

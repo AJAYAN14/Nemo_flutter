@@ -32,6 +32,10 @@ class PreferenceService {
   static const _keyAutoSpeak = 'learning_auto_speak';
   static const _keyShowAnswerWait = 'learning_show_answer_wait';
   static const _keyAnswerWaitDuration = 'learning_answer_wait_duration';
+  static const _keyTtsSpeed = 'tts_speed';
+  static const _keyTtsPitch = 'tts_pitch';
+  static const _keyTtsVoiceName = 'tts_voice_name';
+
 
   // Session keys
   static const _keyWordSessionIds = 'word_session_ids';
@@ -84,6 +88,21 @@ class PreferenceService {
 
   double get answerWaitDuration => _prefs.getDouble(_keyAnswerWaitDuration) ?? 1.0;
   Future<void> setAnswerWaitDuration(double value) => _prefs.setDouble(_keyAnswerWaitDuration, value);
+
+  double getTtsSpeed() => _prefs.getDouble(_keyTtsSpeed) ?? 1.0;
+  Future<void> setTtsSpeed(double value) => _prefs.setDouble(_keyTtsSpeed, value);
+
+  double getTtsPitch() => _prefs.getDouble(_keyTtsPitch) ?? 1.0;
+  Future<void> setTtsPitch(double value) => _prefs.setDouble(_keyTtsPitch, value);
+
+  String? getTtsVoiceName() => _prefs.getString(_keyTtsVoiceName);
+  Future<void> setTtsVoiceName(String? value) async {
+    if (value == null) {
+      await _prefs.remove(_keyTtsVoiceName);
+    } else {
+      await _prefs.setString(_keyTtsVoiceName, value);
+    }
+  }
 
   // Word Session
   Future<void> saveWordSession(List<String> ids, int index, String level, String stepsJson, int waitingUntil) async {

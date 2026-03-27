@@ -6,6 +6,7 @@ import '../data/learning_repository.dart';
 import '../domain/learning_item.dart';
 import '../domain/srs_scheduler.dart';
 import '../domain/learning_session_state.dart';
+import 'package:core_audio/core_audio.dart';
 
 part 'srs_study_providers.g.dart';
 
@@ -167,11 +168,28 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
         await Future.delayed(Duration(milliseconds: (duration * 1000).toInt()));
       }
       next.add(id);
+      
+      // Auto speak when revealed
+      final autoSpeak = ref.read(autoSpeakProvider);
+      if (autoSpeak) {
+        final item = value.items[value.currentIndex];
+        if (item is WordItem) {
+          playWordAudio(item.word.hiragana);
+        }
+      }
     } else {
       next.remove(id);
     }
     
     state = AsyncData(value.copyWith(revealedItemIds: next));
+  }
+
+  void playWordAudio(String text) {
+    ref.read(ttsServiceProvider).speak(text);
+  }
+
+  void playExampleAudio(String text) {
+    ref.read(ttsServiceProvider).speak(text);
   }
 
   Future<void> submitSrsRating(int score) async {
