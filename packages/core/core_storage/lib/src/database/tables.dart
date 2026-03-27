@@ -56,3 +56,20 @@ class GrammarExamples extends Table {
   TextColumn get source => text().nullable()();
   BoolColumn get isDialog => boolean().withDefault(const Constant(false))();
 }
+
+@DataClassName('LearningProgressData')
+class LearningProgress extends Table {
+  TextColumn get id => text()(); // "word_w1" or "grammar_g1"
+  TextColumn get itemType => text()(); // 'word' or 'grammar'
+  
+  Int64Column get dueTime => int64().withDefault(Constant(BigInt.zero))();
+  IntColumn get interval => integer().withDefault(const Constant(0))();
+  RealColumn get difficulty => real().withDefault(const Constant(0.0))();
+  RealColumn get stability => real().withDefault(const Constant(0.0))();
+  IntColumn get repetitionCount => integer().withDefault(const Constant(0))();
+  Int64Column get lastReviewed => int64().nullable()();
+  IntColumn get step => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column>? get primaryKey => {id};
+}

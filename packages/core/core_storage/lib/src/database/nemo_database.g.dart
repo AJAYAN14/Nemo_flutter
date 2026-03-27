@@ -2116,6 +2116,566 @@ class GrammarExamplesCompanion extends UpdateCompanion<GrammarExampleData> {
   }
 }
 
+class $LearningProgressTable extends LearningProgress
+    with TableInfo<$LearningProgressTable, LearningProgressData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearningProgressTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _itemTypeMeta = const VerificationMeta(
+    'itemType',
+  );
+  @override
+  late final GeneratedColumn<String> itemType = GeneratedColumn<String>(
+    'item_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dueTimeMeta = const VerificationMeta(
+    'dueTime',
+  );
+  @override
+  late final GeneratedColumn<BigInt> dueTime = GeneratedColumn<BigInt>(
+    'due_time',
+    aliasedName,
+    false,
+    type: DriftSqlType.bigInt,
+    requiredDuringInsert: false,
+    defaultValue: Constant(BigInt.zero),
+  );
+  static const VerificationMeta _intervalMeta = const VerificationMeta(
+    'interval',
+  );
+  @override
+  late final GeneratedColumn<int> interval = GeneratedColumn<int>(
+    'interval',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _difficultyMeta = const VerificationMeta(
+    'difficulty',
+  );
+  @override
+  late final GeneratedColumn<double> difficulty = GeneratedColumn<double>(
+    'difficulty',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _stabilityMeta = const VerificationMeta(
+    'stability',
+  );
+  @override
+  late final GeneratedColumn<double> stability = GeneratedColumn<double>(
+    'stability',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _repetitionCountMeta = const VerificationMeta(
+    'repetitionCount',
+  );
+  @override
+  late final GeneratedColumn<int> repetitionCount = GeneratedColumn<int>(
+    'repetition_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastReviewedMeta = const VerificationMeta(
+    'lastReviewed',
+  );
+  @override
+  late final GeneratedColumn<BigInt> lastReviewed = GeneratedColumn<BigInt>(
+    'last_reviewed',
+    aliasedName,
+    true,
+    type: DriftSqlType.bigInt,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stepMeta = const VerificationMeta('step');
+  @override
+  late final GeneratedColumn<int> step = GeneratedColumn<int>(
+    'step',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    itemType,
+    dueTime,
+    interval,
+    difficulty,
+    stability,
+    repetitionCount,
+    lastReviewed,
+    step,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learning_progress';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LearningProgressData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('item_type')) {
+      context.handle(
+        _itemTypeMeta,
+        itemType.isAcceptableOrUnknown(data['item_type']!, _itemTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_itemTypeMeta);
+    }
+    if (data.containsKey('due_time')) {
+      context.handle(
+        _dueTimeMeta,
+        dueTime.isAcceptableOrUnknown(data['due_time']!, _dueTimeMeta),
+      );
+    }
+    if (data.containsKey('interval')) {
+      context.handle(
+        _intervalMeta,
+        interval.isAcceptableOrUnknown(data['interval']!, _intervalMeta),
+      );
+    }
+    if (data.containsKey('difficulty')) {
+      context.handle(
+        _difficultyMeta,
+        difficulty.isAcceptableOrUnknown(data['difficulty']!, _difficultyMeta),
+      );
+    }
+    if (data.containsKey('stability')) {
+      context.handle(
+        _stabilityMeta,
+        stability.isAcceptableOrUnknown(data['stability']!, _stabilityMeta),
+      );
+    }
+    if (data.containsKey('repetition_count')) {
+      context.handle(
+        _repetitionCountMeta,
+        repetitionCount.isAcceptableOrUnknown(
+          data['repetition_count']!,
+          _repetitionCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_reviewed')) {
+      context.handle(
+        _lastReviewedMeta,
+        lastReviewed.isAcceptableOrUnknown(
+          data['last_reviewed']!,
+          _lastReviewedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('step')) {
+      context.handle(
+        _stepMeta,
+        step.isAcceptableOrUnknown(data['step']!, _stepMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LearningProgressData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LearningProgressData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      itemType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}item_type'],
+      )!,
+      dueTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.bigInt,
+        data['${effectivePrefix}due_time'],
+      )!,
+      interval: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}interval'],
+      )!,
+      difficulty: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}difficulty'],
+      )!,
+      stability: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}stability'],
+      )!,
+      repetitionCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}repetition_count'],
+      )!,
+      lastReviewed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bigInt,
+        data['${effectivePrefix}last_reviewed'],
+      ),
+      step: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}step'],
+      )!,
+    );
+  }
+
+  @override
+  $LearningProgressTable createAlias(String alias) {
+    return $LearningProgressTable(attachedDatabase, alias);
+  }
+}
+
+class LearningProgressData extends DataClass
+    implements Insertable<LearningProgressData> {
+  final String id;
+  final String itemType;
+  final BigInt dueTime;
+  final int interval;
+  final double difficulty;
+  final double stability;
+  final int repetitionCount;
+  final BigInt? lastReviewed;
+  final int step;
+  const LearningProgressData({
+    required this.id,
+    required this.itemType,
+    required this.dueTime,
+    required this.interval,
+    required this.difficulty,
+    required this.stability,
+    required this.repetitionCount,
+    this.lastReviewed,
+    required this.step,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['item_type'] = Variable<String>(itemType);
+    map['due_time'] = Variable<BigInt>(dueTime);
+    map['interval'] = Variable<int>(interval);
+    map['difficulty'] = Variable<double>(difficulty);
+    map['stability'] = Variable<double>(stability);
+    map['repetition_count'] = Variable<int>(repetitionCount);
+    if (!nullToAbsent || lastReviewed != null) {
+      map['last_reviewed'] = Variable<BigInt>(lastReviewed);
+    }
+    map['step'] = Variable<int>(step);
+    return map;
+  }
+
+  LearningProgressCompanion toCompanion(bool nullToAbsent) {
+    return LearningProgressCompanion(
+      id: Value(id),
+      itemType: Value(itemType),
+      dueTime: Value(dueTime),
+      interval: Value(interval),
+      difficulty: Value(difficulty),
+      stability: Value(stability),
+      repetitionCount: Value(repetitionCount),
+      lastReviewed: lastReviewed == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastReviewed),
+      step: Value(step),
+    );
+  }
+
+  factory LearningProgressData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LearningProgressData(
+      id: serializer.fromJson<String>(json['id']),
+      itemType: serializer.fromJson<String>(json['itemType']),
+      dueTime: serializer.fromJson<BigInt>(json['dueTime']),
+      interval: serializer.fromJson<int>(json['interval']),
+      difficulty: serializer.fromJson<double>(json['difficulty']),
+      stability: serializer.fromJson<double>(json['stability']),
+      repetitionCount: serializer.fromJson<int>(json['repetitionCount']),
+      lastReviewed: serializer.fromJson<BigInt?>(json['lastReviewed']),
+      step: serializer.fromJson<int>(json['step']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'itemType': serializer.toJson<String>(itemType),
+      'dueTime': serializer.toJson<BigInt>(dueTime),
+      'interval': serializer.toJson<int>(interval),
+      'difficulty': serializer.toJson<double>(difficulty),
+      'stability': serializer.toJson<double>(stability),
+      'repetitionCount': serializer.toJson<int>(repetitionCount),
+      'lastReviewed': serializer.toJson<BigInt?>(lastReviewed),
+      'step': serializer.toJson<int>(step),
+    };
+  }
+
+  LearningProgressData copyWith({
+    String? id,
+    String? itemType,
+    BigInt? dueTime,
+    int? interval,
+    double? difficulty,
+    double? stability,
+    int? repetitionCount,
+    Value<BigInt?> lastReviewed = const Value.absent(),
+    int? step,
+  }) => LearningProgressData(
+    id: id ?? this.id,
+    itemType: itemType ?? this.itemType,
+    dueTime: dueTime ?? this.dueTime,
+    interval: interval ?? this.interval,
+    difficulty: difficulty ?? this.difficulty,
+    stability: stability ?? this.stability,
+    repetitionCount: repetitionCount ?? this.repetitionCount,
+    lastReviewed: lastReviewed.present ? lastReviewed.value : this.lastReviewed,
+    step: step ?? this.step,
+  );
+  LearningProgressData copyWithCompanion(LearningProgressCompanion data) {
+    return LearningProgressData(
+      id: data.id.present ? data.id.value : this.id,
+      itemType: data.itemType.present ? data.itemType.value : this.itemType,
+      dueTime: data.dueTime.present ? data.dueTime.value : this.dueTime,
+      interval: data.interval.present ? data.interval.value : this.interval,
+      difficulty: data.difficulty.present
+          ? data.difficulty.value
+          : this.difficulty,
+      stability: data.stability.present ? data.stability.value : this.stability,
+      repetitionCount: data.repetitionCount.present
+          ? data.repetitionCount.value
+          : this.repetitionCount,
+      lastReviewed: data.lastReviewed.present
+          ? data.lastReviewed.value
+          : this.lastReviewed,
+      step: data.step.present ? data.step.value : this.step,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningProgressData(')
+          ..write('id: $id, ')
+          ..write('itemType: $itemType, ')
+          ..write('dueTime: $dueTime, ')
+          ..write('interval: $interval, ')
+          ..write('difficulty: $difficulty, ')
+          ..write('stability: $stability, ')
+          ..write('repetitionCount: $repetitionCount, ')
+          ..write('lastReviewed: $lastReviewed, ')
+          ..write('step: $step')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    itemType,
+    dueTime,
+    interval,
+    difficulty,
+    stability,
+    repetitionCount,
+    lastReviewed,
+    step,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LearningProgressData &&
+          other.id == this.id &&
+          other.itemType == this.itemType &&
+          other.dueTime == this.dueTime &&
+          other.interval == this.interval &&
+          other.difficulty == this.difficulty &&
+          other.stability == this.stability &&
+          other.repetitionCount == this.repetitionCount &&
+          other.lastReviewed == this.lastReviewed &&
+          other.step == this.step);
+}
+
+class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
+  final Value<String> id;
+  final Value<String> itemType;
+  final Value<BigInt> dueTime;
+  final Value<int> interval;
+  final Value<double> difficulty;
+  final Value<double> stability;
+  final Value<int> repetitionCount;
+  final Value<BigInt?> lastReviewed;
+  final Value<int> step;
+  final Value<int> rowid;
+  const LearningProgressCompanion({
+    this.id = const Value.absent(),
+    this.itemType = const Value.absent(),
+    this.dueTime = const Value.absent(),
+    this.interval = const Value.absent(),
+    this.difficulty = const Value.absent(),
+    this.stability = const Value.absent(),
+    this.repetitionCount = const Value.absent(),
+    this.lastReviewed = const Value.absent(),
+    this.step = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearningProgressCompanion.insert({
+    required String id,
+    required String itemType,
+    this.dueTime = const Value.absent(),
+    this.interval = const Value.absent(),
+    this.difficulty = const Value.absent(),
+    this.stability = const Value.absent(),
+    this.repetitionCount = const Value.absent(),
+    this.lastReviewed = const Value.absent(),
+    this.step = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       itemType = Value(itemType);
+  static Insertable<LearningProgressData> custom({
+    Expression<String>? id,
+    Expression<String>? itemType,
+    Expression<BigInt>? dueTime,
+    Expression<int>? interval,
+    Expression<double>? difficulty,
+    Expression<double>? stability,
+    Expression<int>? repetitionCount,
+    Expression<BigInt>? lastReviewed,
+    Expression<int>? step,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (itemType != null) 'item_type': itemType,
+      if (dueTime != null) 'due_time': dueTime,
+      if (interval != null) 'interval': interval,
+      if (difficulty != null) 'difficulty': difficulty,
+      if (stability != null) 'stability': stability,
+      if (repetitionCount != null) 'repetition_count': repetitionCount,
+      if (lastReviewed != null) 'last_reviewed': lastReviewed,
+      if (step != null) 'step': step,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearningProgressCompanion copyWith({
+    Value<String>? id,
+    Value<String>? itemType,
+    Value<BigInt>? dueTime,
+    Value<int>? interval,
+    Value<double>? difficulty,
+    Value<double>? stability,
+    Value<int>? repetitionCount,
+    Value<BigInt?>? lastReviewed,
+    Value<int>? step,
+    Value<int>? rowid,
+  }) {
+    return LearningProgressCompanion(
+      id: id ?? this.id,
+      itemType: itemType ?? this.itemType,
+      dueTime: dueTime ?? this.dueTime,
+      interval: interval ?? this.interval,
+      difficulty: difficulty ?? this.difficulty,
+      stability: stability ?? this.stability,
+      repetitionCount: repetitionCount ?? this.repetitionCount,
+      lastReviewed: lastReviewed ?? this.lastReviewed,
+      step: step ?? this.step,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (itemType.present) {
+      map['item_type'] = Variable<String>(itemType.value);
+    }
+    if (dueTime.present) {
+      map['due_time'] = Variable<BigInt>(dueTime.value);
+    }
+    if (interval.present) {
+      map['interval'] = Variable<int>(interval.value);
+    }
+    if (difficulty.present) {
+      map['difficulty'] = Variable<double>(difficulty.value);
+    }
+    if (stability.present) {
+      map['stability'] = Variable<double>(stability.value);
+    }
+    if (repetitionCount.present) {
+      map['repetition_count'] = Variable<int>(repetitionCount.value);
+    }
+    if (lastReviewed.present) {
+      map['last_reviewed'] = Variable<BigInt>(lastReviewed.value);
+    }
+    if (step.present) {
+      map['step'] = Variable<int>(step.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningProgressCompanion(')
+          ..write('id: $id, ')
+          ..write('itemType: $itemType, ')
+          ..write('dueTime: $dueTime, ')
+          ..write('interval: $interval, ')
+          ..write('difficulty: $difficulty, ')
+          ..write('stability: $stability, ')
+          ..write('repetitionCount: $repetitionCount, ')
+          ..write('lastReviewed: $lastReviewed, ')
+          ..write('step: $step, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$NemoDatabase extends GeneratedDatabase {
   _$NemoDatabase(QueryExecutor e) : super(e);
   $NemoDatabaseManager get managers => $NemoDatabaseManager(this);
@@ -2126,8 +2686,12 @@ abstract class _$NemoDatabase extends GeneratedDatabase {
   late final $GrammarExamplesTable grammarExamples = $GrammarExamplesTable(
     this,
   );
+  late final $LearningProgressTable learningProgress = $LearningProgressTable(
+    this,
+  );
   late final WordDao wordDao = WordDao(this as NemoDatabase);
   late final GrammarDao grammarDao = GrammarDao(this as NemoDatabase);
+  late final LearningDao learningDao = LearningDao(this as NemoDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2138,6 +2702,7 @@ abstract class _$NemoDatabase extends GeneratedDatabase {
     grammars,
     grammarUsages,
     grammarExamples,
+    learningProgress,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -3951,6 +4516,298 @@ typedef $$GrammarExamplesTableProcessedTableManager =
       GrammarExampleData,
       PrefetchHooks Function({bool usageId})
     >;
+typedef $$LearningProgressTableCreateCompanionBuilder =
+    LearningProgressCompanion Function({
+      required String id,
+      required String itemType,
+      Value<BigInt> dueTime,
+      Value<int> interval,
+      Value<double> difficulty,
+      Value<double> stability,
+      Value<int> repetitionCount,
+      Value<BigInt?> lastReviewed,
+      Value<int> step,
+      Value<int> rowid,
+    });
+typedef $$LearningProgressTableUpdateCompanionBuilder =
+    LearningProgressCompanion Function({
+      Value<String> id,
+      Value<String> itemType,
+      Value<BigInt> dueTime,
+      Value<int> interval,
+      Value<double> difficulty,
+      Value<double> stability,
+      Value<int> repetitionCount,
+      Value<BigInt?> lastReviewed,
+      Value<int> step,
+      Value<int> rowid,
+    });
+
+class $$LearningProgressTableFilterComposer
+    extends Composer<_$NemoDatabase, $LearningProgressTable> {
+  $$LearningProgressTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemType => $composableBuilder(
+    column: $table.itemType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<BigInt> get dueTime => $composableBuilder(
+    column: $table.dueTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get interval => $composableBuilder(
+    column: $table.interval,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get difficulty => $composableBuilder(
+    column: $table.difficulty,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get stability => $composableBuilder(
+    column: $table.stability,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get repetitionCount => $composableBuilder(
+    column: $table.repetitionCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<BigInt> get lastReviewed => $composableBuilder(
+    column: $table.lastReviewed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get step => $composableBuilder(
+    column: $table.step,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LearningProgressTableOrderingComposer
+    extends Composer<_$NemoDatabase, $LearningProgressTable> {
+  $$LearningProgressTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemType => $composableBuilder(
+    column: $table.itemType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<BigInt> get dueTime => $composableBuilder(
+    column: $table.dueTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get interval => $composableBuilder(
+    column: $table.interval,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get difficulty => $composableBuilder(
+    column: $table.difficulty,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get stability => $composableBuilder(
+    column: $table.stability,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get repetitionCount => $composableBuilder(
+    column: $table.repetitionCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<BigInt> get lastReviewed => $composableBuilder(
+    column: $table.lastReviewed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get step => $composableBuilder(
+    column: $table.step,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LearningProgressTableAnnotationComposer
+    extends Composer<_$NemoDatabase, $LearningProgressTable> {
+  $$LearningProgressTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get itemType =>
+      $composableBuilder(column: $table.itemType, builder: (column) => column);
+
+  GeneratedColumn<BigInt> get dueTime =>
+      $composableBuilder(column: $table.dueTime, builder: (column) => column);
+
+  GeneratedColumn<int> get interval =>
+      $composableBuilder(column: $table.interval, builder: (column) => column);
+
+  GeneratedColumn<double> get difficulty => $composableBuilder(
+    column: $table.difficulty,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get stability =>
+      $composableBuilder(column: $table.stability, builder: (column) => column);
+
+  GeneratedColumn<int> get repetitionCount => $composableBuilder(
+    column: $table.repetitionCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<BigInt> get lastReviewed => $composableBuilder(
+    column: $table.lastReviewed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get step =>
+      $composableBuilder(column: $table.step, builder: (column) => column);
+}
+
+class $$LearningProgressTableTableManager
+    extends
+        RootTableManager<
+          _$NemoDatabase,
+          $LearningProgressTable,
+          LearningProgressData,
+          $$LearningProgressTableFilterComposer,
+          $$LearningProgressTableOrderingComposer,
+          $$LearningProgressTableAnnotationComposer,
+          $$LearningProgressTableCreateCompanionBuilder,
+          $$LearningProgressTableUpdateCompanionBuilder,
+          (
+            LearningProgressData,
+            BaseReferences<
+              _$NemoDatabase,
+              $LearningProgressTable,
+              LearningProgressData
+            >,
+          ),
+          LearningProgressData,
+          PrefetchHooks Function()
+        > {
+  $$LearningProgressTableTableManager(
+    _$NemoDatabase db,
+    $LearningProgressTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LearningProgressTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LearningProgressTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LearningProgressTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> itemType = const Value.absent(),
+                Value<BigInt> dueTime = const Value.absent(),
+                Value<int> interval = const Value.absent(),
+                Value<double> difficulty = const Value.absent(),
+                Value<double> stability = const Value.absent(),
+                Value<int> repetitionCount = const Value.absent(),
+                Value<BigInt?> lastReviewed = const Value.absent(),
+                Value<int> step = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearningProgressCompanion(
+                id: id,
+                itemType: itemType,
+                dueTime: dueTime,
+                interval: interval,
+                difficulty: difficulty,
+                stability: stability,
+                repetitionCount: repetitionCount,
+                lastReviewed: lastReviewed,
+                step: step,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String itemType,
+                Value<BigInt> dueTime = const Value.absent(),
+                Value<int> interval = const Value.absent(),
+                Value<double> difficulty = const Value.absent(),
+                Value<double> stability = const Value.absent(),
+                Value<int> repetitionCount = const Value.absent(),
+                Value<BigInt?> lastReviewed = const Value.absent(),
+                Value<int> step = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearningProgressCompanion.insert(
+                id: id,
+                itemType: itemType,
+                dueTime: dueTime,
+                interval: interval,
+                difficulty: difficulty,
+                stability: stability,
+                repetitionCount: repetitionCount,
+                lastReviewed: lastReviewed,
+                step: step,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LearningProgressTableProcessedTableManager =
+    ProcessedTableManager<
+      _$NemoDatabase,
+      $LearningProgressTable,
+      LearningProgressData,
+      $$LearningProgressTableFilterComposer,
+      $$LearningProgressTableOrderingComposer,
+      $$LearningProgressTableAnnotationComposer,
+      $$LearningProgressTableCreateCompanionBuilder,
+      $$LearningProgressTableUpdateCompanionBuilder,
+      (
+        LearningProgressData,
+        BaseReferences<
+          _$NemoDatabase,
+          $LearningProgressTable,
+          LearningProgressData
+        >,
+      ),
+      LearningProgressData,
+      PrefetchHooks Function()
+    >;
 
 class $NemoDatabaseManager {
   final _$NemoDatabase _db;
@@ -3965,6 +4822,8 @@ class $NemoDatabaseManager {
       $$GrammarUsagesTableTableManager(_db, _db.grammarUsages);
   $$GrammarExamplesTableTableManager get grammarExamples =>
       $$GrammarExamplesTableTableManager(_db, _db.grammarExamples);
+  $$LearningProgressTableTableManager get learningProgress =>
+      $$LearningProgressTableTableManager(_db, _db.learningProgress);
 }
 
 mixin _$WordDaoMixin on DatabaseAccessor<NemoDatabase> {
@@ -3975,6 +4834,10 @@ mixin _$GrammarDaoMixin on DatabaseAccessor<NemoDatabase> {
   $GrammarsTable get grammars => attachedDatabase.grammars;
   $GrammarUsagesTable get grammarUsages => attachedDatabase.grammarUsages;
   $GrammarExamplesTable get grammarExamples => attachedDatabase.grammarExamples;
+}
+mixin _$LearningDaoMixin on DatabaseAccessor<NemoDatabase> {
+  $LearningProgressTable get learningProgress =>
+      attachedDatabase.learningProgress;
 }
 
 // **************************************************************************
@@ -4032,6 +4895,23 @@ final grammarDaoProvider = AutoDisposeProvider<GrammarDao>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef GrammarDaoRef = AutoDisposeProviderRef<GrammarDao>;
+String _$learningDaoHash() => r'594fff41e63f67e19418f6ba368afa831da52be9';
+
+/// See also [learningDao].
+@ProviderFor(learningDao)
+final learningDaoProvider = AutoDisposeProvider<LearningDao>.internal(
+  learningDao,
+  name: r'learningDaoProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$learningDaoHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef LearningDaoRef = AutoDisposeProviderRef<LearningDao>;
 String _$allWordsHash() => r'6b3e2bf4ff71280e7849ff324fb597996d06f87d';
 
 /// See also [allWords].

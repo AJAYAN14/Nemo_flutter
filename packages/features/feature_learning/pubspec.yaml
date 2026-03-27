@@ -13,6 +13,7 @@ dependencies:
     sdk: flutter
   go_router: ^16.2.5
   hooks_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
   core_designsystem:
     path: ../../core/core_designsystem
   core_ui:

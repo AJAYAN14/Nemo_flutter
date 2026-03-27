@@ -1,71 +1,90 @@
 import 'package:core_domain/core_domain.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../data/learning_repository.dart';
+import '../domain/srs_scheduler.dart';
+import '../domain/learning_item.dart';
 
-class ReviewNotifier extends Notifier<ReviewSession> {
+part 'review_providers.g.dart';
+
+@riverpod
+class ReviewNotifier extends _$ReviewNotifier {
   @override
-  ReviewSession build() {
+  FutureOr<ReviewSession> build() async {
+    final rawItems = await ref.watch(learningRepositoryProvider).getLearningQueue();
+    
+    // Map raw items to ReviewItem
+    final items = rawItems.map((item) {
+      if (item is WordItem) {
+        return ReviewItem.word(word: item.word);
+      } else {
+        return ReviewItem.grammar(grammar: (item as GrammarItem).grammar);
+      }
+    }).toList();
+
     return ReviewSession(
-      items: reviewMockItems,
+      items: items,
       startTime: DateTime.now(),
     );
   }
 
   void showAnswer() {
-    state = state.copyWith(showAnswer: true);
+    final value = state.valueOrNull;
+    if (value == null) return;
+    state = AsyncData(value.copyWith(showAnswer: true));
   }
 
-  void rate(ReviewRating rating) {
-    if (state.isCompleted) return;
+  Future<void> rate(ReviewRating rating) async {
+    final value = state.valueOrNull;
+    if (value == null || value.isCompleted) return;
 
-    final updatedRatings = [...state.ratings, rating];
-    final isLast = state.currentIndex == state.items.length - 1;
+    final item = value.items[value.currentIndex];
+    String id = '';
+    String type = '';
+    
+    item.map(
+      word: (w) {
+        id = w.word.id;
+        type = 'word';
+      },
+      grammar: (g) {
+        id = g.grammar.id;
+        type = 'grammar';
+      },
+    );
+
+    // Map ReviewRating to SrsRating
+    final srsRating = switch (rating) {
+      ReviewRating.again => SrsRating.again,
+      ReviewRating.hard => SrsRating.hard,
+      ReviewRating.good => SrsRating.good,
+      ReviewRating.easy => SrsRating.easy,
+    };
+
+    // Update progress
+    await ref.read(learningRepositoryProvider).updateProgress(
+      id,
+      type,
+      srsRating,
+    );
+
+    final updatedRatings = [...value.ratings, rating];
+    final isLast = value.currentIndex == value.items.length - 1;
 
     if (isLast) {
-      state = state.copyWith(
+      state = AsyncData(value.copyWith(
         ratings: updatedRatings,
         isCompleted: true,
-      );
+      ));
     } else {
-      state = state.copyWith(
+      state = AsyncData(value.copyWith(
         ratings: updatedRatings,
-        currentIndex: state.currentIndex + 1,
+        currentIndex: value.currentIndex + 1,
         showAnswer: false,
-      );
+      ));
     }
   }
 
   void restart() {
-    state = build();
+    ref.invalidateSelf();
   }
 }
-
-final reviewProvider = NotifierProvider<ReviewNotifier, ReviewSession>(
-  ReviewNotifier.new,
-);
-
-final reviewMockItems = [
-  ReviewItem.word(
-    word: Word(
-      id: '1',
-      japanese: '勉強',
-      hiragana: 'べんきょう',
-      chinese: '学习',
-      level: 'N5',
-    ),
-  ),
-  ReviewItem.grammar(
-    grammar: Grammar(
-      id: 'g_2',
-      grammar: '〜ている',
-      grammarLevel: 'N5',
-      lastModifiedTime: 0,
-      usages: [
-        GrammarUsage(
-          connection: '动词连用形 + ている',
-          explanation: '表示正在进行或状态的持续',
-          examples: [],
-        ),
-      ],
-    ),
-  ),
-];

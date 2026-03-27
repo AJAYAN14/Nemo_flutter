@@ -11,27 +11,34 @@ import 'tables.dart';
 part 'nemo_database.g.dart';
 
 @DriftDatabase(
-  tables: [Words, WordExamples, Grammars, GrammarUsages, GrammarExamples],
-  daos: [WordDao, GrammarDao],
+  tables: [Words, WordExamples, Grammars, GrammarUsages, GrammarExamples, LearningProgress],
+  daos: [WordDao, GrammarDao, LearningDao],
 )
 class NemoDatabase extends _$NemoDatabase {
   NemoDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) async {
+      await m.createAll();
+    },
     onUpgrade: (m, from, to) async {
-      if (from < 3) {
-        // Drop all tables to ensure a clean re-import with correct JSON mappings
-        await m.drop(grammarExamples);
-        await m.drop(grammarUsages);
-        await m.drop(grammars);
-        await m.drop(wordExamples);
-        await m.drop(words);
+      if (from < 4) {
+        // Ensure learning_progress table exists
+        await m.createTable(learningProgress);
         
-        await m.createAll();
+        // Ensure clean state for other tables if from old version
+        if (from < 3) {
+          await m.drop(grammarExamples);
+          await m.drop(grammarUsages);
+          await m.drop(grammars);
+          await m.drop(wordExamples);
+          await m.drop(words);
+          await m.createAll();
+        }
       }
     },
     beforeOpen: (details) async {
@@ -99,6 +106,31 @@ extension ExampleMapper on GrammarExampleData {
       translation: translation,
       source: source,
       isDialog: isDialog,
+    );
+  }
+}
+
+extension WordMapper on WordWithExamples {
+  Word toDomain() {
+    return Word(
+      id: word.id,
+      japanese: word.japanese,
+      hiragana: word.hiragana,
+      chinese: word.chinese,
+      level: word.level,
+      pos: word.pos,
+      examples: examples.map((e) => e.toDomain()).toList(),
+      isFavorite: word.isFavorite,
+    );
+  }
+}
+
+extension WordExampleMapper on WordExampleData {
+  WordExample toDomain() {
+    return WordExample(
+      japanese: japanese,
+      chinese: chinese,
+      audioId: audioId,
     );
   }
 }
@@ -214,6 +246,25 @@ class GrammarDao extends DatabaseAccessor<NemoDatabase> with _$GrammarDaoMixin {
   }
 }
 
+@DriftAccessor(tables: [LearningProgress])
+class LearningDao extends DatabaseAccessor<NemoDatabase> with _$LearningDaoMixin {
+  LearningDao(super.db);
+
+  Future<LearningProgressData?> getProgress(String id) {
+    return (select(learningProgress)..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<int> updateProgress(LearningProgressCompanion companion) {
+    return into(learningProgress).insertOnConflictUpdate(companion);
+  }
+
+  Future<List<LearningProgressData>> getAllProgress() => select(learningProgress).get();
+
+  Future<List<LearningProgressData>> getDueItems(int now) {
+    return (select(learningProgress)..where((t) => t.dueTime.isSmallerOrEqualValue(BigInt.from(now)))).get();
+  }
+}
+
 @riverpod
 NemoDatabase nemoDatabase(NemoDatabaseRef ref) {
   final db = NemoDatabase();
@@ -226,6 +277,9 @@ WordDao wordDao(WordDaoRef ref) => ref.watch(nemoDatabaseProvider).wordDao;
 
 @riverpod
 GrammarDao grammarDao(GrammarDaoRef ref) => ref.watch(nemoDatabaseProvider).grammarDao;
+
+@riverpod
+LearningDao learningDao(LearningDaoRef ref) => ref.watch(nemoDatabaseProvider).learningDao;
 
 @riverpod
 Stream<List<WordEntry>> allWords(AllWordsRef ref) {
