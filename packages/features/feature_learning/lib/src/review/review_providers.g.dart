@@ -6,7 +6,7 @@ part of 'review_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$reviewNotifierHash() => r'8349a1c6f48797bccf7ec263ff9746147a2c836d';
+String _$reviewNotifierHash() => r'74d801476cb60e3f26e5b34088722839e6a5d629';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -30,10 +30,10 @@ class _SystemHash {
 }
 
 abstract class _$ReviewNotifier
-    extends BuildlessAutoDisposeAsyncNotifier<ReviewSession> {
+    extends BuildlessAutoDisposeAsyncNotifier<LearningUiModel> {
   late final String mode;
 
-  FutureOr<ReviewSession> build(String mode);
+  FutureOr<LearningUiModel> build(String mode);
 }
 
 /// See also [ReviewNotifier].
@@ -41,7 +41,7 @@ abstract class _$ReviewNotifier
 const reviewNotifierProvider = ReviewNotifierFamily();
 
 /// See also [ReviewNotifier].
-class ReviewNotifierFamily extends Family<AsyncValue<ReviewSession>> {
+class ReviewNotifierFamily extends Family<AsyncValue<LearningUiModel>> {
   /// See also [ReviewNotifier].
   const ReviewNotifierFamily();
 
@@ -75,7 +75,7 @@ class ReviewNotifierFamily extends Family<AsyncValue<ReviewSession>> {
 /// See also [ReviewNotifier].
 class ReviewNotifierProvider
     extends
-        AutoDisposeAsyncNotifierProviderImpl<ReviewNotifier, ReviewSession> {
+        AutoDisposeAsyncNotifierProviderImpl<ReviewNotifier, LearningUiModel> {
   /// See also [ReviewNotifier].
   ReviewNotifierProvider(String mode)
     : this._internal(
@@ -104,7 +104,9 @@ class ReviewNotifierProvider
   final String mode;
 
   @override
-  FutureOr<ReviewSession> runNotifierBuild(covariant ReviewNotifier notifier) {
+  FutureOr<LearningUiModel> runNotifierBuild(
+    covariant ReviewNotifier notifier,
+  ) {
     return notifier.build(mode);
   }
 
@@ -125,7 +127,7 @@ class ReviewNotifierProvider
   }
 
   @override
-  AutoDisposeAsyncNotifierProviderElement<ReviewNotifier, ReviewSession>
+  AutoDisposeAsyncNotifierProviderElement<ReviewNotifier, LearningUiModel>
   createElement() {
     return _ReviewNotifierProviderElement(this);
   }
@@ -146,14 +148,15 @@ class ReviewNotifierProvider
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin ReviewNotifierRef on AutoDisposeAsyncNotifierProviderRef<ReviewSession> {
+mixin ReviewNotifierRef
+    on AutoDisposeAsyncNotifierProviderRef<LearningUiModel> {
   /// The parameter `mode` of this provider.
   String get mode;
 }
 
 class _ReviewNotifierProviderElement
     extends
-        AutoDisposeAsyncNotifierProviderElement<ReviewNotifier, ReviewSession>
+        AutoDisposeAsyncNotifierProviderElement<ReviewNotifier, LearningUiModel>
     with ReviewNotifierRef {
   _ReviewNotifierProviderElement(super.provider);
 

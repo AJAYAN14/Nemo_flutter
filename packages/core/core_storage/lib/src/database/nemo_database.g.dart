@@ -2234,6 +2234,21 @@ class $LearningProgressTable extends LearningProgress
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _isSuspendedMeta = const VerificationMeta(
+    'isSuspended',
+  );
+  @override
+  late final GeneratedColumn<bool> isSuspended = GeneratedColumn<bool>(
+    'is_suspended',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_suspended" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2246,6 +2261,7 @@ class $LearningProgressTable extends LearningProgress
     lastReviewed,
     firstLearned,
     step,
+    isSuspended,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2329,6 +2345,15 @@ class $LearningProgressTable extends LearningProgress
         step.isAcceptableOrUnknown(data['step']!, _stepMeta),
       );
     }
+    if (data.containsKey('is_suspended')) {
+      context.handle(
+        _isSuspendedMeta,
+        isSuspended.isAcceptableOrUnknown(
+          data['is_suspended']!,
+          _isSuspendedMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2378,6 +2403,10 @@ class $LearningProgressTable extends LearningProgress
         DriftSqlType.int,
         data['${effectivePrefix}step'],
       )!,
+      isSuspended: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_suspended'],
+      )!,
     );
   }
 
@@ -2399,6 +2428,7 @@ class LearningProgressData extends DataClass
   final BigInt? lastReviewed;
   final BigInt? firstLearned;
   final int step;
+  final bool isSuspended;
   const LearningProgressData({
     required this.id,
     required this.itemType,
@@ -2410,6 +2440,7 @@ class LearningProgressData extends DataClass
     this.lastReviewed,
     this.firstLearned,
     required this.step,
+    required this.isSuspended,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2428,6 +2459,7 @@ class LearningProgressData extends DataClass
       map['first_learned'] = Variable<BigInt>(firstLearned);
     }
     map['step'] = Variable<int>(step);
+    map['is_suspended'] = Variable<bool>(isSuspended);
     return map;
   }
 
@@ -2447,6 +2479,7 @@ class LearningProgressData extends DataClass
           ? const Value.absent()
           : Value(firstLearned),
       step: Value(step),
+      isSuspended: Value(isSuspended),
     );
   }
 
@@ -2466,6 +2499,7 @@ class LearningProgressData extends DataClass
       lastReviewed: serializer.fromJson<BigInt?>(json['lastReviewed']),
       firstLearned: serializer.fromJson<BigInt?>(json['firstLearned']),
       step: serializer.fromJson<int>(json['step']),
+      isSuspended: serializer.fromJson<bool>(json['isSuspended']),
     );
   }
   @override
@@ -2482,6 +2516,7 @@ class LearningProgressData extends DataClass
       'lastReviewed': serializer.toJson<BigInt?>(lastReviewed),
       'firstLearned': serializer.toJson<BigInt?>(firstLearned),
       'step': serializer.toJson<int>(step),
+      'isSuspended': serializer.toJson<bool>(isSuspended),
     };
   }
 
@@ -2496,6 +2531,7 @@ class LearningProgressData extends DataClass
     Value<BigInt?> lastReviewed = const Value.absent(),
     Value<BigInt?> firstLearned = const Value.absent(),
     int? step,
+    bool? isSuspended,
   }) => LearningProgressData(
     id: id ?? this.id,
     itemType: itemType ?? this.itemType,
@@ -2507,6 +2543,7 @@ class LearningProgressData extends DataClass
     lastReviewed: lastReviewed.present ? lastReviewed.value : this.lastReviewed,
     firstLearned: firstLearned.present ? firstLearned.value : this.firstLearned,
     step: step ?? this.step,
+    isSuspended: isSuspended ?? this.isSuspended,
   );
   LearningProgressData copyWithCompanion(LearningProgressCompanion data) {
     return LearningProgressData(
@@ -2528,6 +2565,9 @@ class LearningProgressData extends DataClass
           ? data.firstLearned.value
           : this.firstLearned,
       step: data.step.present ? data.step.value : this.step,
+      isSuspended: data.isSuspended.present
+          ? data.isSuspended.value
+          : this.isSuspended,
     );
   }
 
@@ -2543,7 +2583,8 @@ class LearningProgressData extends DataClass
           ..write('repetitionCount: $repetitionCount, ')
           ..write('lastReviewed: $lastReviewed, ')
           ..write('firstLearned: $firstLearned, ')
-          ..write('step: $step')
+          ..write('step: $step, ')
+          ..write('isSuspended: $isSuspended')
           ..write(')'))
         .toString();
   }
@@ -2560,6 +2601,7 @@ class LearningProgressData extends DataClass
     lastReviewed,
     firstLearned,
     step,
+    isSuspended,
   );
   @override
   bool operator ==(Object other) =>
@@ -2574,7 +2616,8 @@ class LearningProgressData extends DataClass
           other.repetitionCount == this.repetitionCount &&
           other.lastReviewed == this.lastReviewed &&
           other.firstLearned == this.firstLearned &&
-          other.step == this.step);
+          other.step == this.step &&
+          other.isSuspended == this.isSuspended);
 }
 
 class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
@@ -2588,6 +2631,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
   final Value<BigInt?> lastReviewed;
   final Value<BigInt?> firstLearned;
   final Value<int> step;
+  final Value<bool> isSuspended;
   final Value<int> rowid;
   const LearningProgressCompanion({
     this.id = const Value.absent(),
@@ -2600,6 +2644,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
     this.lastReviewed = const Value.absent(),
     this.firstLearned = const Value.absent(),
     this.step = const Value.absent(),
+    this.isSuspended = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LearningProgressCompanion.insert({
@@ -2613,6 +2658,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
     this.lastReviewed = const Value.absent(),
     this.firstLearned = const Value.absent(),
     this.step = const Value.absent(),
+    this.isSuspended = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        itemType = Value(itemType);
@@ -2627,6 +2673,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
     Expression<BigInt>? lastReviewed,
     Expression<BigInt>? firstLearned,
     Expression<int>? step,
+    Expression<bool>? isSuspended,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2640,6 +2687,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
       if (lastReviewed != null) 'last_reviewed': lastReviewed,
       if (firstLearned != null) 'first_learned': firstLearned,
       if (step != null) 'step': step,
+      if (isSuspended != null) 'is_suspended': isSuspended,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2655,6 +2703,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
     Value<BigInt?>? lastReviewed,
     Value<BigInt?>? firstLearned,
     Value<int>? step,
+    Value<bool>? isSuspended,
     Value<int>? rowid,
   }) {
     return LearningProgressCompanion(
@@ -2668,6 +2717,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
       lastReviewed: lastReviewed ?? this.lastReviewed,
       firstLearned: firstLearned ?? this.firstLearned,
       step: step ?? this.step,
+      isSuspended: isSuspended ?? this.isSuspended,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2705,6 +2755,9 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
     if (step.present) {
       map['step'] = Variable<int>(step.value);
     }
+    if (isSuspended.present) {
+      map['is_suspended'] = Variable<bool>(isSuspended.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2724,6 +2777,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
           ..write('lastReviewed: $lastReviewed, ')
           ..write('firstLearned: $firstLearned, ')
           ..write('step: $step, ')
+          ..write('isSuspended: $isSuspended, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4582,6 +4636,7 @@ typedef $$LearningProgressTableCreateCompanionBuilder =
       Value<BigInt?> lastReviewed,
       Value<BigInt?> firstLearned,
       Value<int> step,
+      Value<bool> isSuspended,
       Value<int> rowid,
     });
 typedef $$LearningProgressTableUpdateCompanionBuilder =
@@ -4596,6 +4651,7 @@ typedef $$LearningProgressTableUpdateCompanionBuilder =
       Value<BigInt?> lastReviewed,
       Value<BigInt?> firstLearned,
       Value<int> step,
+      Value<bool> isSuspended,
       Value<int> rowid,
     });
 
@@ -4655,6 +4711,11 @@ class $$LearningProgressTableFilterComposer
 
   ColumnFilters<int> get step => $composableBuilder(
     column: $table.step,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSuspended => $composableBuilder(
+    column: $table.isSuspended,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -4717,6 +4778,11 @@ class $$LearningProgressTableOrderingComposer
     column: $table.step,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isSuspended => $composableBuilder(
+    column: $table.isSuspended,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LearningProgressTableAnnotationComposer
@@ -4765,6 +4831,11 @@ class $$LearningProgressTableAnnotationComposer
 
   GeneratedColumn<int> get step =>
       $composableBuilder(column: $table.step, builder: (column) => column);
+
+  GeneratedColumn<bool> get isSuspended => $composableBuilder(
+    column: $table.isSuspended,
+    builder: (column) => column,
+  );
 }
 
 class $$LearningProgressTableTableManager
@@ -4814,6 +4885,7 @@ class $$LearningProgressTableTableManager
                 Value<BigInt?> lastReviewed = const Value.absent(),
                 Value<BigInt?> firstLearned = const Value.absent(),
                 Value<int> step = const Value.absent(),
+                Value<bool> isSuspended = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningProgressCompanion(
                 id: id,
@@ -4826,6 +4898,7 @@ class $$LearningProgressTableTableManager
                 lastReviewed: lastReviewed,
                 firstLearned: firstLearned,
                 step: step,
+                isSuspended: isSuspended,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -4840,6 +4913,7 @@ class $$LearningProgressTableTableManager
                 Value<BigInt?> lastReviewed = const Value.absent(),
                 Value<BigInt?> firstLearned = const Value.absent(),
                 Value<int> step = const Value.absent(),
+                Value<bool> isSuspended = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningProgressCompanion.insert(
                 id: id,
@@ -4852,6 +4926,7 @@ class $$LearningProgressTableTableManager
                 lastReviewed: lastReviewed,
                 firstLearned: firstLearned,
                 step: step,
+                isSuspended: isSuspended,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

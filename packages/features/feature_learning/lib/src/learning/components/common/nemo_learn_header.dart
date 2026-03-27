@@ -12,6 +12,11 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
     this.canGoPrev = false,
     this.canGoNext = false,
     this.showMoreMenu = true,
+    this.onUndo,
+    this.onSuspend,
+    this.onBury,
+    this.onToggleAutoRead,
+    this.autoReadEnabled = true,
   });
 
   final String title;
@@ -23,6 +28,11 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
   final bool canGoPrev;
   final bool canGoNext;
   final bool showMoreMenu;
+  final VoidCallback? onUndo;
+  final VoidCallback? onSuspend;
+  final VoidCallback? onBury;
+  final ValueChanged<bool>? onToggleAutoRead;
+  final bool autoReadEnabled;
 
   @override
   Size get preferredSize => const Size.fromHeight(88); // 56 (Content) + 32 (Progress area)
@@ -166,7 +176,12 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                                 size: 24,
                               ),
                               onSelected: (value) {
-                                // 业务逻辑暂未实现
+                                switch (value) {
+                                  case 1: onUndo?.call(); break;
+                                  case 3: onSuspend?.call(); break;
+                                  case 4: onBury?.call(); break;
+                                  case 5: onToggleAutoRead?.call(!autoReadEnabled); break;
+                                }
                               },
                               offset: const Offset(0, 48),
                               color: isDark ? theme.colorScheme.surface : Colors.white,
@@ -179,6 +194,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                                   icon: Icons.undo_rounded,
                                   text: '撤销上一次评分',
                                   theme: theme,
+                                  enabled: onUndo != null,
                                 ),
                                 const PopupMenuDivider(),
                                 _buildMenuItem(
@@ -204,7 +220,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                                 _buildSwitchMenuItem(
                                   value: 5,
                                   text: '翻面自动朗读',
-                                  initialValue: true,
+                                  initialValue: autoReadEnabled,
                                   theme: theme,
                                 ),
                                 _buildSwitchMenuItem(
@@ -256,10 +272,12 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
     required IconData icon,
     required String text,
     required ThemeData theme,
+    bool enabled = true,
   }) {
     final isDark = theme.brightness == Brightness.dark;
     return PopupMenuItem<int>(
       value: value,
+      enabled: enabled,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [

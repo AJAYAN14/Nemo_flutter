@@ -18,7 +18,7 @@ class NemoDatabase extends _$NemoDatabase {
   NemoDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -37,6 +37,9 @@ class NemoDatabase extends _$NemoDatabase {
         } catch (e) {
           // In case it already exists from a failed migration
         }
+      }
+      if (from < 6) {
+        await m.addColumn(learningProgress, learningProgress.isSuspended);
       }
       
       // Ensure clean state for other tables if from old version
@@ -277,8 +280,27 @@ class LearningDao extends DatabaseAccessor<NemoDatabase> with _$LearningDaoMixin
 
   Future<List<LearningProgressData>> getAllProgress() => select(learningProgress).get();
 
-  Future<List<LearningProgressData>> getDueItems(int now) {
-    return (select(learningProgress)..where((t) => t.dueTime.isSmallerOrEqualValue(BigInt.from(now)))).get();
+  Future<List<LearningProgressData>> getDueItems(int now, {String? itemType}) {
+    final query = select(learningProgress)
+      ..where((t) => t.dueTime.isSmallerOrEqualValue(BigInt.from(now)))
+      ..where((t) => t.isSuspended.equals(false))
+      ..orderBy([(t) => OrderingTerm(expression: t.dueTime, mode: OrderingMode.asc)]);
+    
+    if (itemType != null) {
+      query.where((t) => t.itemType.equals(itemType));
+    }
+    
+    return query.get();
+  }
+
+  Future<void> setSuspended(String id, bool isSuspended) {
+    return (update(learningProgress)..where((t) => t.id.equals(id)))
+        .write(LearningProgressCompanion(isSuspended: Value(isSuspended)));
+  }
+
+  Future<void> updateDueTime(String id, int dueTime) {
+    return (update(learningProgress)..where((t) => t.id.equals(id)))
+        .write(LearningProgressCompanion(dueTime: Value(BigInt.from(dueTime))));
   }
 
   Future<int> getNewItemsCount(String itemType, int startMillis, int endMillis) async {

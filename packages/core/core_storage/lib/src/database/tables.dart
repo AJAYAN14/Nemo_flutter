@@ -70,6 +70,7 @@ class LearningProgress extends Table {
   Int64Column get lastReviewed => int64().nullable()();
   Int64Column get firstLearned => int64().nullable()();
   IntColumn get step => integer().withDefault(const Constant(0))();
+  BoolColumn get isSuspended => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column>? get primaryKey => {id};

@@ -6,7 +6,24 @@ part of 'learning_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$learningNotifierHash() => r'cc156f4a41f08c71faed8abf4bc762f1742b5880';
+String _$learnAheadLimitHash() => r'df59433ca0004a409388df04c00ef22501aebda6';
+
+/// See also [learnAheadLimit].
+@ProviderFor(learnAheadLimit)
+final learnAheadLimitProvider = AutoDisposeProvider<Duration>.internal(
+  learnAheadLimit,
+  name: r'learnAheadLimitProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$learnAheadLimitHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef LearnAheadLimitRef = AutoDisposeProviderRef<Duration>;
+String _$learningNotifierHash() => r'14058a45b3fad05c4d159f8235689e78c2fdd395';
 
 /// Copied from Dart SDK
 class _SystemHash {

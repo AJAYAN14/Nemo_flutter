@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:core_designsystem/core_designsystem.dart';
-import 'package:core_domain/core_domain.dart';
 import 'review_providers.dart';
 import '../learning/components/cards/srs_learning_card.dart';
 import '../learning/components/cards/srs_grammar_card.dart';
 import '../learning/components/srs_action_area.dart';
 import '../learning/components/common/nemo_learn_header.dart';
 import '../learning/components/common/nemo_completion_view.dart';
+import '../domain/learning_session_state.dart';
+import '../domain/learning_item.dart';
 import '../domain/srs_scheduler.dart';
 
 class ReviewScreen extends ConsumerWidget {
@@ -24,7 +25,9 @@ class ReviewScreen extends ConsumerWidget {
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (err, stack) => Scaffold(body: Center(child: Text('Error: $err'))),
       data: (session) {
-        if (session.isCompleted) {
+        final state = session.sessionState;
+
+        if (state is LearningSessionEmpty) {
           return Scaffold(
             body: NemoCompletionView(
               title: '复习完成！',
@@ -33,60 +36,78 @@ class ReviewScreen extends ConsumerWidget {
           );
         }
 
-        if (session.items.isEmpty) {
+        if (state is LearningSessionWaiting) {
           return Scaffold(
             backgroundColor: isDark ? NemoColors.bgBaseDark : NemoColors.bgBase,
-            body: const Center(child: Text('当前没有需要复习的内容', style: TextStyle(color: NemoColors.textSub))),
+            appBar: NemoLearnHeader(
+              title: '复习等待',
+              remainingCount: session.items.length,
+              progress: session.progress,
+              onClose: () => Navigator.of(context).pop(),
+              showMoreMenu: false,
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.timer_outlined, size: 80, color: NemoColors.brandBlue),
+                  const SizedBox(height: 16),
+                  const Text('暂无到期项目', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text('下一项将在 ${state.waitingUntil.difference(DateTime.now()).inMinutes} 分钟后开始'),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () => ref.invalidate(reviewNotifierProvider(mode)),
+                    child: const Text('刷新'),
+                  ),
+                ],
+              ),
+            ),
           );
         }
 
-        final currentIndex = session.currentIndex;
-        final totalCount = session.items.length;
-        final isAnswerShown = session.showAnswer;
-        final remainingCount = totalCount - (currentIndex + 1);
+        final activeState = state as LearningSessionActive;
+        final currentIndex = activeState.currentIndex;
+        final isAnswerShown = activeState.isRevealed;
+
+        final notifier = ref.read(reviewNotifierProvider(mode).notifier);
 
         return Scaffold(
           backgroundColor: isDark ? NemoColors.bgBaseDark : NemoColors.bgBase,
           appBar: NemoLearnHeader(
             title: '复习',
-            remainingCount: remainingCount,
-            progress: totalCount > 0 ? (currentIndex + 1) / totalCount : 0,
+            remainingCount: session.items.length,
+            progress: session.progress,
             onClose: () => Navigator.of(context).pop(),
-            onPrev: null,
-            onNext: null,
-            canGoPrev: false,
-            canGoNext: false,
+            onUndo: session.lastSnapshot != null ? () => notifier.undo() : null,
+            onSuspend: () => notifier.suspendCurrent(),
+            onBury: () => notifier.buryCurrent(),
           ),
           body: Stack(
             children: [
               Positioned.fill(
                 child: PageView.builder(
-                  key: ValueKey(session.items.hashCode),
-                  itemCount: totalCount,
+                  key: ValueKey(session.items.length),
+                  itemCount: session.items.length,
                   controller: PageController(initialPage: currentIndex),
                   physics: const NeverScrollableScrollPhysics(),
                   itemBuilder: (context, index) {
                     final item = session.items[index];
-                    
-                    Widget card = const SizedBox.shrink();
-                    
-                    item.map(
-                      word: (w) {
-                        card = SRSLearningCard(
-                          word: w.word,
-                          isAnswerShown: index == currentIndex ? isAnswerShown : false,
-                          badge: CardBadge.review,
-                        );
-                      },
-                      grammar: (g) {
-                        card = SRSGrammarCard(
-                          grammar: g.grammar,
-                          isAnswerShown: index == currentIndex ? isAnswerShown : false,
-                        );
-                      },
-                    );
+                    final isShown = index == currentIndex && isAnswerShown;
 
-                    return card;
+                    if (item is WordItem) {
+                      return SRSLearningCard(
+                        word: item.word,
+                        isAnswerShown: isShown,
+                        badge: CardBadge.review,
+                      );
+                    } else if (item is GrammarItem) {
+                      return SRSGrammarCard(
+                        grammar: item.grammar,
+                        isAnswerShown: isShown,
+                      );
+                    }
+                    return const SizedBox.shrink();
                   },
                 ),
               ),
@@ -96,10 +117,8 @@ class ReviewScreen extends ConsumerWidget {
                 bottom: 0,
                 child: SRSActionArea(
                   showAnswer: isAnswerShown,
-                  onShowAnswer: () => ref.read(reviewNotifierProvider(mode).notifier).showAnswer(),
-                  onRate: (score) {
-                    ref.read(reviewNotifierProvider(mode).notifier).rate(ReviewRating.values[score]);
-                  },
+                  onShowAnswer: () => notifier.showAnswer(),
+                  onRate: (score) => notifier.rate(score),
                   ratingIntervals: session.ratingIntervals.map(
                     (key, value) => MapEntry(SrsRating.values.firstWhere((e) => e.name == key), value),
                   ),

@@ -1,34 +1,40 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:core_prefs/core_prefs.dart';
 import '../domain/learning_item.dart';
 import '../domain/srs_scheduler.dart';
 import '../data/learning_repository.dart';
+import '../domain/learning_session_state.dart';
 
 part 'learning_providers.g.dart';
 
 class LearningUiModel {
   const LearningUiModel({
-    required this.items,
-    required this.currentIndex,
-    required this.revealedItemIds,
-    required this.totalItems,
+    this.sessionState = const LearningSessionEmpty(),
+    this.items = const [],
+    this.currentIndex = 0,
+    this.revealedItemIds = const {},
+    this.totalItems = 0,
     this.completedCount = 0,
     this.ratingIntervals = const {},
-    this.isCompleted = false,
+    this.lastSnapshot,
   });
 
+  final LearningSessionState sessionState;
   final List<LearningItem> items;
   final int currentIndex;
   final Set<String> revealedItemIds;
   final int totalItems;
   final int completedCount;
   final Map<SrsRating, String> ratingIntervals;
-  final bool isCompleted;
+  final SessionSnapshot? lastSnapshot;
+
+  bool get isCompleted => sessionState is LearningSessionEmpty;
 
   String get currentId {
-    if (items.isEmpty || currentIndex >= items.length) return '';
-    final item = items[currentIndex];
+    if (sessionState is! LearningSessionActive) return '';
+    final item = (sessionState as LearningSessionActive).item;
     if (item is WordItem) return item.word.id;
-    if (item is GrammarItem) return item.grammar.id.toString();
+    if (item is GrammarItem) return item.grammar.id;
     return '';
   }
 
@@ -40,34 +46,28 @@ class LearningUiModel {
   }
 
   LearningUiModel copyWith({
+    LearningSessionState? sessionState,
     List<LearningItem>? items,
     int? currentIndex,
     Set<String>? revealedItemIds,
     int? totalItems,
     int? completedCount,
     Map<SrsRating, String>? ratingIntervals,
-    bool? isCompleted,
+    SessionSnapshot? lastSnapshot,
   }) {
     return LearningUiModel(
+      sessionState: sessionState ?? this.sessionState,
       items: items ?? this.items,
       currentIndex: currentIndex ?? this.currentIndex,
       revealedItemIds: revealedItemIds ?? this.revealedItemIds,
       totalItems: totalItems ?? this.totalItems,
       completedCount: completedCount ?? this.completedCount,
       ratingIntervals: ratingIntervals ?? this.ratingIntervals,
-      isCompleted: isCompleted ?? this.isCompleted,
+      lastSnapshot: lastSnapshot ?? this.lastSnapshot,
     );
   }
 
-  static const LearningUiModel initial = LearningUiModel(
-    items: [],
-    currentIndex: 0,
-    revealedItemIds: <String>{},
-    totalItems: 0,
-    completedCount: 0,
-    ratingIntervals: {},
-    isCompleted: false,
-  );
+  static const LearningUiModel initial = LearningUiModel();
 }
 
 @riverpod
@@ -77,15 +77,52 @@ class LearningNotifier extends _$LearningNotifier {
   @override
   FutureOr<LearningUiModel> build(String mode) async {
     final items = await ref.watch(learningRepositoryProvider).getLearningQueue(mode);
-    final intervals = items.isNotEmpty 
-        ? _scheduler.getIntervalPreviews(currentProgress: items[0].progress)
-        : <SrsRating, String>{};
-        
+    return _buildStateWithItems(items, 0, 0);
+  }
+
+  LearningUiModel _buildStateWithItems(List<LearningItem> items, int currentIndex, int completedCount) {
+    if (items.isEmpty) {
+      return LearningUiModel(
+        sessionState: const LearningSessionEmpty(),
+        items: [],
+        currentIndex: 0,
+        totalItems: completedCount,
+        completedCount: completedCount,
+      );
+    }
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    // P1: learn-ahead logic (default 20 mins)
+    final learnAheadLimit = ref.read(learnAheadLimitProvider).inMilliseconds;
+
+    // Check if the current item is actually due
+    final currentItem = items[currentIndex];
+    final dueTime = currentItem.progress?.dueTime.toInt() ?? 0;
+
+    if (dueTime > now + learnAheadLimit) {
+      return LearningUiModel(
+        sessionState: LearningSessionWaiting(
+          waitingUntil: DateTime.fromMillisecondsSinceEpoch(dueTime),
+        ),
+        items: items,
+        currentIndex: currentIndex,
+        totalItems: items.length + completedCount,
+        completedCount: completedCount,
+      );
+    }
+
+    final intervals = _scheduler.getIntervalPreviews(currentProgress: currentItem.progress);
+
     return LearningUiModel(
+      sessionState: LearningSessionActive(
+        item: currentItem,
+        currentIndex: currentIndex,
+        totalItems: items.length + completedCount,
+      ),
       items: items,
-      currentIndex: 0,
-      revealedItemIds: {},
-      totalItems: items.length,
+      currentIndex: currentIndex,
+      totalItems: items.length + completedCount,
+      completedCount: completedCount,
       ratingIntervals: intervals,
     );
   }
@@ -95,16 +132,7 @@ class LearningNotifier extends _$LearningNotifier {
     if (value == null || index < 0 || index >= value.items.length) {
       return;
     }
-    
-    // Recalculate intervals for the new page
-    final intervals = _scheduler.getIntervalPreviews(
-      currentProgress: value.items[index].progress,
-    );
-
-    state = AsyncData(value.copyWith(
-      currentIndex: index,
-      ratingIntervals: intervals,
-    ));
+    state = AsyncData(_buildStateWithItems(value.items, index, value.completedCount));
   }
 
   void toggleReveal(String id) {
@@ -122,7 +150,7 @@ class LearningNotifier extends _$LearningNotifier {
 
   Future<void> onRate(int score) async {
     final value = state.valueOrNull;
-    if (value == null || value.isCompleted || value.items.isEmpty) return;
+    if (value == null || value.items.isEmpty) return;
 
     final item = value.items[value.currentIndex];
     final String id;
@@ -131,50 +159,107 @@ class LearningNotifier extends _$LearningNotifier {
       id = item.word.id;
       type = 'word';
     } else {
-      id = (item as GrammarItem).grammar.id.toString();
+      id = (item as GrammarItem).grammar.id;
       type = 'grammar';
     }
 
-    final rating = SrsRating.fromInt(score);
-
-    // Update progress in database
-    final result = await ref.read(learningRepositoryProvider).updateProgress(
-      id,
-      type,
-      rating,
+    // Save snapshot for Undo
+    final snapshot = SessionSnapshot(
+      items: List.from(value.items),
+      currentIndex: value.currentIndex,
+      completedCount: value.completedCount,
+      previousProgress: item.progress,
     );
 
+    final rating = SrsRating.fromInt(score);
+    final result = await ref.read(learningRepositoryProvider).updateProgress(id, type, rating);
+
     final nextItems = List<LearningItem>.from(value.items);
-    final currentItem = nextItems.removeAt(value.currentIndex);
+    nextItems.removeAt(value.currentIndex);
 
     if (result.isRequeue) {
-      final reItem = currentItem is WordItem 
-          ? currentItem.copyWith(progress: result.updatedProgress)
-          : (currentItem as GrammarItem).copyWith(progress: result.updatedProgress);
+      final reItem = item is WordItem 
+          ? item.copyWith(progress: result.updatedProgress)
+          : (item as GrammarItem).copyWith(progress: result.updatedProgress);
       nextItems.add(reItem);
     }
 
-    if (nextItems.isEmpty) {
-      state = AsyncData(value.copyWith(
-        items: [],
-        currentIndex: 0,
-        completedCount: value.completedCount + 1,
-        isCompleted: true,
-      ));
-    } else {
-      // Clamping in case we were at the end and didn't requeue
-      final nextIndex = value.currentIndex.clamp(0, nextItems.length - 1);
-      final intervals = _scheduler.getIntervalPreviews(
-        currentProgress: nextItems[nextIndex].progress,
-      );
-      
-      state = AsyncData(value.copyWith(
-        items: nextItems,
-        currentIndex: nextIndex,
-        completedCount: value.completedCount + (result.isRequeue ? 0 : 1),
-        ratingIntervals: intervals,
-        revealedItemIds: {...value.revealedItemIds}..remove(id),
-      ));
-    }
+    state = AsyncData(_buildStateWithItems(
+      nextItems, 
+      0, // Always go back to 0 to find the next most due item if sorted
+      value.completedCount + (result.isRequeue ? 0 : 1),
+    ).copyWith(
+      lastSnapshot: snapshot,
+      revealedItemIds: {...value.revealedItemIds}..remove(id),
+    ));
   }
+
+  Future<void> undo() async {
+    final value = state.valueOrNull;
+    if (value == null || value.lastSnapshot == null) return;
+
+    final snapshot = value.lastSnapshot!;
+    final item = snapshot.items[snapshot.currentIndex];
+    
+    final String id;
+    final String type;
+    if (item is WordItem) {
+      id = item.word.id;
+      type = 'word';
+    } else {
+      id = (item as GrammarItem).grammar.id;
+      type = 'grammar';
+    }
+
+    await ref.read(learningRepositoryProvider).undoUpdateProgress(
+      id, 
+      type, 
+      snapshot.previousProgress,
+    );
+
+    state = AsyncData(_buildStateWithItems(
+      snapshot.items,
+      snapshot.currentIndex,
+      snapshot.completedCount,
+    ).copyWith(lastSnapshot: null));
+  }
+
+  Future<void> suspendCurrent() async {
+    final value = state.valueOrNull;
+    if (value == null || value.sessionState is! LearningSessionActive) return;
+
+    final item = (value.sessionState as LearningSessionActive).item;
+    final String id = item is WordItem ? item.word.id : (item as GrammarItem).grammar.id;
+    final String type = item is WordItem ? 'word' : 'grammar';
+
+    await ref.read(learningRepositoryProvider).suspend(id, type);
+    
+    final nextItems = List<LearningItem>.from(value.items);
+    nextItems.removeAt(value.currentIndex);
+
+    state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount));
+  }
+
+  Future<void> buryCurrent() async {
+    final value = state.valueOrNull;
+    if (value == null || value.sessionState is! LearningSessionActive) return;
+
+    final item = (value.sessionState as LearningSessionActive).item;
+    final String id = item is WordItem ? item.word.id : (item as GrammarItem).grammar.id;
+    final String type = item is WordItem ? 'word' : 'grammar';
+    final resetHour = ref.read(resetHourProvider);
+
+    await ref.read(learningRepositoryProvider).bury(id, type, resetHour);
+    
+    final nextItems = List<LearningItem>.from(value.items);
+    nextItems.removeAt(value.currentIndex);
+
+    state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount));
+  }
+}
+
+@riverpod
+Duration learnAheadLimit(LearnAheadLimitRef ref) {
+  // Can be connected to SharedPreferences later
+  return const Duration(minutes: 20);
 }

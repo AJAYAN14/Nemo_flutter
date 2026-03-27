@@ -100,11 +100,13 @@ class LearningRepository {
     final now = DateTime.now().millisecondsSinceEpoch;
     final List<LearningItem> items = [];
 
-    // 1. Get due items (filtered by mode)
-    final dueProgress = await _learningDao.getDueItems(now);
+    // 1. Get due items (filtered by mode or all)
+    final dueProgress = await _learningDao.getDueItems(
+      now, 
+      itemType: mode == 'all' ? null : mode,
+    );
+    
     for (final progress in dueProgress) {
-      if (progress.itemType != mode) continue;
-
       if (progress.itemType == 'word') {
         final idStr = progress.id.replaceFirst('word_', '');
         final word = await _wordDao.getWordWithExamples(idStr);
@@ -144,6 +146,26 @@ class LearningRepository {
       updatedProgress: updatedData,
       isRequeue: result is SrsRequeue,
     );
+  }
+
+  Future<void> undoUpdateProgress(String id, String itemType, LearningProgressData? oldData) async {
+    if (oldData == null) {
+      // If there was no progress before, we might want to delete it or just skip
+      return; 
+    }
+    await _learningDao.updateProgress(oldData.toCompanion(true));
+  }
+
+  Future<void> suspend(String id, String itemType) async {
+    final fullId = '${itemType}_$id';
+    await _learningDao.setSuspended(fullId, true);
+  }
+
+  Future<void> bury(String id, String itemType, int resetHour) async {
+    final fullId = '${itemType}_$id';
+    // Move dueTime to the start of the next learning day
+    final nextDayStart = DateTimeUtils.getLearningDayEnd(resetHour) + 1;
+    await _learningDao.updateDueTime(fullId, nextDayStart);
   }
 }
 
