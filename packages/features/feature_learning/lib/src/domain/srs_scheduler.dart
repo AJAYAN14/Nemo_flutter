@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:core_storage/core_storage.dart';
+import 'fsrs_algorithm.dart';
 
 enum SrsRating {
   again, // 0
@@ -10,6 +11,10 @@ enum SrsRating {
   static SrsRating fromInt(int value) {
     return SrsRating.values[value.clamp(0, 3)];
   }
+
+  FsrsRating toFsrs() {
+    return FsrsRating.values[index];
+  }
 }
 
 sealed class SrsScheduleResult {
@@ -17,29 +22,41 @@ sealed class SrsScheduleResult {
 }
 
 class SrsRequeue extends SrsScheduleResult {
-  final LearningProgressCompanion updatedProgress;
+  final LearningProgressCompanion companion;
   final int nextStep;
   final BigInt dueTime;
 
   const SrsRequeue({
-    required this.updatedProgress,
+    required this.companion,
     required this.nextStep,
     required this.dueTime,
   });
 }
 
 class SrsGraduate extends SrsScheduleResult {
-  final LearningProgressCompanion updatedProgress;
+  final LearningProgressCompanion companion;
   final SrsRating rating;
 
   const SrsGraduate({
-    required this.updatedProgress,
+    required this.companion,
     required this.rating,
+  });
+}
+
+/// A wrapper used by Repository to provide the actual Data object to the UI
+class SrsFinalResult {
+  final LearningProgressData updatedProgress;
+  final bool isRequeue;
+
+  const SrsFinalResult({
+    required this.updatedProgress,
+    required this.isRequeue,
   });
 }
 
 class SrsScheduler {
   static const List<int> learningSteps = [1, 10]; // Minutes
+  final FsrsAlgorithm _fsrs = FsrsAlgorithm();
 
   SrsScheduleResult schedule({
     required String id,
@@ -48,22 +65,89 @@ class SrsScheduler {
     required LearningProgressData? currentProgress,
   }) {
     final now = DateTime.now().millisecondsSinceEpoch;
-    final currentStep = currentProgress?.step ?? 0;
+    final currentState = MemoryState(
+      stability: currentProgress?.stability ?? 0.0,
+      difficulty: currentProgress?.difficulty ?? 0.0,
+    );
+    
+    final lastReviewed = currentProgress?.lastReviewed?.toInt() ?? now;
+    final double elapsedDays = (currentProgress == null || currentProgress.lastReviewed == null)
+        ? 0.0
+        : (now - lastReviewed) / (24 * 60 * 60 * 1000);
 
-    switch (rating) {
-      case SrsRating.again:
-        return _handleAgain(id, itemType, now);
-      case SrsRating.hard:
-        return _handleHard(id, itemType, currentStep, now);
-      case SrsRating.good:
-        return _handleGood(id, itemType, currentStep, now);
-      case SrsRating.easy:
-        return _handleEasy(id, itemType, currentStep, now);
+    final firstLearned = currentProgress?.firstLearned ?? BigInt.from(now);
+    final currentStep = currentProgress?.step ?? 0;
+    final isNew = currentProgress == null || currentProgress.repetitionCount == 0;
+    final isLearning = isNew || currentProgress.step < learningSteps.length;
+
+    if (rating == SrsRating.again) {
+      return _handleAgain(id, itemType, now, firstLearned);
     }
+
+    if (isLearning) {
+      if (rating == SrsRating.hard) {
+        return _handleHard(id, itemType, currentStep, now, firstLearned);
+      } else if (rating == SrsRating.good) {
+        if (currentStep < learningSteps.length - 1) {
+          return _handleGoodStep(id, itemType, currentStep, now, firstLearned);
+        } else {
+          return _handleGraduate(id, itemType, currentState, rating.toFsrs(), elapsedDays, now, firstLearned, currentProgress?.repetitionCount ?? 0);
+        }
+      } else if (rating == SrsRating.easy) {
+        return _handleGraduate(id, itemType, currentState, rating.toFsrs(), elapsedDays, now, firstLearned, currentProgress?.repetitionCount ?? 0);
+      }
+    } else {
+      return _handleGraduate(id, itemType, currentState, rating.toFsrs(), elapsedDays, now, firstLearned, currentProgress.repetitionCount);
+    }
+
+    return _handleAgain(id, itemType, now, firstLearned);
   }
 
-  SrsScheduleResult _handleAgain(String id, String itemType, int now) {
-    final nextStep = 0;
+  Map<SrsRating, String> getIntervalPreviews({
+    required LearningProgressData? currentProgress,
+  }) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final currentState = MemoryState(
+      stability: currentProgress?.stability ?? 0.0,
+      difficulty: currentProgress?.difficulty ?? 0.0,
+    );
+    
+    final lastReviewed = currentProgress?.lastReviewed?.toInt() ?? now;
+    final double elapsedDays = (currentProgress == null || currentProgress.lastReviewed == null)
+        ? 0.0
+        : (now - lastReviewed) / (24 * 60 * 60 * 1000);
+
+    final currentStep = currentProgress?.step ?? 0;
+    final isNew = currentProgress == null || currentProgress.repetitionCount == 0;
+    final isLearning = isNew || currentProgress.step < learningSteps.length;
+
+    final Map<SrsRating, String> previews = {};
+    previews[SrsRating.again] = '<${learningSteps[0]}m';
+
+    if (isLearning) {
+      previews[SrsRating.hard] = '${learningSteps[currentStep]}m';
+      
+      if (currentStep < learningSteps.length - 1) {
+        previews[SrsRating.good] = '${learningSteps[currentStep + 1]}m';
+      } else {
+        final nextState = _fsrs.step(currentState, SrsRating.good.toFsrs(), elapsedDays);
+        previews[SrsRating.good] = '${_fsrs.nextIntervalDays(nextState.stability)}d';
+      }
+
+      final nextStateEasy = _fsrs.step(currentState, SrsRating.easy.toFsrs(), elapsedDays);
+      previews[SrsRating.easy] = '${_fsrs.nextIntervalDays(nextStateEasy.stability)}d';
+    } else {
+      for (final rating in [SrsRating.hard, SrsRating.good, SrsRating.easy]) {
+        final nextState = _fsrs.step(currentState, rating.toFsrs(), elapsedDays);
+        previews[rating] = '${_fsrs.nextIntervalDays(nextState.stability)}d';
+      }
+    }
+
+    return previews;
+  }
+
+  SrsScheduleResult _handleAgain(String id, String itemType, int now, BigInt firstLearned) {
+    const nextStep = 0;
     final intervalMin = learningSteps[nextStep];
     final dueTime = BigInt.from(now + intervalMin * 60 * 1000);
 
@@ -73,16 +157,17 @@ class SrsScheduler {
       step: const Value(0),
       dueTime: Value(dueTime),
       lastReviewed: Value(BigInt.from(now)),
+      firstLearned: Value(firstLearned),
     );
 
     return SrsRequeue(
-      updatedProgress: companion,
+      companion: companion,
       nextStep: nextStep,
       dueTime: dueTime,
     );
   }
 
-  SrsScheduleResult _handleHard(String id, String itemType, int currentStep, int now) {
+  SrsScheduleResult _handleHard(String id, String itemType, int currentStep, int now, BigInt firstLearned) {
     final intervalMin = learningSteps[currentStep];
     final dueTime = BigInt.from(now + intervalMin * 60 * 1000);
 
@@ -92,58 +177,72 @@ class SrsScheduler {
       step: Value(currentStep),
       dueTime: Value(dueTime),
       lastReviewed: Value(BigInt.from(now)),
+      firstLearned: Value(firstLearned),
     );
 
     return SrsRequeue(
-      updatedProgress: companion,
+      companion: companion,
       nextStep: currentStep,
       dueTime: dueTime,
     );
   }
 
-  SrsScheduleResult _handleGood(String id, String itemType, int currentStep, int now) {
-    if (currentStep < learningSteps.length - 1) {
-      final nextStep = currentStep + 1;
-      final intervalMin = learningSteps[nextStep];
-      final dueTime = BigInt.from(now + intervalMin * 60 * 1000);
+  SrsScheduleResult _handleGoodStep(String id, String itemType, int currentStep, int now, BigInt firstLearned) {
+    final nextStep = currentStep + 1;
+    final intervalMin = learningSteps[nextStep];
+    final dueTime = BigInt.from(now + intervalMin * 60 * 1000);
 
-      final companion = LearningProgressCompanion(
-        id: Value(id),
-        itemType: Value(itemType),
-        step: Value(nextStep),
-        dueTime: Value(dueTime),
-        lastReviewed: Value(BigInt.from(now)),
-      );
-
-      return SrsRequeue(
-        updatedProgress: companion,
-        nextStep: nextStep,
-        dueTime: dueTime,
-      );
-    } else {
-      // Graduate
-      final companion = LearningProgressCompanion(
-        id: Value(id),
-        itemType: Value(itemType),
-        // Simple graduation logic: 1 day interval
-        interval: const Value(1), 
-        dueTime: Value(BigInt.from(now + 24 * 60 * 60 * 1000)),
-        lastReviewed: Value(BigInt.from(now)),
-        repetitionCount: Value((0) + 1), // This needs current count
-      );
-      return SrsGraduate(updatedProgress: companion, rating: SrsRating.good);
-    }
-  }
-
-  SrsScheduleResult _handleEasy(String id, String itemType, int currentStep, int now) {
-    // Immediate graduation
     final companion = LearningProgressCompanion(
       id: Value(id),
       itemType: Value(itemType),
-      interval: const Value(4), // 4 days for Easy graduation
-      dueTime: Value(BigInt.from(now + 4 * 24 * 60 * 60 * 1000)),
+      step: Value(nextStep),
+      dueTime: Value(dueTime),
       lastReviewed: Value(BigInt.from(now)),
+      firstLearned: Value(firstLearned),
     );
-    return SrsGraduate(updatedProgress: companion, rating: SrsRating.easy);
+
+    return SrsRequeue(
+      companion: companion,
+      nextStep: nextStep,
+      dueTime: dueTime,
+    );
+  }
+
+  SrsScheduleResult _handleGraduate(
+    String id,
+    String itemType,
+    MemoryState currentState,
+    FsrsRating rating,
+    double elapsedDays,
+    int now,
+    BigInt firstLearned,
+    int repetitionCount,
+  ) {
+    final newState = _fsrs.step(currentState, rating, elapsedDays);
+    
+    final int newInterval;
+    if (rating.index < FsrsRating.good.index) {
+       newInterval = _fsrs.nextIntervalDays(newState.stability);
+    } else {
+       final seed = id.hashCode ^ now ^ rating.index ^ repetitionCount;
+       newInterval = _fsrs.nextIntervalDaysWithFuzz(newState.stability, seed);
+    }
+
+    final dueTime = BigInt.from(now + newInterval * 24 * 60 * 60 * 1000);
+
+    final companion = LearningProgressCompanion(
+      id: Value(id),
+      itemType: Value(itemType),
+      step: Value(learningSteps.length), // Graduate
+      stability: Value(newState.stability),
+      difficulty: Value(newState.difficulty),
+      interval: Value(newInterval),
+      repetitionCount: Value(repetitionCount + 1),
+      dueTime: Value(dueTime),
+      lastReviewed: Value(BigInt.from(now)),
+      firstLearned: Value(firstLearned),
+    );
+
+    return SrsGraduate(companion: companion, rating: SrsRating.values[rating.index]);
   }
 }

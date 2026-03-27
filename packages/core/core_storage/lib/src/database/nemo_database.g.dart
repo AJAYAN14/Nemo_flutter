@@ -2213,6 +2213,17 @@ class $LearningProgressTable extends LearningProgress
     type: DriftSqlType.bigInt,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _firstLearnedMeta = const VerificationMeta(
+    'firstLearned',
+  );
+  @override
+  late final GeneratedColumn<BigInt> firstLearned = GeneratedColumn<BigInt>(
+    'first_learned',
+    aliasedName,
+    true,
+    type: DriftSqlType.bigInt,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _stepMeta = const VerificationMeta('step');
   @override
   late final GeneratedColumn<int> step = GeneratedColumn<int>(
@@ -2233,6 +2244,7 @@ class $LearningProgressTable extends LearningProgress
     stability,
     repetitionCount,
     lastReviewed,
+    firstLearned,
     step,
   ];
   @override
@@ -2302,6 +2314,15 @@ class $LearningProgressTable extends LearningProgress
         ),
       );
     }
+    if (data.containsKey('first_learned')) {
+      context.handle(
+        _firstLearnedMeta,
+        firstLearned.isAcceptableOrUnknown(
+          data['first_learned']!,
+          _firstLearnedMeta,
+        ),
+      );
+    }
     if (data.containsKey('step')) {
       context.handle(
         _stepMeta,
@@ -2349,6 +2370,10 @@ class $LearningProgressTable extends LearningProgress
         DriftSqlType.bigInt,
         data['${effectivePrefix}last_reviewed'],
       ),
+      firstLearned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bigInt,
+        data['${effectivePrefix}first_learned'],
+      ),
       step: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}step'],
@@ -2372,6 +2397,7 @@ class LearningProgressData extends DataClass
   final double stability;
   final int repetitionCount;
   final BigInt? lastReviewed;
+  final BigInt? firstLearned;
   final int step;
   const LearningProgressData({
     required this.id,
@@ -2382,6 +2408,7 @@ class LearningProgressData extends DataClass
     required this.stability,
     required this.repetitionCount,
     this.lastReviewed,
+    this.firstLearned,
     required this.step,
   });
   @override
@@ -2396,6 +2423,9 @@ class LearningProgressData extends DataClass
     map['repetition_count'] = Variable<int>(repetitionCount);
     if (!nullToAbsent || lastReviewed != null) {
       map['last_reviewed'] = Variable<BigInt>(lastReviewed);
+    }
+    if (!nullToAbsent || firstLearned != null) {
+      map['first_learned'] = Variable<BigInt>(firstLearned);
     }
     map['step'] = Variable<int>(step);
     return map;
@@ -2413,6 +2443,9 @@ class LearningProgressData extends DataClass
       lastReviewed: lastReviewed == null && nullToAbsent
           ? const Value.absent()
           : Value(lastReviewed),
+      firstLearned: firstLearned == null && nullToAbsent
+          ? const Value.absent()
+          : Value(firstLearned),
       step: Value(step),
     );
   }
@@ -2431,6 +2464,7 @@ class LearningProgressData extends DataClass
       stability: serializer.fromJson<double>(json['stability']),
       repetitionCount: serializer.fromJson<int>(json['repetitionCount']),
       lastReviewed: serializer.fromJson<BigInt?>(json['lastReviewed']),
+      firstLearned: serializer.fromJson<BigInt?>(json['firstLearned']),
       step: serializer.fromJson<int>(json['step']),
     );
   }
@@ -2446,6 +2480,7 @@ class LearningProgressData extends DataClass
       'stability': serializer.toJson<double>(stability),
       'repetitionCount': serializer.toJson<int>(repetitionCount),
       'lastReviewed': serializer.toJson<BigInt?>(lastReviewed),
+      'firstLearned': serializer.toJson<BigInt?>(firstLearned),
       'step': serializer.toJson<int>(step),
     };
   }
@@ -2459,6 +2494,7 @@ class LearningProgressData extends DataClass
     double? stability,
     int? repetitionCount,
     Value<BigInt?> lastReviewed = const Value.absent(),
+    Value<BigInt?> firstLearned = const Value.absent(),
     int? step,
   }) => LearningProgressData(
     id: id ?? this.id,
@@ -2469,6 +2505,7 @@ class LearningProgressData extends DataClass
     stability: stability ?? this.stability,
     repetitionCount: repetitionCount ?? this.repetitionCount,
     lastReviewed: lastReviewed.present ? lastReviewed.value : this.lastReviewed,
+    firstLearned: firstLearned.present ? firstLearned.value : this.firstLearned,
     step: step ?? this.step,
   );
   LearningProgressData copyWithCompanion(LearningProgressCompanion data) {
@@ -2487,6 +2524,9 @@ class LearningProgressData extends DataClass
       lastReviewed: data.lastReviewed.present
           ? data.lastReviewed.value
           : this.lastReviewed,
+      firstLearned: data.firstLearned.present
+          ? data.firstLearned.value
+          : this.firstLearned,
       step: data.step.present ? data.step.value : this.step,
     );
   }
@@ -2502,6 +2542,7 @@ class LearningProgressData extends DataClass
           ..write('stability: $stability, ')
           ..write('repetitionCount: $repetitionCount, ')
           ..write('lastReviewed: $lastReviewed, ')
+          ..write('firstLearned: $firstLearned, ')
           ..write('step: $step')
           ..write(')'))
         .toString();
@@ -2517,6 +2558,7 @@ class LearningProgressData extends DataClass
     stability,
     repetitionCount,
     lastReviewed,
+    firstLearned,
     step,
   );
   @override
@@ -2531,6 +2573,7 @@ class LearningProgressData extends DataClass
           other.stability == this.stability &&
           other.repetitionCount == this.repetitionCount &&
           other.lastReviewed == this.lastReviewed &&
+          other.firstLearned == this.firstLearned &&
           other.step == this.step);
 }
 
@@ -2543,6 +2586,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
   final Value<double> stability;
   final Value<int> repetitionCount;
   final Value<BigInt?> lastReviewed;
+  final Value<BigInt?> firstLearned;
   final Value<int> step;
   final Value<int> rowid;
   const LearningProgressCompanion({
@@ -2554,6 +2598,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
     this.stability = const Value.absent(),
     this.repetitionCount = const Value.absent(),
     this.lastReviewed = const Value.absent(),
+    this.firstLearned = const Value.absent(),
     this.step = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2566,6 +2611,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
     this.stability = const Value.absent(),
     this.repetitionCount = const Value.absent(),
     this.lastReviewed = const Value.absent(),
+    this.firstLearned = const Value.absent(),
     this.step = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -2579,6 +2625,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
     Expression<double>? stability,
     Expression<int>? repetitionCount,
     Expression<BigInt>? lastReviewed,
+    Expression<BigInt>? firstLearned,
     Expression<int>? step,
     Expression<int>? rowid,
   }) {
@@ -2591,6 +2638,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
       if (stability != null) 'stability': stability,
       if (repetitionCount != null) 'repetition_count': repetitionCount,
       if (lastReviewed != null) 'last_reviewed': lastReviewed,
+      if (firstLearned != null) 'first_learned': firstLearned,
       if (step != null) 'step': step,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2605,6 +2653,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
     Value<double>? stability,
     Value<int>? repetitionCount,
     Value<BigInt?>? lastReviewed,
+    Value<BigInt?>? firstLearned,
     Value<int>? step,
     Value<int>? rowid,
   }) {
@@ -2617,6 +2666,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
       stability: stability ?? this.stability,
       repetitionCount: repetitionCount ?? this.repetitionCount,
       lastReviewed: lastReviewed ?? this.lastReviewed,
+      firstLearned: firstLearned ?? this.firstLearned,
       step: step ?? this.step,
       rowid: rowid ?? this.rowid,
     );
@@ -2649,6 +2699,9 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
     if (lastReviewed.present) {
       map['last_reviewed'] = Variable<BigInt>(lastReviewed.value);
     }
+    if (firstLearned.present) {
+      map['first_learned'] = Variable<BigInt>(firstLearned.value);
+    }
     if (step.present) {
       map['step'] = Variable<int>(step.value);
     }
@@ -2669,6 +2722,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
           ..write('stability: $stability, ')
           ..write('repetitionCount: $repetitionCount, ')
           ..write('lastReviewed: $lastReviewed, ')
+          ..write('firstLearned: $firstLearned, ')
           ..write('step: $step, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -4526,6 +4580,7 @@ typedef $$LearningProgressTableCreateCompanionBuilder =
       Value<double> stability,
       Value<int> repetitionCount,
       Value<BigInt?> lastReviewed,
+      Value<BigInt?> firstLearned,
       Value<int> step,
       Value<int> rowid,
     });
@@ -4539,6 +4594,7 @@ typedef $$LearningProgressTableUpdateCompanionBuilder =
       Value<double> stability,
       Value<int> repetitionCount,
       Value<BigInt?> lastReviewed,
+      Value<BigInt?> firstLearned,
       Value<int> step,
       Value<int> rowid,
     });
@@ -4589,6 +4645,11 @@ class $$LearningProgressTableFilterComposer
 
   ColumnFilters<BigInt> get lastReviewed => $composableBuilder(
     column: $table.lastReviewed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<BigInt> get firstLearned => $composableBuilder(
+    column: $table.firstLearned,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4647,6 +4708,11 @@ class $$LearningProgressTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<BigInt> get firstLearned => $composableBuilder(
+    column: $table.firstLearned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get step => $composableBuilder(
     column: $table.step,
     builder: (column) => ColumnOrderings(column),
@@ -4689,6 +4755,11 @@ class $$LearningProgressTableAnnotationComposer
 
   GeneratedColumn<BigInt> get lastReviewed => $composableBuilder(
     column: $table.lastReviewed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<BigInt> get firstLearned => $composableBuilder(
+    column: $table.firstLearned,
     builder: (column) => column,
   );
 
@@ -4741,6 +4812,7 @@ class $$LearningProgressTableTableManager
                 Value<double> stability = const Value.absent(),
                 Value<int> repetitionCount = const Value.absent(),
                 Value<BigInt?> lastReviewed = const Value.absent(),
+                Value<BigInt?> firstLearned = const Value.absent(),
                 Value<int> step = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningProgressCompanion(
@@ -4752,6 +4824,7 @@ class $$LearningProgressTableTableManager
                 stability: stability,
                 repetitionCount: repetitionCount,
                 lastReviewed: lastReviewed,
+                firstLearned: firstLearned,
                 step: step,
                 rowid: rowid,
               ),
@@ -4765,6 +4838,7 @@ class $$LearningProgressTableTableManager
                 Value<double> stability = const Value.absent(),
                 Value<int> repetitionCount = const Value.absent(),
                 Value<BigInt?> lastReviewed = const Value.absent(),
+                Value<BigInt?> firstLearned = const Value.absent(),
                 Value<int> step = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningProgressCompanion.insert(
@@ -4776,6 +4850,7 @@ class $$LearningProgressTableTableManager
                 stability: stability,
                 repetitionCount: repetitionCount,
                 lastReviewed: lastReviewed,
+                firstLearned: firstLearned,
                 step: step,
                 rowid: rowid,
               ),

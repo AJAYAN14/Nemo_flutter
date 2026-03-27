@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'srs_rating_button.dart';
+import '../../domain/srs_scheduler.dart';
 
 class SRSActionArea extends StatelessWidget {
   const SRSActionArea({
@@ -13,14 +14,12 @@ class SRSActionArea extends StatelessWidget {
   final bool showAnswer;
   final VoidCallback onShowAnswer;
   final Function(int) onRate;
-  final Map<String, String>? ratingIntervals;
+  final Map<SrsRating, String>? ratingIntervals;
 
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     
-    // 100% 1:1 Floating Design: 
-    // No background on the main container, only on the buttons themselves.
     return Container(
       padding: EdgeInsets.fromLTRB(16, 12, 16, bottomPadding + 16),
       child: AnimatedSwitcher(
@@ -33,28 +32,28 @@ class SRSActionArea extends StatelessWidget {
                   SRSRatingButton(
                     type: SRSRatingType.again,
                     label: '重来',
-                    interval: ratingIntervals?['again'] ?? '<1m',
+                    interval: ratingIntervals?[SrsRating.again] ?? '<1m',
                     onPressed: () => onRate(0),
                   ),
                   const SizedBox(width: 8),
                   SRSRatingButton(
                     type: SRSRatingType.hard,
                     label: '困难',
-                    interval: ratingIntervals?['hard'] ?? '1d',
+                    interval: ratingIntervals?[SrsRating.hard] ?? '1d',
                     onPressed: () => onRate(1),
                   ),
                   const SizedBox(width: 8),
                   SRSRatingButton(
                     type: SRSRatingType.good,
                     label: '良好',
-                    interval: ratingIntervals?['good'] ?? '3d',
+                    interval: ratingIntervals?[SrsRating.good] ?? '3d',
                     onPressed: () => onRate(2),
                   ),
                   const SizedBox(width: 8),
                   SRSRatingButton(
                     type: SRSRatingType.easy,
                     label: '简单',
-                    interval: ratingIntervals?['easy'] ?? '7d',
+                    interval: ratingIntervals?[SrsRating.easy] ?? '7d',
                     onPressed: () => onRate(3),
                   ),
                 ],
@@ -113,7 +112,6 @@ class _ShowAnswerButtonState extends State<_ShowAnswerButton> with SingleTickerP
           height: 56,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            // Use 1:1 Dark/Gray colors for the button itself
             color: isDark ? const Color(0xFF1F2937) : const Color(0xFF111827),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [

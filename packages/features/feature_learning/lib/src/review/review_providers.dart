@@ -9,8 +9,8 @@ part 'review_providers.g.dart';
 @riverpod
 class ReviewNotifier extends _$ReviewNotifier {
   @override
-  FutureOr<ReviewSession> build() async {
-    final rawItems = await ref.watch(learningRepositoryProvider).getLearningQueue();
+  FutureOr<ReviewSession> build(String mode) async {
+    final rawItems = await ref.watch(learningRepositoryProvider).getLearningQueue(mode);
     
     // Map raw items to ReviewItem
     final items = rawItems.map((item) {

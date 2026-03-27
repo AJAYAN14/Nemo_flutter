@@ -9,11 +9,13 @@ import 'components/srs_action_area.dart';
 import 'components/common/nemo_learn_header.dart';
 
 class LearningScreen extends ConsumerWidget {
-  const LearningScreen({super.key});
+  const LearningScreen({super.key, required this.mode});
+
+  final String mode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sessionAsync = ref.watch(learningNotifierProvider);
+    final sessionAsync = ref.watch(learningNotifierProvider(mode));
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return sessionAsync.when(
@@ -39,23 +41,26 @@ class LearningScreen extends ConsumerWidget {
         final totalCount = session.items.length;
         final currentId = session.currentId;
         final isAnswerShown = session.isRevealed(currentId);
-        final remainingCount = totalCount - (currentIndex + 1);
+        final remainingCount = totalCount; // Live queue: remaining items is exactly list length
+        
+        final item = session.items[currentIndex];
+        final title = item is WordItem ? '单词学习' : '语法学习';
 
         return Scaffold(
           backgroundColor: isDark ? NemoColors.bgBaseDark : NemoColors.bgBase,
           appBar: NemoLearnHeader(
-            title: '单词学习',
+            title: title,
             remainingCount: remainingCount,
             progress: session.progress,
             onClose: () => Navigator.of(context).pop(),
             onPrev: () {
               if (currentIndex > 0) {
-                ref.read(learningNotifierProvider.notifier).onPageChanged(currentIndex - 1);
+                ref.read(learningNotifierProvider(mode).notifier).onPageChanged(currentIndex - 1);
               }
             },
             onNext: () {
               if (currentIndex < totalCount - 1) {
-                ref.read(learningNotifierProvider.notifier).onPageChanged(currentIndex + 1);
+                ref.read(learningNotifierProvider(mode).notifier).onPageChanged(currentIndex + 1);
               }
             },
             canGoPrev: currentIndex > 0,
@@ -70,7 +75,7 @@ class LearningScreen extends ConsumerWidget {
                   controller: PageController(initialPage: currentIndex),
                   physics: isAnswerShown ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
                   onPageChanged: (index) {
-                    ref.read(learningNotifierProvider.notifier).onPageChanged(index);
+                    ref.read(learningNotifierProvider(mode).notifier).onPageChanged(index);
                   },
                   itemBuilder: (context, index) {
                     final item = session.items[index];
@@ -100,14 +105,9 @@ class LearningScreen extends ConsumerWidget {
                 bottom: 0,
                 child: SRSActionArea(
                   showAnswer: isAnswerShown,
-                  onShowAnswer: () => ref.read(learningNotifierProvider.notifier).toggleReveal(currentId),
-                  onRate: (rating) => ref.read(learningNotifierProvider.notifier).onRate(rating),
-                  ratingIntervals: const {
-                    'again': '<1m',
-                    'hard': '1d',
-                    'good': '3d',
-                    'easy': '7d',
-                  },
+                  onShowAnswer: () => ref.read(learningNotifierProvider(mode).notifier).toggleReveal(currentId),
+                  onRate: (rating) => ref.read(learningNotifierProvider(mode).notifier).onRate(rating),
+                  ratingIntervals: session.ratingIntervals,
                 ),
               ),
             ],

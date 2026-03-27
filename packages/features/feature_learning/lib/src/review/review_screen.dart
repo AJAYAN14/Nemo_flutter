@@ -9,11 +9,13 @@ import '../learning/components/srs_action_area.dart';
 import '../learning/components/common/nemo_learn_header.dart';
 
 class ReviewScreen extends ConsumerWidget {
-  const ReviewScreen({super.key});
+  const ReviewScreen({super.key, required this.mode});
+
+  final String mode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sessionAsync = ref.watch(reviewNotifierProvider);
+    final sessionAsync = ref.watch(reviewNotifierProvider(mode));
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return sessionAsync.when(
@@ -98,22 +100,11 @@ class ReviewScreen extends ConsumerWidget {
                 bottom: 0,
                 child: SRSActionArea(
                   showAnswer: isAnswerShown,
-                  onShowAnswer: () => ref.read(reviewNotifierProvider.notifier).showAnswer(),
+                  onShowAnswer: () => ref.read(reviewNotifierProvider(mode).notifier).showAnswer(),
                   onRate: (score) {
-                    final rating = switch (score) {
-                      0 => ReviewRating.again,
-                      1 => ReviewRating.hard,
-                      2 => ReviewRating.good,
-                      _ => ReviewRating.easy,
-                    };
-                    ref.read(reviewNotifierProvider.notifier).rate(rating);
+                    ref.read(reviewNotifierProvider(mode).notifier).rate(ReviewRating.values[score]);
                   },
-                  ratingIntervals: const {
-                    'again': '<1m',
-                    'hard': '2d',
-                    'good': '4d',
-                    'easy': '7d',
-                  },
+                  ratingIntervals: null, // TODO: Implement dynamic intervals for review session
                 ),
               ),
             ],

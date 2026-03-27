@@ -18,7 +18,7 @@ class NemoDatabase extends _$NemoDatabase {
   NemoDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -29,16 +29,24 @@ class NemoDatabase extends _$NemoDatabase {
       if (from < 4) {
         // Ensure learning_progress table exists
         await m.createTable(learningProgress);
-        
-        // Ensure clean state for other tables if from old version
-        if (from < 3) {
-          await m.drop(grammarExamples);
-          await m.drop(grammarUsages);
-          await m.drop(grammars);
-          await m.drop(wordExamples);
-          await m.drop(words);
-          await m.createAll();
+      }
+      if (from < 5) {
+        // Add firstLearned column to learning_progress
+        try {
+          await m.addColumn(learningProgress, learningProgress.firstLearned);
+        } catch (e) {
+          // In case it already exists from a failed migration
         }
+      }
+      
+      // Ensure clean state for other tables if from old version
+      if (from < 3) {
+        await m.drop(grammarExamples);
+        await m.drop(grammarUsages);
+        await m.drop(grammars);
+        await m.drop(wordExamples);
+        await m.drop(words);
+        await m.createAll();
       }
     },
     beforeOpen: (details) async {
@@ -151,6 +159,10 @@ class WordDao extends DatabaseAccessor<NemoDatabase> with _$WordDaoMixin {
   
   Future<List<WordEntry>> getAllWords() => select(words).get();
   
+  Future<List<WordEntry>> getWordsByLevel(String level) {
+    return (select(words)..where((t) => t.level.equals(level))).get();
+  }
+  
   Stream<List<WordEntry>> watchWordsByCategory(String category) {
     return _queryWordsByCategory(category).watch();
   }
@@ -231,6 +243,10 @@ class GrammarDao extends DatabaseAccessor<NemoDatabase> with _$GrammarDaoMixin {
 
   Future<List<GrammarEntry>> getAllGrammars() => select(grammars).get();
 
+  Future<List<GrammarEntry>> getGrammarsByLevel(String level) {
+    return (select(grammars)..where((t) => t.grammarLevel.equals(level))).get();
+  }
+
   Future<GrammarWithDetails?> getGrammarWithDetails(String id) async {
     final grammar = await (select(grammars)..where((t) => t.id.equals(id))).getSingleOrNull();
     if (grammar == null) return null;
@@ -254,14 +270,42 @@ class LearningDao extends DatabaseAccessor<NemoDatabase> with _$LearningDaoMixin
     return (select(learningProgress)..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
-  Future<int> updateProgress(LearningProgressCompanion companion) {
-    return into(learningProgress).insertOnConflictUpdate(companion);
+  Future<LearningProgressData> updateProgress(LearningProgressCompanion companion) async {
+    await into(learningProgress).insertOnConflictUpdate(companion);
+    return (select(learningProgress)..where((t) => t.id.equals(companion.id.value))).getSingle();
   }
 
   Future<List<LearningProgressData>> getAllProgress() => select(learningProgress).get();
 
   Future<List<LearningProgressData>> getDueItems(int now) {
     return (select(learningProgress)..where((t) => t.dueTime.isSmallerOrEqualValue(BigInt.from(now)))).get();
+  }
+
+  Future<int> getNewItemsCount(String itemType, int startMillis, int endMillis) async {
+    final query = select(learningProgress)
+      ..where((t) => t.itemType.equals(itemType))
+      ..where((t) => t.firstLearned.isBetweenValues(BigInt.from(startMillis), BigInt.from(endMillis)));
+    
+    final result = await query.get();
+    return result.length;
+  }
+
+  Future<int> getReviewedItemsCount(String itemType, int startMillis, int endMillis) async {
+    final query = select(learningProgress)
+      ..where((t) => t.itemType.equals(itemType))
+      ..where((t) => t.lastReviewed.isBetweenValues(BigInt.from(startMillis), BigInt.from(endMillis)));
+    
+    final result = await query.get();
+    return result.length;
+  }
+
+  Future<int> getDueItemsCount(String itemType, int now) async {
+    final query = select(learningProgress)
+      ..where((t) => t.itemType.equals(itemType))
+      ..where((t) => t.dueTime.isSmallerOrEqualValue(BigInt.from(now)));
+    
+    final result = await query.get();
+    return result.length;
   }
 }
 

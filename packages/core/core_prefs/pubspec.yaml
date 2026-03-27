@@ -1,0 +1,23 @@
+name: core_prefs
+description: "Centralized user preferences for Nemo using SharedPreferences."
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ^3.10.8
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  riverpod_annotation: ^2.6.1
+  shared_preferences: ^2.2.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.9
+  riverpod_generator: ^2.6.2
+
+flutter:

@@ -1,23 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:core_prefs/core_prefs.dart';
+import 'package:core_storage/core_storage.dart';
+import 'package:core_domain/core_domain.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../mock/home_mock_data.dart';
 
-class LearningModeNotifier extends Notifier<LearningMode> {
-  @override
-  LearningMode build() => LearningMode.words;
+part 'home_providers.g.dart';
 
-  void setMode(LearningMode mode) {
-    state = mode;
+@riverpod
+class LearningModeNotifier extends _$LearningModeNotifier {
+  @override
+  LearningMode build() {
+    final lastMode = ref.watch(lastLearningModeProvider);
+    return lastMode == 'words' ? LearningMode.words : LearningMode.grammar;
+  }
+
+  Future<void> setMode(LearningMode mode) async {
+    await ref.read(lastLearningModeProvider.notifier).set(mode.name);
   }
 }
 
-class SelectedLevelNotifier extends Notifier<String> {
+@riverpod
+class SelectedLevelNotifier extends _$SelectedLevelNotifier {
   @override
-  String build() => 'N2';
+  String build() {
+    final mode = ref.watch(learningModeNotifierProvider);
+    if (mode == LearningMode.words) {
+      return ref.watch(wordLevelProvider);
+    } else {
+      return ref.watch(grammarLevelProvider);
+    }
+  }
 
-  void setLevel(String level) {
-    state = level;
+  Future<void> setLevel(String level) async {
+    final mode = ref.read(learningModeNotifierProvider);
+    if (mode == LearningMode.words) {
+      await ref.read(wordLevelProvider.notifier).set(level);
+    } else {
+      await ref.read(grammarLevelProvider.notifier).set(level);
+    }
   }
 }
 
@@ -49,35 +71,31 @@ class HomeViewModel {
   final Color highlightColor;
 }
 
-final learningModeProvider =
-    NotifierProvider<LearningModeNotifier, LearningMode>(
-  LearningModeNotifier.new,
-);
-
-final selectedLevelProvider =
-    NotifierProvider<SelectedLevelNotifier, String>(
-  SelectedLevelNotifier.new,
-);
-
-final homeMockMapProvider = Provider<Map<LearningMode, HomeMockStats>>(
-  (ref) => homeMockStats,
-);
-
-final homeViewModelProvider = Provider<HomeViewModel>((ref) {
+@riverpod
+FutureOr<HomeViewModel> homeViewModel(HomeViewModelRef ref) async {
   final now = DateTime.now();
-  final mode = ref.watch(learningModeProvider);
-  final selectedLevel = ref.watch(selectedLevelProvider);
-  final stats = ref.watch(homeMockMapProvider)[mode] ??
-      const HomeMockStats(
-        learned: 0,
-        goal: 1,
-        reviewed: 0,
-        reviewDue: 0,
-        accuracy: 0,
-        levelLabel: 'Error',
-        highlightColor: 0xFFEF4444,
-      );
+  final mode = ref.watch(learningModeNotifierProvider);
+  final selectedLevel = ref.watch(selectedLevelNotifierProvider);
+  
+  final learningDao = ref.watch(learningDaoProvider);
+  final wordGoal = ref.watch(wordGoalProvider);
+  final grammarGoal = ref.watch(grammarGoalProvider);
+  final resetHour = ref.watch(resetHourProvider);
 
+  // Calculate learning day
+  final dayStartMillis = DateTimeUtils.getLearningDayStart(resetHour);
+  final dayEndMillis = DateTimeUtils.getLearningDayEnd(resetHour);
+
+  final itemType = mode == LearningMode.words ? 'word' : 'grammar';
+  
+  // Fetch real stats
+  final learnedCount = await learningDao.getNewItemsCount(itemType, dayStartMillis, dayEndMillis);
+  final reviewedTotal = await learningDao.getReviewedItemsCount(itemType, dayStartMillis, dayEndMillis);
+  final dueCount = await learningDao.getDueItemsCount(itemType, now.millisecondsSinceEpoch);
+  
+  final goal = mode == LearningMode.words ? wordGoal : grammarGoal;
+  
+  // UI formatting
   final weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
   final dateText = '${weekdays[now.weekday % 7]}, ${now.month}月${now.day}日';
 
@@ -100,13 +118,13 @@ final homeViewModelProvider = Provider<HomeViewModel>((ref) {
     mode: mode,
     dateText: dateText,
     greeting: greeting,
-    learned: stats.learned,
-    goal: stats.goal,
-    reviewed: stats.reviewed,
-    reviewDue: stats.reviewDue,
-    accuracy: stats.accuracy,
-    progress: stats.goal > 0 ? (stats.learned / stats.goal).clamp(0.0, 1.0) : 0.0,
-    levelLabel: selectedLevel, // Use dynamic level
-    highlightColor: Color(stats.highlightColor),
+    learned: learnedCount,
+    goal: goal,
+    reviewed: reviewedTotal,
+    reviewDue: dueCount,
+    accuracy: 0, // Accuracy logic not implemented yet
+    progress: goal > 0 ? (learnedCount / goal).clamp(0.0, 1.0) : 0.0,
+    levelLabel: selectedLevel,
+    highlightColor: mode == LearningMode.words ? const Color(0xFF0E68FF) : const Color(0xFF34C759),
   );
-});
+}

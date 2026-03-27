@@ -17,6 +17,8 @@ dependencies:
     path: ../../core/core_designsystem
   core_ui:
     path: ../../core/core_ui
+  core_prefs:
+    path: ../../core/core_prefs
 
 dev_dependencies:
   flutter_test:

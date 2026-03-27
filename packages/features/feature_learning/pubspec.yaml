@@ -22,6 +22,8 @@ dependencies:
     path: ../../core/core_domain
   core_storage:
     path: ../../core/core_storage
+  core_prefs:
+    path: ../../core/core_prefs
 
 dev_dependencies:
   flutter_test:

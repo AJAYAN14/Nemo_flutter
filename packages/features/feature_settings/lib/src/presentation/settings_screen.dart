@@ -8,59 +8,10 @@ import '../routes/settings_routes.dart';
 import 'components/settings_components.dart';
 import 'components/settings_dialogs.dart';
 
-// --- Improved State Providers ---
-class DarkModeOptionNotifier extends Notifier<int> {
-  @override
-  int build() => 2; // 0=Light, 1=Dark, 2=Follow System
-  void set(int value) => state = value;
-}
-
-final darkModeProvider = NotifierProvider<DarkModeOptionNotifier, int>(DarkModeOptionNotifier.new);
-
-class AutoSyncNotifier extends Notifier<bool> {
-  @override
-  bool build() => true;
-  void toggle(bool value) => state = value;
-}
-
-final autoSyncProvider = NotifierProvider<AutoSyncNotifier, bool>(AutoSyncNotifier.new);
-
-class DailyGoalNotifier extends Notifier<int> {
-  @override
-  int build() => 20;
-  void set(int value) => state = value;
-}
-
-final dailyGoalProvider = NotifierProvider<DailyGoalNotifier, int>(DailyGoalNotifier.new);
-
-class GrammarDailyGoalNotifier extends Notifier<int> {
-  @override
-  int build() => 5;
-  void set(int value) => state = value;
-}
-
-final grammarDailyGoalProvider = NotifierProvider<GrammarDailyGoalNotifier, int>(GrammarDailyGoalNotifier.new);
-
-class ResetHourNotifier extends Notifier<int> {
-  @override
-  int build() => 4;
-  void set(int value) => state = value;
-}
-
-final resetHourProvider = NotifierProvider<ResetHourNotifier, int>(ResetHourNotifier.new);
-
-class RandomContentNotifier extends Notifier<bool> {
-  @override
-  bool build() => false;
-  void toggle(bool value) => state = value;
-}
-
-final randomContentProvider = NotifierProvider<RandomContentNotifier, bool>(RandomContentNotifier.new);
-// ----------------------------
+import 'package:core_prefs/core_prefs.dart';
 
 class SettingsScreen extends HookConsumerWidget {
   const SettingsScreen({super.key});
-
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -68,10 +19,11 @@ class SettingsScreen extends HookConsumerWidget {
     final topPadding = mediaQuery.padding.top + 16.0;
     final bottomPadding = mediaQuery.padding.bottom + 104.0;
     
+    // Watch persistent providers from core_prefs
     final darkMode = ref.watch(darkModeProvider);
     final isAutoSync = ref.watch(autoSyncProvider);
-    final dailyGoal = ref.watch(dailyGoalProvider);
-    final grammarGoal = ref.watch(grammarDailyGoalProvider);
+    final dailyGoal = ref.watch(wordGoalProvider); // Renamed to wordGoalProvider
+    final grammarGoal = ref.watch(grammarGoalProvider);
     final resetHour = ref.watch(resetHourProvider);
     final isRandom = ref.watch(randomContentProvider);
 
@@ -150,7 +102,7 @@ class SettingsScreen extends HookConsumerWidget {
                     onClick: () => context.showNemoBottomSheet(
                       child: DailyGoalSelectionBottomSheet(
                         currentGoal: dailyGoal,
-                        onSelected: (val) => ref.read(dailyGoalProvider.notifier).set(val),
+                        onSelected: (val) => ref.read(wordGoalProvider.notifier).set(val),
                       ),
                     ),
                     trailing: _TrailingValue('$dailyGoal个'),
@@ -163,7 +115,7 @@ class SettingsScreen extends HookConsumerWidget {
                     onClick: () => context.showNemoBottomSheet(
                       child: GrammarDailyGoalSelectionBottomSheet(
                         currentGoal: grammarGoal,
-                        onSelected: (val) => ref.read(grammarDailyGoalProvider.notifier).set(val),
+                        onSelected: (val) => ref.read(grammarGoalProvider.notifier).set(val),
                       ),
                     ),
                     trailing: _TrailingValue('$grammarGoal条'),

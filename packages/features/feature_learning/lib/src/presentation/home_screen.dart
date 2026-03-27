@@ -16,7 +16,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final vm = ref.watch(homeViewModelProvider);
+    final homeAsync = ref.watch(homeViewModelProvider);
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
 
@@ -26,38 +26,42 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: NemoColors.bgBase,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(16, topPadding, 16, bottomPadding),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _Header(vm: vm),
-                const SizedBox(height: 20),
-                _BentoControlCard(vm: vm, ref: ref),
-                const SizedBox(height: kGridGap),
-                _BentoMiddleGrid(vm: vm),
-                const SizedBox(height: kGridGap),
-                _BentoActionButton(vm: vm),
-                const SizedBox(height: 32),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(
-                    '学习资源',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                      color: NemoColors.textSub,
-                      letterSpacing: 0.5,
+      body: homeAsync.when(
+        data: (vm) => CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(16, topPadding, 16, bottomPadding),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  _Header(vm: vm),
+                  const SizedBox(height: 20),
+                  _BentoControlCard(vm: vm, ref: ref),
+                  const SizedBox(height: kGridGap),
+                  _BentoMiddleGrid(vm: vm),
+                  const SizedBox(height: kGridGap),
+                  _BentoActionButton(vm: vm),
+                  const SizedBox(height: 32),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      '学习资源',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: NemoColors.textSub,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                _ResourceSection(),
-              ]),
+                  const SizedBox(height: 12),
+                  _ResourceSection(),
+                ]),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('加载失败: $err')),
       ),
     );
   }
@@ -142,7 +146,7 @@ class _BentoControlCard extends StatelessWidget {
                     selectedLevel: vm.levelLabel,
                     primaryColor: primaryColor,
                     onLevelSelected: (level) {
-                      ref.read(selectedLevelProvider.notifier).setLevel(level);
+                      ref.read(selectedLevelNotifierProvider.notifier).setLevel(level);
                     },
                   ),
                 );
@@ -170,12 +174,12 @@ class _BentoControlCard extends StatelessWidget {
                   _ModeButton(
                     label: '单词',
                     isSelected: isWords,
-                    onTap: () => ref.read(learningModeProvider.notifier).setMode(LearningMode.words),
+                    onTap: () => ref.read(learningModeNotifierProvider.notifier).setMode(LearningMode.words),
                   ),
                   _ModeButton(
                     label: '语法',
                     isSelected: !isWords,
-                    onTap: () => ref.read(learningModeProvider.notifier).setMode(LearningMode.grammar),
+                    onTap: () => ref.read(learningModeNotifierProvider.notifier).setMode(LearningMode.grammar),
                   ),
                 ],
               ),
@@ -361,7 +365,13 @@ class _BentoActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.pushNamed(LearningRouteNames.learning),
+      onTap: () {
+        final mode = vm.mode == LearningMode.words ? 'word' : 'grammar';
+        context.pushNamed(
+          LearningRouteNames.learning,
+          pathParameters: {'mode': mode},
+        );
+      },
       child: Container(
         height: 64,
         width: double.infinity,

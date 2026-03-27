@@ -6,7 +6,7 @@ part of 'preferences_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$sharedPrefsHash() => r'fed4dca864642604d0f2ec7cd1c0cdf906becb54';
+String _$sharedPrefsHash() => r'eb098372937031de179d783d77e5bfeb9825bc42';
 
 /// See also [sharedPrefs].
 @ProviderFor(sharedPrefs)
@@ -23,7 +23,7 @@ final sharedPrefsProvider = FutureProvider<SharedPreferences>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SharedPrefsRef = FutureProviderRef<SharedPreferences>;
-String _$preferenceServiceHash() => r'e94d26fb7d972db07212058e3d56dcd447822e71';
+String _$preferenceServiceHash() => r'e1e989f971ee763823ed0863ce56876147588ed9';
 
 /// See also [preferenceService].
 @ProviderFor(preferenceService)
@@ -40,7 +40,7 @@ final preferenceServiceProvider = Provider<PreferenceService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef PreferenceServiceRef = ProviderRef<PreferenceService>;
-String _$wordGoalHash() => r'c280c8363722d4844cf624e9e6aeffec1cd40b86';
+String _$wordGoalHash() => r'eb8c747cd22a689ab161098952f6a33bbb0b4d5d';
 
 /// See also [WordGoal].
 @ProviderFor(WordGoal)
@@ -55,7 +55,7 @@ final wordGoalProvider = AutoDisposeNotifierProvider<WordGoal, int>.internal(
 );
 
 typedef _$WordGoal = AutoDisposeNotifier<int>;
-String _$grammarGoalHash() => r'a0fa4344df0bf43f71d65e3da6e6af181027f9c3';
+String _$grammarGoalHash() => r'aacef944848040d0ac738d7c602fc474ba6c93ba';
 
 /// See also [GrammarGoal].
 @ProviderFor(GrammarGoal)
@@ -71,23 +71,55 @@ final grammarGoalProvider =
     );
 
 typedef _$GrammarGoal = AutoDisposeNotifier<int>;
-String _$jlptLevelHash() => r'1c3850c4912ac844d543194d63db239fa3fdd016';
+String _$wordLevelHash() => r'e18b07b156a22014011eaeb703db93892c6926f4';
 
-/// See also [JlptLevel].
-@ProviderFor(JlptLevel)
-final jlptLevelProvider =
-    AutoDisposeNotifierProvider<JlptLevel, String>.internal(
-      JlptLevel.new,
-      name: r'jlptLevelProvider',
+/// See also [WordLevel].
+@ProviderFor(WordLevel)
+final wordLevelProvider =
+    AutoDisposeNotifierProvider<WordLevel, String>.internal(
+      WordLevel.new,
+      name: r'wordLevelProvider',
       debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
           ? null
-          : _$jlptLevelHash,
+          : _$wordLevelHash,
       dependencies: null,
       allTransitiveDependencies: null,
     );
 
-typedef _$JlptLevel = AutoDisposeNotifier<String>;
-String _$darkModeHash() => r'16f8ba23b743f9fcf0c1df710e6f4c255c8ae3a1';
+typedef _$WordLevel = AutoDisposeNotifier<String>;
+String _$grammarLevelHash() => r'c7de99715f59fb654bab0a021435cdc226560fc3';
+
+/// See also [GrammarLevel].
+@ProviderFor(GrammarLevel)
+final grammarLevelProvider =
+    AutoDisposeNotifierProvider<GrammarLevel, String>.internal(
+      GrammarLevel.new,
+      name: r'grammarLevelProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$grammarLevelHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+typedef _$GrammarLevel = AutoDisposeNotifier<String>;
+String _$lastLearningModeHash() => r'9bdcf56faa1fb236206e2195bb12d0fa7093649b';
+
+/// See also [LastLearningMode].
+@ProviderFor(LastLearningMode)
+final lastLearningModeProvider =
+    AutoDisposeNotifierProvider<LastLearningMode, String>.internal(
+      LastLearningMode.new,
+      name: r'lastLearningModeProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$lastLearningModeHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+typedef _$LastLearningMode = AutoDisposeNotifier<String>;
+String _$darkModeHash() => r'63f6374eb264f023de860d29a7395a3645e155a4';
 
 /// See also [DarkMode].
 @ProviderFor(DarkMode)
@@ -102,7 +134,7 @@ final darkModeProvider = AutoDisposeNotifierProvider<DarkMode, int>.internal(
 );
 
 typedef _$DarkMode = AutoDisposeNotifier<int>;
-String _$autoSyncHash() => r'25c899bf6c5dc75fad88a083dcb4aa9e759b22f4';
+String _$autoSyncHash() => r'21c618e2f7c785c8ff15af2d074a0e965d325245';
 
 /// See also [AutoSync].
 @ProviderFor(AutoSync)
@@ -117,7 +149,7 @@ final autoSyncProvider = AutoDisposeNotifierProvider<AutoSync, bool>.internal(
 );
 
 typedef _$AutoSync = AutoDisposeNotifier<bool>;
-String _$resetHourHash() => r'832d8841dd35adf4382a095b1d953eaea57f23fa';
+String _$resetHourHash() => r'aaa334056b326b103c2c676fe28086b5f4e1428c';
 
 /// See also [ResetHour].
 @ProviderFor(ResetHour)
@@ -132,7 +164,7 @@ final resetHourProvider = AutoDisposeNotifierProvider<ResetHour, int>.internal(
 );
 
 typedef _$ResetHour = AutoDisposeNotifier<int>;
-String _$randomContentHash() => r'd32bb054d8674c3b9064e506757fe306071f9740';
+String _$randomContentHash() => r'0a31960d56f93221895a8fa39aba431db1a6311e';
 
 /// See also [RandomContent].
 @ProviderFor(RandomContent)

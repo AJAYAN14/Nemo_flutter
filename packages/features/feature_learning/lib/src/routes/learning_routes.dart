@@ -12,8 +12,8 @@ abstract final class LearningRoutePaths {
   static const String home = '/home';
   static const String kana = 'kana';
   static const String sessionPrep = 'session-prep';
-  static const String learning = 'learning';
-  static const String review = 'review';
+  static const String learning = 'learning/:mode';
+  static const String review = 'review/:mode';
   static const String categoryLearning = 'learning/category/:categoryId';
 }
 
@@ -32,9 +32,9 @@ abstract final class LearningRoutes {
 
   static Widget buildSessionPrepScreen() => const SessionPrepScreen();
 
-  static Widget buildLearningScreen() => const LearningScreen();
+  static Widget buildLearningScreen(String mode) => LearningScreen(mode: mode);
 
-  static Widget buildReviewScreen() => const ReviewScreen();
+  static Widget buildReviewScreen(String mode) => ReviewScreen(mode: mode);
 
   static List<RouteBase> rootRoutes() {
     return [
@@ -49,14 +49,18 @@ abstract final class LearningRoutes {
         builder: (context, state) => const SessionPrepScreen(),
       ),
       GoRoute(
-        path: '/home/learning',
+        path: '/home/learning/:mode',
         name: LearningRouteNames.learning,
-        builder: (context, state) => const LearningScreen(),
+        builder: (context, state) => LearningScreen(
+          mode: state.pathParameters['mode'] ?? 'word',
+        ),
       ),
       GoRoute(
-        path: '/home/review',
+        path: '/home/review/:mode',
         name: LearningRouteNames.review,
-        builder: (context, state) => const ReviewScreen(),
+        builder: (context, state) => ReviewScreen(
+          mode: state.pathParameters['mode'] ?? 'word',
+        ),
       ),
       GoRoute(
         path: '/learning/category/:categoryId',
