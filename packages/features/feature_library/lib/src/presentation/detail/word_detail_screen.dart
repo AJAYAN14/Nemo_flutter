@@ -6,24 +6,40 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'word_detail_notifier.dart';
 
-class WordDetailScreen extends HookConsumerWidget {
+class WordDetailScreen extends ConsumerWidget {
   const WordDetailScreen({super.key, required this.wordId});
 
   final String wordId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(wordDetailProvider(wordId));
-    final notifier = ref.read(wordDetailProvider(wordId).notifier);
+    final stateAsync = ref.watch(wordDetailProvider(wordId));
 
-    if (state.isLoading || state.currentWord == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    return stateAsync.when(
+      data: (state) {
+        if (state.currentWord == null) {
+          return const Scaffold(body: Center(child: Text('未找到单词')));
+        }
 
-    final contextIds = state.contextIds;
-    final initialIndex = contextIds.indexOf(wordId);
+        return _WordDetailPager(
+          initialWordId: wordId,
+          contextIds: state.contextIds,
+        );
+      },
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (err, stack) => Scaffold(body: Center(child: Text('加载失败: $err'))),
+    );
+  }
+}
+
+class _WordDetailPager extends HookConsumerWidget {
+  const _WordDetailPager({required this.initialWordId, required this.contextIds});
+  final String initialWordId;
+  final List<String> contextIds;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final initialIndex = contextIds.indexOf(initialWordId);
     final pageController = usePageController(initialPage: initialIndex >= 0 ? initialIndex : 0);
 
     return Scaffold(
@@ -32,20 +48,36 @@ class WordDetailScreen extends HookConsumerWidget {
         controller: pageController,
         itemCount: contextIds.length,
         itemBuilder: (context, index) {
-          final currentId = contextIds[index];
-          // We can use another provider or just fetch from notifier if it's sync mock logic
-          final word = (currentId == wordId) ? state.currentWord : notifier.getWordById(currentId);
-          
-          if (word == null) return const Center(child: CircularProgressIndicator());
-          
-          return _WordDetailContent(
-            word: word,
-            playingAudioId: state.playingAudioId,
-            onPlayAudio: notifier.playAudio,
-            onBack: () => Navigator.of(context).pop(),
-          );
+          return _WordDetailPage(wordId: contextIds[index]);
         },
       ),
+    );
+  }
+}
+
+class _WordDetailPage extends ConsumerWidget {
+  const _WordDetailPage({required this.wordId});
+  final String wordId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stateAsync = ref.watch(wordDetailProvider(wordId));
+    final notifier = ref.read(wordDetailProvider(wordId).notifier);
+
+    return stateAsync.when(
+      data: (state) {
+        final word = state.currentWord;
+        if (word == null) return const Center(child: Text('未找到单词'));
+
+        return _WordDetailContent(
+          word: word,
+          playingAudioId: state.playingAudioId,
+          onPlayAudio: notifier.playAudio,
+          onBack: () => Navigator.of(context).pop(),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text('加载失败: $err')),
     );
   }
 }

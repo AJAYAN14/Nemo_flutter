@@ -261,7 +261,7 @@ class _Badge extends StatelessWidget {
 
 class _StickerBox extends StatelessWidget {
   const _StickerBox({required this.grammarId});
-  final int grammarId;
+  final String grammarId;
 
   @override
   Widget build(BuildContext context) {
@@ -277,7 +277,7 @@ class _StickerBox extends StatelessWidget {
           children: [
             const Icon(Icons.auto_awesome_rounded, size: 60, color: NemoColors.textMain),
             const SizedBox(height: 12),
-            Text('STICKER_G_${grammarId % 25}', style: const TextStyle(fontWeight: FontWeight.w900)),
+            Text('STICKER_G_${grammarId.hashCode % 25}', style: const TextStyle(fontWeight: FontWeight.w900)),
           ],
         ),
       ),
@@ -317,7 +317,7 @@ class _UsageSection extends StatelessWidget {
   final Color yellowBg, yellowBorder, yellowIcon, yellowText;
   final Function(String, String, String)? onSpeakExample;
   final String? playingAudioId;
-  final int grammarId;
+  final String grammarId;
 
   @override
   Widget build(BuildContext context) {
@@ -531,7 +531,7 @@ class _ExamplesCard extends StatelessWidget {
   final bool isDark;
   final Function(String, String, String)? onSpeak;
   final String? playingAudioId;
-  final int grammarId;
+  final String grammarId;
   final int usageIndex;
 
   @override

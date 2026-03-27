@@ -1,6 +1,7 @@
+import 'dart:convert';
 import 'package:core_domain/core_domain.dart';
+import 'package:core_storage/core_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../mock/mock_words.dart';
 
 part 'word_detail_notifier.g.dart';
 
@@ -36,70 +37,71 @@ class WordDetailState {
 @riverpod
 class WordDetail extends _$WordDetail {
   @override
-  WordDetailState build(String wordId) {
-    // Note: In a real app, this would be an async fetch.
-    // For now, we initialize from mock data.
-    final state = _loadInitialWord(wordId);
-    return state;
-  }
-
-  WordDetailState _loadInitialWord(String wordId) {
-    try {
-      final mockData = mockWords.firstWhere((w) => w.id == wordId, orElse: () => mockWords.first);
-      final word = _mapMockToWord(mockData);
-      
-      final contextIds = mockWords
-          .where((w) => w.level == word.level)
-          .map((w) => w.id)
-          .toList();
-
-      return WordDetailState(
-        currentWord: word,
-        contextIds: contextIds,
-        isLoading: false,
-      );
-    } catch (e) {
+  Future<WordDetailState> build(String wordId) async {
+    final dao = ref.watch(wordDaoProvider);
+    final data = await dao.getWordWithExamples(wordId);
+    
+    if (data == null) {
       return const WordDetailState(isLoading: false);
     }
+
+    final word = _mapToWord(data);
+    
+    // Fetch neighbor words for swiping (same level)
+    final allWords = await dao.getAllWords();
+    final contextIds = allWords
+        .where((w) => w.level == word.level)
+        .map((w) => w.id)
+        .toList();
+
+    return WordDetailState(
+      currentWord: word,
+      contextIds: contextIds,
+      isLoading: false,
+    );
   }
 
   /// Get a word by ID (for swiping)
-  Word? getWordById(String id) {
-    try {
-      final mockData = mockWords.firstWhere((w) => w.id == id);
-      return _mapMockToWord(mockData);
-    } catch (_) {
-      return null;
-    }
+  Future<Word?> fetchWordById(String id) async {
+    final data = await ref.read(wordDaoProvider).getWordWithExamples(id);
+    if (data == null) return null;
+    return _mapToWord(data);
   }
 
   void playAudio(String text, String audioId) async {
-    state = state.copyWith(playingAudioId: audioId);
+    state = AsyncValue.data(state.value!.copyWith(playingAudioId: audioId));
     // Simulate audio playback duration
     await Future.delayed(const Duration(seconds: 2));
-    if (state.playingAudioId == audioId) {
-      state = state.copyWith(playingAudioId: null);
+    if (state.value?.playingAudioId == audioId) {
+      state = AsyncValue.data(state.value!.copyWith(playingAudioId: null));
     }
   }
 
   void stopAudio() {
-    state = state.copyWith(playingAudioId: null);
+    state = AsyncValue.data(state.value!.copyWith(playingAudioId: null));
   }
 
-  Word _mapMockToWord(WordMockData mock) {
+  Word _mapToWord(WordWithExamples data) {
+    final entry = data.word;
+    List<FuriganaBlock> furigana = [];
+    if (entry.furiganaDataJson != null) {
+      final List<dynamic> jsonArr = jsonDecode(entry.furiganaDataJson!);
+      furigana = jsonArr.map((f) => FuriganaBlock(
+        text: f['text'] ?? '',
+        furigana: f['furigana'] ?? '',
+      )).toList();
+    }
+
     return Word(
-      id: mock.id,
-      japanese: mock.kanji,
-      hiragana: mock.hiragana,
-      chinese: mock.meaning,
-      level: mock.level,
-      pos: mock.type,
-      isFavorite: mock.isFavorite,
-      furiganaData: mock.furiganaData.map((f) => FuriganaBlock(
-        text: f.text,
-        furigana: f.furigana,
-      )).toList(),
-      examples: mock.examples.map((e) => WordExample(
+      id: entry.id,
+      japanese: entry.japanese,
+      hiragana: entry.hiragana,
+      chinese: entry.chinese,
+      level: entry.level,
+      pos: entry.pos ?? '',
+      isFavorite: entry.isFavorite,
+      furiganaData: furigana,
+      examples: data.examples.map((e) => WordExample(
         japanese: e.japanese,
         chinese: e.chinese,
       )).toList(),

@@ -61,6 +61,15 @@ abstract final class NemoColors {
   static const Color srsEmeraldBgDark = Color(0xFF064E3B);
   static const Color accentOrange = Color(0xFFF59E0B);
   static const Color accentPurple = Color(0xFF8B5CF6);
+  static const Color accentPink = Color(0xFFFF2D55);
+  static const Color accentCyan = Color(0xFF00C7BE);
+
+  // JLPT Level Colors (1:1 with old project)
+  static const Color n5 = success;
+  static const Color n4 = accentCyan;
+  static const Color n3 = brandBlue;
+  static const Color n2 = accentOrange;
+  static const Color n1 = accentPink;
 }
 
 /// 词性分类色彩 (Category Colors)

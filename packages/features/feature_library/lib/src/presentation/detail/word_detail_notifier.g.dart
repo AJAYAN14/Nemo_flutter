@@ -6,7 +6,7 @@ part of 'word_detail_notifier.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$wordDetailHash() => r'c0db2e779be7cc6955599c2b38acd0f359de875d';
+String _$wordDetailHash() => r'1316de9624a4bdb45265e9e69b7eddb0b81f869f';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -30,10 +30,10 @@ class _SystemHash {
 }
 
 abstract class _$WordDetail
-    extends BuildlessAutoDisposeNotifier<WordDetailState> {
+    extends BuildlessAutoDisposeAsyncNotifier<WordDetailState> {
   late final String wordId;
 
-  WordDetailState build(String wordId);
+  FutureOr<WordDetailState> build(String wordId);
 }
 
 /// See also [WordDetail].
@@ -41,7 +41,7 @@ abstract class _$WordDetail
 const wordDetailProvider = WordDetailFamily();
 
 /// See also [WordDetail].
-class WordDetailFamily extends Family<WordDetailState> {
+class WordDetailFamily extends Family<AsyncValue<WordDetailState>> {
   /// See also [WordDetail].
   const WordDetailFamily();
 
@@ -74,7 +74,7 @@ class WordDetailFamily extends Family<WordDetailState> {
 
 /// See also [WordDetail].
 class WordDetailProvider
-    extends AutoDisposeNotifierProviderImpl<WordDetail, WordDetailState> {
+    extends AutoDisposeAsyncNotifierProviderImpl<WordDetail, WordDetailState> {
   /// See also [WordDetail].
   WordDetailProvider(String wordId)
     : this._internal(
@@ -102,7 +102,7 @@ class WordDetailProvider
   final String wordId;
 
   @override
-  WordDetailState runNotifierBuild(covariant WordDetail notifier) {
+  FutureOr<WordDetailState> runNotifierBuild(covariant WordDetail notifier) {
     return notifier.build(wordId);
   }
 
@@ -123,7 +123,7 @@ class WordDetailProvider
   }
 
   @override
-  AutoDisposeNotifierProviderElement<WordDetail, WordDetailState>
+  AutoDisposeAsyncNotifierProviderElement<WordDetail, WordDetailState>
   createElement() {
     return _WordDetailProviderElement(this);
   }
@@ -144,13 +144,13 @@ class WordDetailProvider
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin WordDetailRef on AutoDisposeNotifierProviderRef<WordDetailState> {
+mixin WordDetailRef on AutoDisposeAsyncNotifierProviderRef<WordDetailState> {
   /// The parameter `wordId` of this provider.
   String get wordId;
 }
 
 class _WordDetailProviderElement
-    extends AutoDisposeNotifierProviderElement<WordDetail, WordDetailState>
+    extends AutoDisposeAsyncNotifierProviderElement<WordDetail, WordDetailState>
     with WordDetailRef {
   _WordDetailProviderElement(super.provider);
 

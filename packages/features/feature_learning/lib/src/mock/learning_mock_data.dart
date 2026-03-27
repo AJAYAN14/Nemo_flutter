@@ -31,7 +31,7 @@ const mockLearningItems = <LearningItem>[
   ),
   GrammarItem(
     Grammar(
-      id: 1,
+      id: 'g_1',
       grammar: '〜とともに',
       grammarLevel: 'N2',
       lastModifiedTime: 0,

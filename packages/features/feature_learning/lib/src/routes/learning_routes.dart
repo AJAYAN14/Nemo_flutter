@@ -6,6 +6,7 @@ import '../kana/kana_chart_screen.dart';
 import '../learning/learning_screen.dart';
 import '../review/review_screen.dart';
 import '../session/session_prep_screen.dart';
+import '../learning/category_card_learning_screen.dart';
 
 abstract final class LearningRoutePaths {
   static const String home = '/home';
@@ -60,14 +61,13 @@ abstract final class LearningRoutes {
       GoRoute(
         path: '/learning/category/:categoryId',
         name: 'learning-category',
-        redirect: (context, state) {
+        builder: (context, state) {
           final categoryId = state.pathParameters['categoryId']!;
-          final title = state.uri.queryParameters['title'];
-          if (title == null || title.isEmpty) {
-            return '/library/category_words/$categoryId';
-          }
-          final encodedTitle = Uri.encodeQueryComponent(title);
-          return '/library/category_words/$categoryId?title=$encodedTitle';
+          final title = state.uri.queryParameters['title'] ?? '专项训练';
+          return CategoryCardLearningScreen(
+            categoryId: categoryId,
+            categoryTitle: title,
+          );
         },
       ),
     ];

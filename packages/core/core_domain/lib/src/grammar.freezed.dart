@@ -21,7 +21,7 @@ Grammar _$GrammarFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Grammar {
-  int get id => throw _privateConstructorUsedError;
+  String get id => throw _privateConstructorUsedError;
   String get grammar => throw _privateConstructorUsedError;
   String get grammarLevel => throw _privateConstructorUsedError;
   bool get isDelisted => throw _privateConstructorUsedError;
@@ -54,7 +54,7 @@ abstract class $GrammarCopyWith<$Res> {
       _$GrammarCopyWithImpl<$Res, Grammar>;
   @useResult
   $Res call({
-    int id,
+    String id,
     String grammar,
     String grammarLevel,
     bool isDelisted,
@@ -110,7 +110,7 @@ class _$GrammarCopyWithImpl<$Res, $Val extends Grammar>
             id: null == id
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
-                      as int,
+                      as String,
             grammar: null == grammar
                 ? _value.grammar
                 : grammar // ignore: cast_nullable_to_non_nullable
@@ -186,7 +186,7 @@ abstract class _$$GrammarImplCopyWith<$Res> implements $GrammarCopyWith<$Res> {
   @override
   @useResult
   $Res call({
-    int id,
+    String id,
     String grammar,
     String grammarLevel,
     bool isDelisted,
@@ -241,7 +241,7 @@ class __$$GrammarImplCopyWithImpl<$Res>
         id: null == id
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
-                  as int,
+                  as String,
         grammar: null == grammar
             ? _value.grammar
             : grammar // ignore: cast_nullable_to_non_nullable
@@ -333,7 +333,7 @@ class _$GrammarImpl implements _Grammar {
       _$$GrammarImplFromJson(json);
 
   @override
-  final int id;
+  final String id;
   @override
   final String grammar;
   @override
@@ -460,7 +460,7 @@ class _$GrammarImpl implements _Grammar {
 
 abstract class _Grammar implements Grammar {
   const factory _Grammar({
-    required final int id,
+    required final String id,
     required final String grammar,
     required final String grammarLevel,
     final bool isDelisted,
@@ -481,7 +481,7 @@ abstract class _Grammar implements Grammar {
   factory _Grammar.fromJson(Map<String, dynamic> json) = _$GrammarImpl.fromJson;
 
   @override
-  int get id;
+  String get id;
   @override
   String get grammar;
   @override

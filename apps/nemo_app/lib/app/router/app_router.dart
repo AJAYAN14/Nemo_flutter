@@ -111,12 +111,12 @@ final appRouter = GoRouter(
         GoRoute(
           path: 'grammar/:grammarId',
           name: 'library-grammar-detail',
-          builder: (context, state) => _buildDeferredScreen(
-            loadLibrary: library_module.loadLibrary,
-            builder: () => library_module.GrammarDetailScreen(
-              id: int.tryParse(state.pathParameters['grammarId'] ?? '') ?? 0,
+            builder: (context, state) => _buildDeferredScreen(
+              loadLibrary: library_module.loadLibrary,
+              builder: () => library_module.GrammarDetailScreen(
+                id: state.pathParameters['grammarId'] ?? '',
+              ),
             ),
-          ),
         ),
       ],
     ),

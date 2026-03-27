@@ -1,4 +1,5 @@
 import 'package:core_designsystem/core_designsystem.dart';
+import 'package:core_storage/core_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -6,20 +7,31 @@ import 'typing_practice_providers.dart';
 
 Future<void> showTypingPracticeDialog(
   BuildContext context,
-  WidgetRef ref,
-) async {
+  WidgetRef ref, {
+  WordEntry? word,
+  Color themeColor = NemoColors.brandBlue,
+}) async {
   final notifier = ref.read(typingPracticeProvider.notifier);
   notifier.clear();
+
+  if (word != null) {
+    ref.read(typingPracticePromptProvider.notifier).state = word.toPrompt();
+  }
 
   await showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => const TypingPracticeDialog(),
+    builder: (_) => TypingPracticeDialog(themeColor: themeColor),
   );
 }
 
 class TypingPracticeDialog extends ConsumerWidget {
-  const TypingPracticeDialog({super.key});
+  const TypingPracticeDialog({
+    super.key,
+    this.themeColor = NemoColors.brandBlue,
+  });
+
+  final Color themeColor;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -94,7 +106,7 @@ class TypingPracticeDialog extends ConsumerWidget {
                                 .textTheme
                                 .headlineMedium
                                 ?.copyWith(
-                                  color: NemoColors.textMain,
+                                  color: themeColor,
                                   fontWeight: FontWeight.w900,
                                 ),
                           ),
@@ -126,8 +138,7 @@ class TypingPracticeDialog extends ConsumerWidget {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(18),
-                          borderSide:
-                              const BorderSide(color: NemoColors.brandBlue),
+                          borderSide: BorderSide(color: themeColor),
                         ),
                       ),
                     ),
@@ -155,8 +166,7 @@ class TypingPracticeDialog extends ConsumerWidget {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(18),
-                          borderSide:
-                              const BorderSide(color: NemoColors.brandBlue),
+                          borderSide: BorderSide(color: themeColor),
                         ),
                       ),
                     ),
@@ -198,7 +208,7 @@ class TypingPracticeDialog extends ConsumerWidget {
                                 : null,
                             style: FilledButton.styleFrom(
                               minimumSize: const Size.fromHeight(48),
-                              backgroundColor: NemoColors.brandBlue,
+                              backgroundColor: themeColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(24),
                               ),

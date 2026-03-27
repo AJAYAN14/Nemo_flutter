@@ -1,12 +1,16 @@
 import 'package:core_designsystem/core_designsystem.dart';
+import 'package:core_storage/core_storage.dart';
 import 'package:core_ui/core_ui.dart';
+import 'package:feature_learning/feature_learning.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import 'components/flip_card.dart';
 
 enum CategoryViewMode { list, card }
 
-class CategoryWordsScreen extends StatefulWidget {
+class CategoryWordsScreen extends ConsumerStatefulWidget {
   const CategoryWordsScreen({
     super.key,
     required this.categoryId,
@@ -19,10 +23,10 @@ class CategoryWordsScreen extends StatefulWidget {
   final CategoryViewMode initialMode;
 
   @override
-  State<CategoryWordsScreen> createState() => _CategoryWordsScreenState();
+  ConsumerState<CategoryWordsScreen> createState() => _CategoryWordsScreenState();
 }
 
-class _CategoryWordsScreenState extends State<CategoryWordsScreen> {
+class _CategoryWordsScreenState extends ConsumerState<CategoryWordsScreen> {
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _expandedLevels = {'N5', 'N4', 'N3', 'N2', 'N1'};
   String _searchQuery = '';
@@ -37,39 +41,6 @@ class _CategoryWordsScreenState extends State<CategoryWordsScreen> {
     _viewMode = widget.initialMode;
     _pageController = PageController();
   }
-
-  final List<Map<String, dynamic>> _mockWords = [
-    {
-      'id': 1,
-      'japanese': '曖昧[あいまい]',
-      'hiragana': 'あいまい',
-      'meaning': '模棱两可，含糊',
-      'level': 'N1',
-      'examples': [
-        {'japanese': '曖昧[あいまい]な返事[へんじ]をする。', 'chinese': '做出含糊的回答。'}
-      ]
-    },
-    {
-      'id': 2,
-      'japanese': '遠慮[えんりょ]',
-      'hiragana': 'えんりょ',
-      'meaning': '客气，谢绝',
-      'level': 'N2',
-      'examples': [
-        {'japanese': 'どうぞご遠慮[えんりょ]なく。', 'chinese': '请不要客气。'}
-      ]
-    },
-    {
-      'id': 3,
-      'japanese': '昨日[きのう]',
-      'hiragana': 'きのう',
-      'meaning': '昨天',
-      'level': 'N5',
-      'examples': [
-        {'japanese': '昨日[きのう]避头[あめ]でした。', 'chinese': '昨天打雷了。'}
-      ]
-    },
-  ];
 
   @override
   void dispose() {
@@ -95,6 +66,9 @@ class _CategoryWordsScreenState extends State<CategoryWordsScreen> {
   Widget build(BuildContext context) {
     final backgroundColor = NemoColors.bgBase;
     final themeColor = _getCategoryThemeColor();
+    
+    // Fetch real data
+    final wordsAsync = ref.watch(wordsByCategoryProvider(widget.categoryId));
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -106,11 +80,15 @@ class _CategoryWordsScreenState extends State<CategoryWordsScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          _viewMode == CategoryViewMode.list 
-              ? widget.title 
-              : '${widget.title} (${_currentCardIndex + 1}/${_mockWords.length})',
-          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+        title: wordsAsync.when(
+          data: (words) => Text(
+            _viewMode == CategoryViewMode.list 
+                ? widget.title 
+                : '${widget.title} (${_currentCardIndex + 1}/${words.length})',
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+          ),
+          loading: () => Text(widget.title),
+          error: (_, __) => Text(widget.title),
         ),
         actions: [
           IconButton(
@@ -128,12 +106,32 @@ class _CategoryWordsScreenState extends State<CategoryWordsScreen> {
           ),
         ],
       ),
-      body: _viewMode == CategoryViewMode.list ? _buildListView() : _buildCardView(themeColor),
+      body: wordsAsync.when(
+        data: (words) {
+          if (words.isEmpty) {
+            return const Center(child: Text('该分类下暂无词汇'));
+          }
+          return _viewMode == CategoryViewMode.list 
+              ? _buildListView(words) 
+              : _buildCardView(words, themeColor);
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('加载失败: $e')),
+      ),
     );
   }
 
-  Widget _buildListView() {
+  Widget _buildListView(List<WordEntry> words) {
     final allLevels = ['N1', 'N2', 'N3', 'N4', 'N5'];
+    
+    // Filter words by search query
+    final filteredWords = words.where((w) {
+      if (_searchQuery.isEmpty) return true;
+      return w.japanese.contains(_searchQuery) || 
+             w.hiragana.contains(_searchQuery) || 
+             w.chinese.contains(_searchQuery);
+    }).toList();
+
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
@@ -146,45 +144,51 @@ class _CategoryWordsScreenState extends State<CategoryWordsScreen> {
           ),
         ),
         for (final level in allLevels) ...[
-          _buildLevelHeader(level),
+          _buildLevelHeader(level, filteredWords),
           if (_expandedLevels.contains(level) || _searchQuery.isNotEmpty)
-            _buildWordList(level),
+            _buildWordList(level, filteredWords),
         ],
         const SliverToBoxAdapter(child: SizedBox(height: 40)),
       ],
     );
   }
 
-  Widget _buildCardView(Color themeColor) {
-    if (_mockWords.isEmpty) {
-      return const Center(child: Text('该分类下暂无词汇'));
-    }
-
+  Widget _buildCardView(List<WordEntry> words, Color themeColor) {
     return Column(
       children: [
         Expanded(
           child: PageView.builder(
             controller: _pageController,
-            itemCount: _mockWords.length,
+            itemCount: words.length,
             onPageChanged: (index) => setState(() {
               _currentCardIndex = index;
             }),
             itemBuilder: (context, index) {
-              final word = _mockWords[index];
+              final word = words[index];
               final isFlipped = _flippedStates[index] ?? false;
+
+              // Need examples for flip card back side
+              final examplesAsync = ref.watch(wordWithExamplesProvider(word.id));
 
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                child: FlipCard(
-                  japanese: word['japanese'],
-                  hiragana: word['hiragana'],
-                  meaning: word['meaning'],
-                  examples: List<Map<String, String>>.from(word['examples'] ?? []),
-                  themeColor: themeColor,
-                  isFlipped: isFlipped,
-                  onFlip: () => setState(() => _flippedStates[index] = !isFlipped),
-                  onSpeak: () {},
-                  categoryId: widget.categoryId,
+                child: examplesAsync.when(
+                  data: (data) {
+                    final examples = data?.examples.map((e) => {'japanese': e.japanese, 'chinese': e.chinese}).toList() ?? [];
+                    return FlipCard(
+                      japanese: word.japanese,
+                      hiragana: word.hiragana,
+                      meaning: word.chinese,
+                      examples: List<Map<String, String>>.from(examples),
+                      themeColor: themeColor,
+                      isFlipped: isFlipped,
+                      onFlip: () => setState(() => _flippedStates[index] = !isFlipped),
+                      onSpeak: () {},
+                      categoryId: widget.categoryId,
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Center(child: Text('加载例句失败: $e')),
                 ),
               );
             },
@@ -227,7 +231,10 @@ class _CategoryWordsScreenState extends State<CategoryWordsScreen> {
                       ),
                       elevation: 0,
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      final word = words[_currentCardIndex];
+                      showTypingPracticeDialog(context, ref, word: word, themeColor: themeColor);
+                    },
                     child: const Text(
                       '跟打练习', 
                       style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
@@ -238,7 +245,7 @@ class _CategoryWordsScreenState extends State<CategoryWordsScreen> {
               const SizedBox(width: 16),
               _TintedSquircleIconButton(
                 iconData: Icons.arrow_forward_ios_rounded,
-                onPressed: _currentCardIndex < _mockWords.length - 1 ? () {
+                onPressed: _currentCardIndex < words.length - 1 ? () {
                   _pageController.nextPage(
                     duration: const Duration(milliseconds: 400),
                     curve: Curves.easeInOut,
@@ -253,10 +260,12 @@ class _CategoryWordsScreenState extends State<CategoryWordsScreen> {
     );
   }
 
-  Widget _buildLevelHeader(String level) {
+  Widget _buildLevelHeader(String level, List<WordEntry> filteredWords) {
     final isExpanded = _expandedLevels.contains(level);
     final color = _getLevelColor(level);
-    final count = _mockWords.where((w) => w['level'] == level).length;
+    final count = filteredWords.where((w) => w.level == level).length;
+
+    if (count == 0 && _searchQuery.isNotEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
       child: InkWell(
@@ -309,8 +318,8 @@ class _CategoryWordsScreenState extends State<CategoryWordsScreen> {
     );
   }
 
-  Widget _buildWordList(String level) {
-    final words = _mockWords.where((w) => w['level'] == level).toList();
+  Widget _buildWordList(String level, List<WordEntry> filteredWords) {
+    final words = filteredWords.where((w) => w.level == level).toList();
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       sliver: SliverList(
@@ -320,10 +329,12 @@ class _CategoryWordsScreenState extends State<CategoryWordsScreen> {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: _WordListItem(
-                japanese: word['japanese'],
-                hiragana: word['hiragana'],
-                meaning: word['meaning'],
-                onClick: () {},
+                japanese: word.japanese,
+                hiragana: word.hiragana,
+                meaning: word.chinese,
+                onClick: () {
+                  // TODO: Navigate to Word Detail
+                },
               ),
             );
           },

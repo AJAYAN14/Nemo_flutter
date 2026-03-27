@@ -1,30 +1,47 @@
+import 'dart:async';
+import 'package:core_storage/core_storage.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:core_domain/core_domain.dart';
 import 'package:go_router/go_router.dart';
 import '../../routes/library_routes.dart';
-import '../../mock/mock_words.dart';
 
-class WordListScreen extends StatefulWidget {
+class WordListScreen extends ConsumerStatefulWidget {
   const WordListScreen({super.key});
 
   @override
-  State<WordListScreen> createState() => _WordListScreenState();
+  ConsumerState<WordListScreen> createState() => _WordListScreenState();
 }
 
-class _WordListScreenState extends State<WordListScreen> {
+class _WordListScreenState extends ConsumerState<WordListScreen> {
   String _searchQuery = '';
+  Timer? _debounce;
+  late final TextEditingController _searchController;
   final List<String> _expandedLevels = []; 
   
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
   // Group words by level
-  Map<String, List<WordMockData>> get _groupedWords {
-    final groups = <String, List<WordMockData>>{};
-    for (var word in mockWords) {
+  Map<String, List<WordEntry>> _groupWords(List<WordEntry> words) {
+    final groups = <String, List<WordEntry>>{};
+    for (var word in words) {
       if (_searchQuery.isNotEmpty) {
-        final query = _searchQuery.toLowerCase();
-        if (!word.kanji.toLowerCase().contains(query) &&
-            !word.hiragana.toLowerCase().contains(query) &&
-            !word.meaning.toLowerCase().contains(query)) {
+        if (!GrammarSearchUtils.isMatch(word.japanese, _searchQuery) &&
+            !GrammarSearchUtils.isMatch(word.hiragana, _searchQuery) &&
+            !word.chinese.toLowerCase().contains(_searchQuery.toLowerCase())) {
           continue;
         }
       }
@@ -45,19 +62,20 @@ class _WordListScreenState extends State<WordListScreen> {
 
   Color _getLevelColor(String level) {
     switch (level.toUpperCase()) {
-      case 'N5': return const Color(0xFF10B981); // Green
-      case 'N4': return const Color(0xFF06B6D4); // Cyan
-      case 'N3': return NemoColors.brandBlue;    // Blue
-      case 'N2': return const Color(0xFFF59E0B); // Orange
-      case 'N1': return const Color(0xFFEC4899); // Pink
+      case 'N5': return NemoColors.n5;
+      case 'N4': return NemoColors.n4;
+      case 'N3': return NemoColors.n3;
+      case 'N2': return NemoColors.n2;
+      case 'N1': return NemoColors.n1;
       default: return NemoColors.brandBlue;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final grouped = _groupedWords;
-    final levels = grouped.keys.toList()..sort();
+    // Trigger importer if needed
+    final importerAsync = ref.watch(assetDataImporterProvider);
+    final wordsAsync = ref.watch(allWordsProvider);
 
     return Scaffold(
       backgroundColor: NemoColors.bgBase,
@@ -75,20 +93,37 @@ class _WordListScreenState extends State<WordListScreen> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: _SearchBar(
-              query: _searchQuery,
-              onChanged: (val) => setState(() => _searchQuery = val),
+              controller: _searchController,
+              onChanged: (val) {
+                if (_debounce?.isActive ?? false) _debounce?.cancel();
+                _debounce = Timer(const Duration(milliseconds: 300), () {
+                  setState(() => _searchQuery = val);
+                });
+              },
+              onClear: () {
+                _searchController.clear();
+                setState(() => _searchQuery = '');
+              },
             ),
           ),
         ),
       ),
-      body: grouped.isEmpty
-          ? const Center(child: _EmptyState(message: '未找到相关单词'))
-          : ListView.builder(
+      body: importerAsync.when(
+        data: (_) => wordsAsync.when(
+          data: (words) {
+            final grouped = _groupWords(words);
+            final levels = grouped.keys.toList()..sort();
+
+            if (grouped.isEmpty) {
+              return const Center(child: _EmptyState(message: '未找到相关单词'));
+            }
+
+            return ListView.builder(
               padding: const EdgeInsets.only(bottom: 32),
               itemCount: levels.length,
               itemBuilder: (context, index) {
                 final level = levels[index];
-                final words = grouped[level]!;
+                final levelWords = grouped[level]!;
                 final isExpanded = _searchQuery.isNotEmpty || _expandedLevels.contains(level);
                 final levelColor = _getLevelColor(level);
 
@@ -120,7 +155,7 @@ class _WordListScreenState extends State<WordListScreen> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              '${words.length} 词',
+                              '${levelWords.length} 词',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -142,7 +177,7 @@ class _WordListScreenState extends State<WordListScreen> {
                     ),
                     // Words List
                     if (isExpanded)
-                      ...words.map((word) => Padding(
+                      ...levelWords.map((word) => Padding(
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                         child: _WordListItemPremium(
                           word: word,
@@ -155,15 +190,37 @@ class _WordListScreenState extends State<WordListScreen> {
                   ],
                 );
               },
-            ),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(child: Text('Word Loading Error: $err')),
+        ),
+        loading: () => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              const Text('正在初始化词库数据...', style: TextStyle(fontSize: 14)),
+            ],
+          ),
+        ),
+        error: (err, stack) => Center(child: Text('数据导入失败: $err')),
+      ),
     );
   }
 }
 
 class _SearchBar extends StatelessWidget {
-  const _SearchBar({required this.query, required this.onChanged});
-  final String query;
+  const _SearchBar({
+    required this.controller, 
+    required this.onChanged,
+    required this.onClear,
+  });
+  
+  final TextEditingController controller;
   final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context) {
@@ -194,8 +251,8 @@ class _SearchBar extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
+              controller: controller,
               onChanged: onChanged,
-              controller: TextEditingController(text: query)..selection = TextSelection.fromPosition(TextPosition(offset: query.length)),
               decoration: InputDecoration(
                 hintText: '搜索：汉字 / 假名 / 释义',
                 hintStyle: TextStyle(
@@ -208,13 +265,18 @@ class _SearchBar extends StatelessWidget {
               style: const TextStyle(fontSize: 15),
             ),
           ),
-          if (query.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.close_rounded, size: 20),
-              onPressed: () => onChanged(''),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              if (value.text.isEmpty) return const SizedBox.shrink();
+              return IconButton(
+                icon: const Icon(Icons.close_rounded, size: 20),
+                onPressed: onClear,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -223,21 +285,23 @@ class _SearchBar extends StatelessWidget {
 
 class _WordListItemPremium extends StatelessWidget {
   const _WordListItemPremium({required this.word, required this.onClick});
-  final WordMockData word;
+  final WordEntry word;
   final VoidCallback onClick;
 
   @override
   Widget build(BuildContext context) {
     final avatarColors = [
       NemoColors.brandBlue,
-      const Color(0xFFF59E0B), // Orange
-      const Color(0xFF10B981), // Green
+      NemoColors.n2, // Orange
+      NemoColors.n5, // Green
       const Color(0xFF6366F1), // Indigo
       const Color(0xFF14B8A6), // Teal
-      const Color(0xFFD946EF), // Pink
+      NemoColors.accentPurple,
+      NemoColors.n1, // Pink
+      NemoColors.n4, // Cyan
     ];
     final color = avatarColors[word.id.hashCode.abs() % avatarColors.length];
-    final avatarChar = word.kanji.isNotEmpty ? word.kanji[0] : '?';
+    final avatarChar = word.japanese.isNotEmpty ? word.japanese[0] : '?';
 
     return PremiumCard(
       onClick: onClick,
@@ -268,7 +332,7 @@ class _WordListItemPremium extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  word.kanji,
+                  word.japanese,
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w900,
@@ -276,7 +340,7 @@ class _WordListItemPremium extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${word.hiragana} · ${word.meaning}',
+                  '${word.hiragana} · ${word.chinese}',
                   style: TextStyle(
                     fontSize: 14,
                     color: NemoColors.textSub,

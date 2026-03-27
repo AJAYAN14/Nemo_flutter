@@ -6,7 +6,7 @@ part 'grammar.g.dart';
 @freezed
 class Grammar with _$Grammar {
   const factory Grammar({
-    required int id,
+    required String id,
     required String grammar,
     required String grammarLevel,
     @Default(false) bool isDelisted,

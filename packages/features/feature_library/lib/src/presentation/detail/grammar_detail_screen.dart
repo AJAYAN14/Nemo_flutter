@@ -9,7 +9,7 @@ import 'grammar_detail_notifier.dart';
 class GrammarDetailScreen extends ConsumerStatefulWidget {
   const GrammarDetailScreen({super.key, required this.id});
 
-  final int id;
+  final String id;
 
   @override
   ConsumerState<GrammarDetailScreen> createState() => _GrammarDetailScreenState();
@@ -17,7 +17,7 @@ class GrammarDetailScreen extends ConsumerStatefulWidget {
 
 class _GrammarDetailScreenState extends ConsumerState<GrammarDetailScreen> {
   late PageController _pageController;
-  List<int> _contextIds = [];
+  List<String> _contextIds = [];
   bool _isLoadingContext = true;
 
   @override
@@ -92,7 +92,7 @@ class _GrammarDetailScreenState extends ConsumerState<GrammarDetailScreen> {
 
 class _GrammarDetailContent extends ConsumerWidget {
   const _GrammarDetailContent({required this.id});
-  final int id;
+  final String id;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -237,7 +237,7 @@ class _UsageCard extends StatelessWidget {
 
   final GrammarUsage usage;
   final int usageIndex;
-  final int grammarId;
+  final String grammarId;
 
   @override
   Widget build(BuildContext context) {
@@ -402,7 +402,7 @@ class _ExampleItem extends StatelessWidget {
   final GrammarExample example;
   final int index;
   final int usageIndex;
-  final int grammarId;
+  final String grammarId;
   final bool showDivider;
 
   @override

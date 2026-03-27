@@ -6,7 +6,7 @@ part of 'grammar_detail_notifier.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$grammarDetailHash() => r'8c16f789e349af218ef677b29b9edc6e8407ee73';
+String _$grammarDetailHash() => r'73c0262256a56e5b38a98971e197adad3075308a';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -31,9 +31,9 @@ class _SystemHash {
 
 abstract class _$GrammarDetail
     extends BuildlessAutoDisposeAsyncNotifier<Grammar?> {
-  late final int grammarId;
+  late final String grammarId;
 
-  FutureOr<Grammar?> build(int grammarId);
+  FutureOr<Grammar?> build(String grammarId);
 }
 
 /// See also [GrammarDetail].
@@ -46,7 +46,7 @@ class GrammarDetailFamily extends Family<AsyncValue<Grammar?>> {
   const GrammarDetailFamily();
 
   /// See also [GrammarDetail].
-  GrammarDetailProvider call(int grammarId) {
+  GrammarDetailProvider call(String grammarId) {
     return GrammarDetailProvider(grammarId);
   }
 
@@ -76,7 +76,7 @@ class GrammarDetailFamily extends Family<AsyncValue<Grammar?>> {
 class GrammarDetailProvider
     extends AutoDisposeAsyncNotifierProviderImpl<GrammarDetail, Grammar?> {
   /// See also [GrammarDetail].
-  GrammarDetailProvider(int grammarId)
+  GrammarDetailProvider(String grammarId)
     : this._internal(
         () => GrammarDetail()..grammarId = grammarId,
         from: grammarDetailProvider,
@@ -100,7 +100,7 @@ class GrammarDetailProvider
     required this.grammarId,
   }) : super.internal();
 
-  final int grammarId;
+  final String grammarId;
 
   @override
   FutureOr<Grammar?> runNotifierBuild(covariant GrammarDetail notifier) {
@@ -147,7 +147,7 @@ class GrammarDetailProvider
 // ignore: unused_element
 mixin GrammarDetailRef on AutoDisposeAsyncNotifierProviderRef<Grammar?> {
   /// The parameter `grammarId` of this provider.
-  int get grammarId;
+  String get grammarId;
 }
 
 class _GrammarDetailProviderElement
@@ -156,7 +156,7 @@ class _GrammarDetailProviderElement
   _GrammarDetailProviderElement(super.provider);
 
   @override
-  int get grammarId => (origin as GrammarDetailProvider).grammarId;
+  String get grammarId => (origin as GrammarDetailProvider).grammarId;
 }
 
 // ignore_for_file: type=lint

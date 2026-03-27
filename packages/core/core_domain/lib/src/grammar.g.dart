@@ -8,7 +8,7 @@ part of 'grammar.dart';
 
 _$GrammarImpl _$$GrammarImplFromJson(Map<String, dynamic> json) =>
     _$GrammarImpl(
-      id: (json['id'] as num).toInt(),
+      id: json['id'] as String,
       grammar: json['grammar'] as String,
       grammarLevel: json['grammarLevel'] as String,
       isDelisted: json['isDelisted'] as bool? ?? false,

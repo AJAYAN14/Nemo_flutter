@@ -1,34 +1,50 @@
+import 'dart:async';
+import 'package:core_storage/core_storage.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
-import '../category/category_classification_screen.dart';
+import 'package:core_domain/core_domain.dart';
 import 'package:go_router/go_router.dart';
-import '../../mock/mock_category_grammar.dart';
 import '../../routes/library_routes.dart';
 
-class GrammarListScreen extends StatefulWidget {
+class GrammarListScreen extends ConsumerStatefulWidget {
   const GrammarListScreen({super.key});
 
   @override
-  State<GrammarListScreen> createState() => _GrammarListScreenState();
+  ConsumerState<GrammarListScreen> createState() => _GrammarListScreenState();
 }
 
-class _GrammarListScreenState extends State<GrammarListScreen> {
+class _GrammarListScreenState extends ConsumerState<GrammarListScreen> {
   String _searchQuery = '';
+  Timer? _debounce;
+  late final TextEditingController _searchController;
   final List<String> _expandedLevels = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
   // Group grammars by level
-  Map<String, List<GrammarMockData>> get _groupedGrammars {
-    final groups = <String, List<GrammarMockData>>{};
-    for (var grammar in mockGrammars) {
+  Map<String, List<Grammar>> _groupGrammars(List<Grammar> grammars) {
+    final groups = <String, List<Grammar>>{};
+    for (var grammar in grammars) {
       if (_searchQuery.isNotEmpty) {
-        final query = _searchQuery.toLowerCase();
-        if (!grammar.title.toLowerCase().contains(query) &&
-            !grammar.meaning.toLowerCase().contains(query)) {
+        // 使用深度匹配逻辑（搜索标题、含义、接续、笔记、例句）
+        if (!GrammarSearchUtils.isMatchDetailed(grammar, _searchQuery)) {
           continue;
         }
       }
-      groups.putIfAbsent(grammar.level, () => []).add(grammar);
+      groups.putIfAbsent(grammar.grammarLevel, () => []).add(grammar);
     }
     return groups;
   }
@@ -45,30 +61,25 @@ class _GrammarListScreenState extends State<GrammarListScreen> {
 
   Color _getLevelColor(String level) {
     switch (level.toUpperCase()) {
-      case 'N5':
-        return const Color(0xFF10B981); // Green
-      case 'N4':
-        return const Color(0xFF06B6D4); // Cyan
-      case 'N3':
-        return NemoColors.brandBlue; // Blue
-      case 'N2':
-        return const Color(0xFFF59E0B); // Orange
-      case 'N1':
-        return const Color(0xFFEC4899); // Pink
-      default:
-        return NemoColors.brandBlue;
+      case 'N5': return NemoColors.n5;
+      case 'N4': return NemoColors.n4;
+      case 'N3': return NemoColors.n3;
+      case 'N2': return NemoColors.n2;
+      case 'N1': return NemoColors.n1;
+      default: return NemoColors.brandBlue;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final grouped = _groupedGrammars;
-    final levels = grouped.keys.toList()..sort();
+    // Trigger importer if needed
+    final importerAsync = ref.watch(assetDataImporterProvider);
+    final grammarsAsync = ref.watch(allGrammarsWithDetailsProvider);
 
     return Scaffold(
       backgroundColor: NemoColors.bgBase,
       appBar: AppBar(
-        title: const Text('语法库', style: TextStyle(fontWeight: FontWeight.w900)),
+        title: const Text('语法列表', style: TextStyle(fontWeight: FontWeight.w900)),
         centerTitle: true,
         backgroundColor: NemoColors.bgBase,
         elevation: 0,
@@ -81,22 +92,38 @@ class _GrammarListScreenState extends State<GrammarListScreen> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: _SearchBar(
-              query: _searchQuery,
-              onChanged: (val) => setState(() => _searchQuery = val),
+              controller: _searchController,
+              onChanged: (val) {
+                if (_debounce?.isActive ?? false) _debounce?.cancel();
+                _debounce = Timer(const Duration(milliseconds: 300), () {
+                  setState(() => _searchQuery = val);
+                });
+              },
+              onClear: () {
+                _searchController.clear();
+                setState(() => _searchQuery = '');
+              },
             ),
           ),
         ),
       ),
-      body: grouped.isEmpty
-          ? const Center(child: _EmptyState(message: '未找到相关语法'))
-          : ListView.builder(
+      body: importerAsync.when(
+        data: (_) => grammarsAsync.when(
+          data: (grammars) {
+            final grouped = _groupGrammars(grammars);
+            final levels = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+
+            if (grouped.isEmpty) {
+              return const Center(child: _EmptyState(message: '未找到相关语法'));
+            }
+
+            return ListView.builder(
               padding: const EdgeInsets.only(bottom: 32),
               itemCount: levels.length,
               itemBuilder: (context, index) {
                 final level = levels[index];
-                final grammars = grouped[level]!;
-                final isExpanded =
-                    _searchQuery.isNotEmpty || _expandedLevels.contains(level);
+                final levelGrammars = grouped[level]!;
+                final isExpanded = _searchQuery.isNotEmpty || _expandedLevels.contains(level);
                 final levelColor = _getLevelColor(level);
 
                 return Column(
@@ -130,7 +157,7 @@ class _GrammarListScreenState extends State<GrammarListScreen> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              '${grammars.length} 条',
+                              '${levelGrammars.length} 条',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -156,33 +183,54 @@ class _GrammarListScreenState extends State<GrammarListScreen> {
                     ),
                     // Grammars List
                     if (isExpanded)
-                      ...grammars.map(
-                            (grammar) => Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                              child: _GrammarListItemPremium(
-                                grammar: grammar,
-                                onClick: () {
-                                  final id = mockGrammars.indexOf(grammar);
-                                  context.pushNamed(
-                                    LibraryRouteNames.grammarDetail,
-                                    pathParameters: {'grammarId': id.toString()},
-                                  );
-                                },
-                              ),
-                            ),
+                      ...levelGrammars.map(
+                        (grammar) => Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                          child: _GrammarListItemPremium(
+                            grammar: grammar,
+                            onClick: () {
+                              context.pushNamed(
+                                LibraryRouteNames.grammarDetail,
+                                pathParameters: {'grammarId': grammar.id},
+                              );
+                            },
                           ),
+                        ),
+                      ),
                   ],
                 );
               },
-            ),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(child: Text('Grammar Loading Error: $err')),
+        ),
+        loading: () => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              const Text('正在初始化语法库...', style: TextStyle(fontSize: 14)),
+            ],
+          ),
+        ),
+        error: (err, stack) => Center(child: Text('数据导入失败: $err')),
+      ),
     );
   }
 }
 
 class _SearchBar extends StatelessWidget {
-  const _SearchBar({required this.query, required this.onChanged});
-  final String query;
+  const _SearchBar({
+    required this.controller, 
+    required this.onChanged,
+    required this.onClear,
+  });
+  
+  final TextEditingController controller;
   final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context) {
@@ -218,13 +266,10 @@ class _SearchBar extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
+              controller: controller,
               onChanged: onChanged,
-              controller: TextEditingController(text: query)
-                ..selection = TextSelection.fromPosition(
-                  TextPosition(offset: query.length),
-                ),
               decoration: InputDecoration(
-                hintText: '搜索：语法 / 解释',
+                hintText: '搜索：语法 / 解释 / 链接 / 例句',
                 hintStyle: TextStyle(
                   color: Theme.of(
                     context,
@@ -237,13 +282,18 @@ class _SearchBar extends StatelessWidget {
               style: const TextStyle(fontSize: 15),
             ),
           ),
-          if (query.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.close_rounded, size: 20),
-              onPressed: () => onChanged(''),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              if (value.text.isEmpty) return const SizedBox.shrink();
+              return IconButton(
+                icon: const Icon(Icons.close_rounded, size: 20),
+                onPressed: onClear,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -252,21 +302,23 @@ class _SearchBar extends StatelessWidget {
 
 class _GrammarListItemPremium extends StatelessWidget {
   const _GrammarListItemPremium({required this.grammar, required this.onClick});
-  final GrammarMockData grammar;
+  final Grammar grammar;
   final VoidCallback onClick;
 
   @override
   Widget build(BuildContext context) {
     final avatarColors = [
       NemoColors.brandBlue,
-      const Color(0xFFF59E0B), // Orange
-      const Color(0xFF10B981), // Green
+      NemoColors.n2, // Orange
+      NemoColors.n5, // Green
       const Color(0xFF6366F1), // Indigo
       const Color(0xFF14B8A6), // Teal
-      const Color(0xFFD946EF), // Pink
+      NemoColors.accentPurple,
+      NemoColors.n1, // Pink
+      NemoColors.n4, // Cyan
     ];
     final color =
-        avatarColors[grammar.title.hashCode.abs() % avatarColors.length];
+        avatarColors[grammar.grammar.hashCode.abs() % avatarColors.length];
 
     return PremiumCard(
       onClick: onClick,
@@ -297,15 +349,18 @@ class _GrammarListItemPremium extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  grammar.title,
+                  GrammarSearchUtils.cleanRubi(grammar.grammar),
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
                 const SizedBox(height: 4),
+                // 使用第一个用法的解释作为摘要
                 Text(
-                  grammar.meaning,
+                  GrammarSearchUtils.cleanRubi(
+                    grammar.usages.isNotEmpty ? grammar.usages.first.explanation : '',
+                  ),
                   style: TextStyle(
                     fontSize: 14,
                     color: NemoColors.textSub,

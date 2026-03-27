@@ -76,7 +76,7 @@ abstract final class LibraryRoutes {
             builder: (context, state) {
               final id = state.pathParameters['grammarId'];
               return GrammarDetailScreen(
-                id: id != null ? int.parse(id) : 0,
+                id: id ?? '',
               );
             },
           ),

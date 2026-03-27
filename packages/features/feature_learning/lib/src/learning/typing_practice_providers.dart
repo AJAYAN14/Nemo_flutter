@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import 'package:core_storage/core_storage.dart';
 import '../mock/typing_practice_mock_data.dart';
 
 typedef CloseCallback = void Function();
@@ -95,9 +96,16 @@ class TypingPracticeNotifier extends Notifier<TypingPracticeState> {
   }
 }
 
-final typingPracticePromptProvider = Provider<TypingPracticePrompt>(
+final typingPracticePromptProvider = StateProvider<TypingPracticePrompt>(
   (ref) => typingPracticeMockPrompt,
 );
+
+extension TypingPracticePromptX on WordEntry {
+  TypingPracticePrompt toPrompt() => TypingPracticePrompt(
+    japanese: japanese,
+    hiragana: hiragana,
+  );
+}
 
 final typingPracticeProvider =
     NotifierProvider<TypingPracticeNotifier, TypingPracticeState>(
