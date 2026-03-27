@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:core_domain/core_domain.dart';
 import 'package:core_prefs/core_prefs.dart';
 import '../domain/learning_item.dart';
 import '../domain/srs_scheduler.dart';

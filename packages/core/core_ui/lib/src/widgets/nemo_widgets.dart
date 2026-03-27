@@ -1,4 +1,3 @@
-import 'package:core_designsystem/core_designsystem.dart';
 import 'package:flutter/material.dart';
 
 class PremiumCard extends StatefulWidget {
@@ -61,10 +60,10 @@ class _PremiumCardState extends State<PremiumCard> with SingleTickerProviderStat
     
     // V2 Styling: White/SurfaceContainer + Soft Shadow
     final containerColor = isDark ? Theme.of(context).colorScheme.surfaceContainer : Colors.white;
-    final borderRadius = widget.borderRadius ?? NemoMetrics.radius(24);
+    final borderRadius = widget.borderRadius ?? BorderRadius.circular(26);
     
-    final shadowElevation = isDark ? 2.0 : 8.0;
-    final shadowColor = isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.05);
+    final shadowElevation = isDark ? 4.0 : 12.0;
+    final shadowColor = isDark ? Colors.black.withOpacity(0.5) : Colors.black.withOpacity(0.06);
 
     Widget card = Container(
       margin: widget.margin,

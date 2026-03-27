@@ -57,7 +57,7 @@ class CategoryClassificationScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. 基础词性类
-            const _SectionHeader(title: '基础词性类'),
+            const _SectionHeader(title: '基础词性类', delay: 0),
             const SizedBox(height: 16),
             _CategoryGrid(
               items: [
@@ -108,7 +108,7 @@ class CategoryClassificationScreen extends StatelessWidget {
             const SizedBox(height: 32),
 
             // 2. 构词·句法功能类
-            const _SectionHeader(title: '构词·句法功能类'),
+            const _SectionHeader(title: '构词·句法功能类', delay: 100),
             const SizedBox(height: 16),
             _CategoryGrid(
               items: [
@@ -159,7 +159,7 @@ class CategoryClassificationScreen extends StatelessWidget {
             const SizedBox(height: 32),
 
             // 3. 构词·表达用法类
-            const _SectionHeader(title: '构词·表达用法类'),
+            const _SectionHeader(title: '构词·表达用法类', delay: 200),
             const SizedBox(height: 16),
             _CategoryGrid(
               items: [
@@ -232,19 +232,57 @@ class CategoryClassificationScreen extends StatelessWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
+class _SectionHeader extends StatefulWidget {
+  const _SectionHeader({required this.title, this.delay = 0});
   final String title;
+  final int delay;
+
+  @override
+  State<_SectionHeader> createState() => _SectionHeaderState();
+}
+
+class _SectionHeaderState extends State<_SectionHeader> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0.5,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+    return AnimatedBuilder(
+      animation: _opacity,
+      builder: (context, child) => Opacity(
+        opacity: _opacity.value,
+        child: child,
+      ),
+      child: Text(
+        widget.title,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+      ),
     );
   }
 }

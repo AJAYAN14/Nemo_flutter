@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:core_designsystem/core_designsystem.dart';
-import 'package:core_domain/core_domain.dart';
 import 'package:core_prefs/core_prefs.dart';
 import 'package:feature_learning/src/srs_study/srs_study_providers.dart';
 import '../domain/learning_item.dart';
