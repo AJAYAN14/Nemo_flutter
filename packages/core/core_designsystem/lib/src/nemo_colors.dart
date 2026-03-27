@@ -13,6 +13,18 @@ abstract final class NemoColors {
   static const Color surfaceCard = Color(0xFFFFFFFF);
   static const Color surfaceCardDark = Color(0xFF2B2930);
   static const Color divider = Color(0xFFE2E8F0);
+
+  // MD3 / Neutral Tokens (Premium Grays)
+  static const Color gray900 = Color(0xFF111827);
+  static const Color gray500 = Color(0xFF6B7280);
+  static const Color gray400 = Color(0xFF9CA3AF);
+  static const Color gray300 = Color(0xFFD1D5DB);
+  static const Color gray100 = Color(0xFFF3F4F6);
+
+  static const Color darkTextPrimary = Color(0xFFE6E1E5);
+  static const Color darkTextSecondary = Color(0xFFCAC4D0);
+
+  static const Color blue600 = Color(0xFF2563EB);
   
   // Header / Navigation
   static const Color navGroupBgLight = Color(0xFFFFFFFF);

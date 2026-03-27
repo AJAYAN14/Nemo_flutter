@@ -109,15 +109,15 @@ class _ShowAnswerButtonState extends State<_ShowAnswerButton> with SingleTickerP
         onTapCancel: () => _controller.forward(),
         child: Container(
           width: double.infinity,
-          height: 56,
+          height: 60,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1F2937) : const Color(0xFF111827),
-            borderRadius: BorderRadius.circular(16),
+            color: isDark ? const Color(0xFF111827) : const Color(0xFF111827), // Deep black for premium look
+            borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 12,
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -125,15 +125,15 @@ class _ShowAnswerButtonState extends State<_ShowAnswerButton> with SingleTickerP
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.auto_awesome, color: Color(0xFFFACC15), size: 18),
+              Icon(Icons.auto_awesome, color: Color(0xFFFACC15), size: 20),
               SizedBox(width: 8),
               Text(
                 '显示答案',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
                 ),
               ),
             ],

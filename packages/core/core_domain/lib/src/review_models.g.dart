@@ -70,6 +70,11 @@ _$ReviewSessionImpl _$$ReviewSessionImplFromJson(Map<String, dynamic> json) =>
               ?.map((e) => $enumDecode(_$ReviewRatingEnumMap, e))
               .toList() ??
           const [],
+      ratingIntervals:
+          (json['ratingIntervals'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(k, e as String),
+          ) ??
+          const {},
       startTime: json['startTime'] == null
           ? null
           : DateTime.parse(json['startTime'] as String),
@@ -83,6 +88,7 @@ Map<String, dynamic> _$$ReviewSessionImplToJson(
   'showAnswer': instance.showAnswer,
   'isCompleted': instance.isCompleted,
   'ratings': instance.ratings.map((e) => _$ReviewRatingEnumMap[e]!).toList(),
+  'ratingIntervals': instance.ratingIntervals,
   'startTime': instance.startTime?.toIso8601String(),
 };
 

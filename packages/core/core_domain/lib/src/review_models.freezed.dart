@@ -811,6 +811,7 @@ mixin _$ReviewSession {
   bool get showAnswer => throw _privateConstructorUsedError;
   bool get isCompleted => throw _privateConstructorUsedError;
   List<ReviewRating> get ratings => throw _privateConstructorUsedError;
+  Map<String, String> get ratingIntervals => throw _privateConstructorUsedError;
   DateTime? get startTime => throw _privateConstructorUsedError;
 
   /// Serializes this ReviewSession to a JSON map.
@@ -836,6 +837,7 @@ abstract class $ReviewSessionCopyWith<$Res> {
     bool showAnswer,
     bool isCompleted,
     List<ReviewRating> ratings,
+    Map<String, String> ratingIntervals,
     DateTime? startTime,
   });
 }
@@ -860,6 +862,7 @@ class _$ReviewSessionCopyWithImpl<$Res, $Val extends ReviewSession>
     Object? showAnswer = null,
     Object? isCompleted = null,
     Object? ratings = null,
+    Object? ratingIntervals = null,
     Object? startTime = freezed,
   }) {
     return _then(
@@ -884,6 +887,10 @@ class _$ReviewSessionCopyWithImpl<$Res, $Val extends ReviewSession>
                 ? _value.ratings
                 : ratings // ignore: cast_nullable_to_non_nullable
                       as List<ReviewRating>,
+            ratingIntervals: null == ratingIntervals
+                ? _value.ratingIntervals
+                : ratingIntervals // ignore: cast_nullable_to_non_nullable
+                      as Map<String, String>,
             startTime: freezed == startTime
                 ? _value.startTime
                 : startTime // ignore: cast_nullable_to_non_nullable
@@ -909,6 +916,7 @@ abstract class _$$ReviewSessionImplCopyWith<$Res>
     bool showAnswer,
     bool isCompleted,
     List<ReviewRating> ratings,
+    Map<String, String> ratingIntervals,
     DateTime? startTime,
   });
 }
@@ -932,6 +940,7 @@ class __$$ReviewSessionImplCopyWithImpl<$Res>
     Object? showAnswer = null,
     Object? isCompleted = null,
     Object? ratings = null,
+    Object? ratingIntervals = null,
     Object? startTime = freezed,
   }) {
     return _then(
@@ -956,6 +965,10 @@ class __$$ReviewSessionImplCopyWithImpl<$Res>
             ? _value._ratings
             : ratings // ignore: cast_nullable_to_non_nullable
                   as List<ReviewRating>,
+        ratingIntervals: null == ratingIntervals
+            ? _value._ratingIntervals
+            : ratingIntervals // ignore: cast_nullable_to_non_nullable
+                  as Map<String, String>,
         startTime: freezed == startTime
             ? _value.startTime
             : startTime // ignore: cast_nullable_to_non_nullable
@@ -974,9 +987,11 @@ class _$ReviewSessionImpl implements _ReviewSession {
     this.showAnswer = false,
     this.isCompleted = false,
     final List<ReviewRating> ratings = const [],
+    final Map<String, String> ratingIntervals = const {},
     this.startTime,
   }) : _items = items,
-       _ratings = ratings;
+       _ratings = ratings,
+       _ratingIntervals = ratingIntervals;
 
   factory _$ReviewSessionImpl.fromJson(Map<String, dynamic> json) =>
       _$$ReviewSessionImplFromJson(json);
@@ -1007,12 +1022,21 @@ class _$ReviewSessionImpl implements _ReviewSession {
     return EqualUnmodifiableListView(_ratings);
   }
 
+  final Map<String, String> _ratingIntervals;
+  @override
+  @JsonKey()
+  Map<String, String> get ratingIntervals {
+    if (_ratingIntervals is EqualUnmodifiableMapView) return _ratingIntervals;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_ratingIntervals);
+  }
+
   @override
   final DateTime? startTime;
 
   @override
   String toString() {
-    return 'ReviewSession(items: $items, currentIndex: $currentIndex, showAnswer: $showAnswer, isCompleted: $isCompleted, ratings: $ratings, startTime: $startTime)';
+    return 'ReviewSession(items: $items, currentIndex: $currentIndex, showAnswer: $showAnswer, isCompleted: $isCompleted, ratings: $ratings, ratingIntervals: $ratingIntervals, startTime: $startTime)';
   }
 
   @override
@@ -1028,6 +1052,10 @@ class _$ReviewSessionImpl implements _ReviewSession {
             (identical(other.isCompleted, isCompleted) ||
                 other.isCompleted == isCompleted) &&
             const DeepCollectionEquality().equals(other._ratings, _ratings) &&
+            const DeepCollectionEquality().equals(
+              other._ratingIntervals,
+              _ratingIntervals,
+            ) &&
             (identical(other.startTime, startTime) ||
                 other.startTime == startTime));
   }
@@ -1041,6 +1069,7 @@ class _$ReviewSessionImpl implements _ReviewSession {
     showAnswer,
     isCompleted,
     const DeepCollectionEquality().hash(_ratings),
+    const DeepCollectionEquality().hash(_ratingIntervals),
     startTime,
   );
 
@@ -1065,6 +1094,7 @@ abstract class _ReviewSession implements ReviewSession {
     final bool showAnswer,
     final bool isCompleted,
     final List<ReviewRating> ratings,
+    final Map<String, String> ratingIntervals,
     final DateTime? startTime,
   }) = _$ReviewSessionImpl;
 
@@ -1081,6 +1111,8 @@ abstract class _ReviewSession implements ReviewSession {
   bool get isCompleted;
   @override
   List<ReviewRating> get ratings;
+  @override
+  Map<String, String> get ratingIntervals;
   @override
   DateTime? get startTime;
 

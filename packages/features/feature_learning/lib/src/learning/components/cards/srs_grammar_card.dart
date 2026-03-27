@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_domain/core_domain.dart';
+import 'package:core_ui/core_ui.dart';
 import 'srs_learning_card.dart'; // For CardBadge
 
 class SRSGrammarCard extends StatefulWidget {
@@ -49,26 +50,28 @@ class _SRSGrammarCardState extends State<SRSGrammarCard> {
     final isDark = theme.brightness == Brightness.dark;
 
     final cardBackground = isDark ? NemoColors.surfaceCardDark : NemoColors.surfaceCard;
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE5E7EB);
-    final primaryTextColor = isDark ? const Color(0xFFE6E1E5) : const Color(0xFF111827);
-    final secondaryTextColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : NemoColors.gray100;
+    
+    final primaryTextColor = isDark ? NemoColors.darkTextPrimary : NemoColors.gray900;
+    final secondaryTextColor = isDark ? NemoColors.gray400 : NemoColors.gray500;
 
-    // Indigo theme
+    // Indigo theme (Modified to use NemoColors if available, or keep as is if specific to grammar)
     final indigoBg = isDark ? const Color(0xFF1E1B4B) : const Color(0xFFEEF2FF);
     final indigoBorder = isDark ? const Color(0xFF3730A3) : const Color(0xFFE0E7FF);
     final indigoText = isDark ? const Color(0xFFA5B4FC) : const Color(0xFF4F46E5);
 
     // Yellow theme
-    final yellowBg = isDark ? const Color(0xFF713F12) : const Color(0xFFFEFCE8);
-    final yellowBorder = isDark ? const Color(0xFF92400E) : const Color(0xFFFEF3C7);
+    final yellowBg = isDark ? const Color(0xFF451A03) : const Color(0xFFFEFCE8); // More brown in dark
+    final yellowBorder = isDark ? const Color(0xFF713F12) : const Color(0xFFFEF3C7);
     final yellowIcon = isDark ? const Color(0xFFFDE047) : const Color(0xFFCA8A04);
     final yellowText = isDark ? const Color(0xFFFEF08A) : const Color(0xFF92400E);
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 120, left: 4, right: 4),
+      padding: const EdgeInsets.only(bottom: 120, left: 16, right: 16),
       child: Column(
         children: [
+          const SizedBox(height: 16),
           // ========== Question Card ==========
           _QuestionBox(
             grammar: widget.grammar,
@@ -78,12 +81,13 @@ class _SRSGrammarCardState extends State<SRSGrammarCard> {
             borderColor: borderColor,
             primaryTextColor: primaryTextColor,
             secondaryTextColor: secondaryTextColor,
+            isDark: isDark,
             indigoBg: indigoBg,
             indigoBorder: indigoBorder,
             indigoText: indigoText,
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // --- Sticker or Answer Area ---
           AnimatedSwitcher(
@@ -151,6 +155,7 @@ class _QuestionBox extends StatelessWidget {
     required this.borderColor,
     required this.primaryTextColor,
     required this.secondaryTextColor,
+    required this.isDark,
     required this.indigoBg,
     required this.indigoBorder,
     required this.indigoText,
@@ -160,6 +165,7 @@ class _QuestionBox extends StatelessWidget {
   final bool isAnswerShown;
   final CardBadge? badge;
   final Color backgroundColor, borderColor, primaryTextColor, secondaryTextColor;
+  final bool isDark;
   final Color indigoBg, indigoBorder, indigoText;
 
   @override
@@ -168,65 +174,79 @@ class _QuestionBox extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: borderColor, width: 0.5),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
       child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Column(
-            children: [
-              // Level Tag
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: indigoBg,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: indigoBorder),
-                  ),
-                  child: Text(
-                    grammar.grammarLevel,
-                    style: TextStyle(
-                      color: indigoText,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.2,
+          SizedBox(
+            width: double.infinity,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Level Tag
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: indigoBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: indigoBorder, width: 0.5),
+                    ),
+                    child: Text(
+                      grammar.grammarLevel,
+                      style: TextStyle(
+                        color: indigoText,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              // Grammar Entry
-              Text(
-                grammar.grammar,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: primaryTextColor,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              if (!isAnswerShown) ...[
                 const SizedBox(height: 16),
+                // Grammar Entry
                 Text(
-                  "思考这个语法的用法...",
+                  grammar.grammar,
                   style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: secondaryTextColor.withValues(alpha: 0.6),
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800, // ExtraBold
+                    color: primaryTextColor,
+                    height: 1.3,
+                    letterSpacing: -0.5,
                   ),
+                  textAlign: TextAlign.center,
                 ),
+                if (!isAnswerShown) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    "思考这个语法的用法...",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: secondaryTextColor.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
           if (badge != null)
             Positioned(
-              top: 0,
-              right: 0,
-              child: _Badge(badge: badge!),
+              top: -8,
+              right: -8,
+              child: _Badge(badge: badge!, isDark: isDark),
             ),
         ],
       ),
@@ -235,21 +255,22 @@ class _QuestionBox extends StatelessWidget {
 }
 
 class _Badge extends StatelessWidget {
-  const _Badge({required this.badge});
+  const _Badge({required this.badge, required this.isDark});
   final CardBadge badge;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        color: badge.bgColor,
+        color: badge.getBgColor(isDark),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         badge.text,
         style: TextStyle(
-          color: badge.textColor,
+          color: badge.getTextColor(isDark),
           fontSize: 12,
           fontWeight: FontWeight.w900,
           letterSpacing: 1.2,
@@ -267,7 +288,7 @@ class _StickerBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 240,
+      height: 320,
       padding: const EdgeInsets.symmetric(vertical: 24),
       alignment: Alignment.center,
       child: Opacity(
@@ -275,9 +296,9 @@ class _StickerBox extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.auto_awesome_rounded, size: 60, color: NemoColors.textMain),
-            const SizedBox(height: 12),
-            Text('STICKER_G_${grammarId.hashCode % 25}', style: const TextStyle(fontWeight: FontWeight.w900)),
+            const Icon(Icons.auto_awesome_rounded, size: 80, color: NemoColors.textMain),
+            const SizedBox(height: 16),
+            Text('STICKER_G_${grammarId.hashCode % 25}', style: const TextStyle(fontWeight: FontWeight.w900, color: NemoColors.textMain)),
           ],
         ),
       ),
@@ -582,9 +603,9 @@ class _ExamplesCard extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  example.sentence,
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: primaryTextColor, height: 1.6),
+                                NemoFuriganaText(
+                                  text: example.sentence,
+                                  baseTextStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: primaryTextColor, height: 1.6),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(

@@ -1,4 +1,5 @@
 import 'package:core_domain/core_domain.dart';
+import 'package:core_storage/core_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/learning_repository.dart';
 import '../domain/srs_scheduler.dart';
@@ -8,10 +9,20 @@ part 'review_providers.g.dart';
 
 @riverpod
 class ReviewNotifier extends _$ReviewNotifier {
+  final SrsScheduler _scheduler = SrsScheduler();
+
+  // Caching progress to avoid repeated DB lookups
+  final Map<int, LearningProgressData?> _progressCache = {};
+
   @override
   FutureOr<ReviewSession> build(String mode) async {
     final rawItems = await ref.watch(learningRepositoryProvider).getLearningQueue(mode);
     
+    // Cache progress
+    for (int i = 0; i < rawItems.length; i++) {
+       _progressCache[i] = rawItems[i].progress;
+    }
+
     // Map raw items to ReviewItem
     final items = rawItems.map((item) {
       if (item is WordItem) {
@@ -21,8 +32,15 @@ class ReviewNotifier extends _$ReviewNotifier {
       }
     }).toList();
 
+    Map<String, String> intervals = {};
+    if (rawItems.isNotEmpty) {
+      final srsIntervals = _scheduler.getIntervalPreviews(currentProgress: rawItems[0].progress);
+      intervals = srsIntervals.map((key, value) => MapEntry(key.name, value));
+    }
+
     return ReviewSession(
       items: items,
+      ratingIntervals: intervals,
       startTime: DateTime.now(),
     );
   }
@@ -76,10 +94,18 @@ class ReviewNotifier extends _$ReviewNotifier {
         isCompleted: true,
       ));
     } else {
+      final nextIndex = value.currentIndex + 1;
+      
+      // Update cache with updated progress for current if it was requeued (but review doesn't normally requeue in this simple implementation)
+      // Actually, let's just use the cached progress for the next item
+      final srsIntervals = _scheduler.getIntervalPreviews(currentProgress: _progressCache[nextIndex]);
+      final nextIntervals = srsIntervals.map((key, value) => MapEntry(key.name, value));
+
       state = AsyncData(value.copyWith(
         ratings: updatedRatings,
-        currentIndex: value.currentIndex + 1,
+        currentIndex: nextIndex,
         showAnswer: false,
+        ratingIntervals: nextIntervals,
       ));
     }
   }

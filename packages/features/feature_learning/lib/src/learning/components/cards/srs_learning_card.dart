@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_domain/core_domain.dart';
+import 'package:core_ui/core_ui.dart';
 
 enum CardBadge {
   fresh,
@@ -16,20 +17,34 @@ enum CardBadge {
     }
   }
 
-  Color get bgColor {
-    switch (this) {
-      case CardBadge.fresh: return const Color(0xFFE0EDFF);
-      case CardBadge.review: return const Color(0xFFDCFCE7);
-      case CardBadge.relearn: return const Color(0xFFFFEDD5);
+  Color getBgColor(bool isDark) {
+    if (isDark) {
+      return switch (this) {
+        CardBadge.fresh => const Color(0xFF1E3A8A),
+        CardBadge.review => const Color(0xFF14532D),
+        CardBadge.relearn => const Color(0xFF7C2D12),
+      };
     }
+    return switch (this) {
+      CardBadge.fresh => const Color(0xFFE0EDFF),
+      CardBadge.review => const Color(0xFFDCFCE7),
+      CardBadge.relearn => const Color(0xFFFFEDD5),
+    };
   }
 
-  Color get textColor {
-    switch (this) {
-      case CardBadge.fresh: return const Color(0xFF1D4ED8);
-      case CardBadge.review: return const Color(0xFF166534);
-      case CardBadge.relearn: return const Color(0xFF9A3412);
+  Color getTextColor(bool isDark) {
+    if (isDark) {
+      return switch (this) {
+        CardBadge.fresh => const Color(0xFFBFDBFE),
+        CardBadge.review => const Color(0xFFBBF7D0),
+        CardBadge.relearn => const Color(0xFFFED7AA),
+      };
     }
+    return switch (this) {
+      CardBadge.fresh => const Color(0xFF1D4ED8),
+      CardBadge.review => const Color(0xFF166534),
+      CardBadge.relearn => const Color(0xFF9A3412),
+    };
   }
 }
 
@@ -55,8 +70,7 @@ class SRSLearningCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final cardBackground = isDark ? NemoColors.surfaceCardDark : NemoColors.surfaceCard;
     final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
@@ -141,6 +155,8 @@ class _QuestionBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryTextColor = isDark ? NemoColors.darkTextPrimary : NemoColors.gray900;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -155,50 +171,56 @@ class _QuestionBox extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
       child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Column(
-            children: [
-              // Japanese
-              Text(
-                word.japanese,
-                style: const TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.w800, // ExtraBold
-                  letterSpacing: -1,
-                  height: 1.1,
-                  color: NemoColors.textMain,
+          SizedBox(
+            width: double.infinity,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Japanese
+                NemoFuriganaText(
+                  text: word.japanese,
+                  textAlign: TextAlign.center,
+                  baseTextStyle: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w800, // ExtraBold
+                    letterSpacing: -1,
+                    height: 1.1,
+                    color: primaryTextColor,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              // Hiragana (Blurred if hidden)
-              _BlurredText(
-                text: word.hiragana,
-                isBlurred: !isAnswerShown,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                  color: isAnswerShown ? NemoColors.accentBlue : (isDark ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFD1D5DB)),
+                const SizedBox(height: 8),
+                // Hiragana (Blurred if hidden)
+                _BlurredText(
+                  text: word.hiragana,
+                  isBlurred: !isAnswerShown,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w500,
+                    color: isAnswerShown ? NemoColors.blue600 : (isDark ? Colors.white.withValues(alpha: 0.2) : NemoColors.gray300),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           if (badge != null)
             Positioned(
-              top: 0,
-              right: 0,
+              top: -8,
+              right: -4,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
-                  color: badge!.bgColor,
+                  color: badge!.getBgColor(isDark),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   badge!.text,
                   style: TextStyle(
-                    color: badge!.textColor,
+                    color: badge!.getTextColor(isDark),
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.2,
@@ -253,7 +275,7 @@ class _StickerBox extends StatelessWidget {
           children: [
             const Icon(Icons.auto_awesome_rounded, size: 80, color: NemoColors.textMain),
             const SizedBox(height: 16),
-            Text('STICKER_${wordId.hashCode % 25}', style: const TextStyle(fontWeight: FontWeight.w900)),
+            Text('STICKER_${wordId.hashCode % 25}', style: const TextStyle(fontWeight: FontWeight.w900, color: NemoColors.textMain)),
           ],
         ),
       ),
@@ -290,6 +312,10 @@ class _AnswerBox extends StatelessWidget {
     final practiceColor = _getColorForWord(word.id.hashCode);
     final practiceBgColor = practiceColor.withValues(alpha: isDark ? 0.2 : 0.1);
 
+    final primaryTextColor = isDark ? NemoColors.darkTextPrimary : NemoColors.gray900;
+    final secondaryTextColor = isDark ? NemoColors.gray400 : NemoColors.gray400;
+    final dividerColor = isDark ? Colors.white.withValues(alpha: 0.1) : NemoColors.gray100;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -312,26 +338,26 @@ class _AnswerBox extends StatelessWidget {
             children: [
               // POS Tag
               if (word.pos != null)
-                _PosPill(text: word.pos!),
+                _PosPill(text: word.pos!, isDark: isDark),
 
               // Meaning Section
-              _Label('含义'),
+              _Label('含义', color: secondaryTextColor),
               const SizedBox(height: 4),
               Text(
                 word.chinese,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: NemoColors.textMain,
+                  color: primaryTextColor,
                   height: 1.2,
                 ),
               ),
               const SizedBox(height: 16),
-              const Divider(height: 1, color: NemoColors.divider),
+              Divider(height: 1, color: dividerColor),
               const SizedBox(height: 16),
 
               // Example Section
-              _Label('例句'),
+              _Label('例句', color: secondaryTextColor),
               const SizedBox(height: 12),
               ...word.examples.asMap().entries.map((entry) {
                 final ex = entry.value;
@@ -342,6 +368,8 @@ class _AnswerBox extends StatelessWidget {
                   id: id,
                   onSpeak: onSpeakExample,
                   isPlaying: playingAudioId == id,
+                  primaryTextColor: primaryTextColor,
+                  secondaryTextColor: secondaryTextColor,
                 );
               }),
             ],
@@ -358,15 +386,15 @@ class _AnswerBox extends StatelessWidget {
                   _SpeakerButton(
                     onPressed: onSpeakWord!,
                     isPlaying: playingAudioId == 'word',
-                    color: practiceColor, // Or use specific blue from original
+                    color: practiceColor,
                     backgroundColor: practiceBgColor,
                   ),
                 const SizedBox(width: 8),
                 if (onPracticeClick != null)
                   _PracticeButton(
                     onPressed: onPracticeClick!,
-                    color: const Color(0xFF5856D6), // iOS Indigo
-                    backgroundColor: const Color(0xFF5856D6).withValues(alpha: 0.1),
+                    color: practiceColor,
+                    backgroundColor: practiceBgColor,
                   ),
               ],
             ),
@@ -392,17 +420,17 @@ class _AnswerBox extends StatelessWidget {
 }
 
 class _PosPill extends StatelessWidget {
-  const _PosPill({required this.text});
+  const _PosPill({required this.text, required this.isDark});
   final String text;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
+        color: isDark ? Colors.white.withValues(alpha: 0.1) : NemoColors.gray100,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
@@ -410,7 +438,7 @@ class _PosPill extends StatelessWidget {
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.bold,
-          color: isDark ? const Color(0xFFCAC4D0) : const Color(0xFF6B7280),
+          color: isDark ? NemoColors.darkTextSecondary : NemoColors.gray500,
           letterSpacing: 1,
         ),
       ),
@@ -419,17 +447,18 @@ class _PosPill extends StatelessWidget {
 }
 
 class _Label extends StatelessWidget {
-  const _Label(this.text);
+  const _Label(this.text, {required this.color});
   final String text;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 12,
-        fontWeight: FontWeight.w500, // Refined to Medium
-        color: NemoColors.textSub,
+        fontWeight: FontWeight.w500, // Medium
+        color: color,
         letterSpacing: 1,
       ),
     );
@@ -443,6 +472,8 @@ class _ExampleRow extends StatelessWidget {
     required this.id,
     this.onSpeak,
     this.isPlaying = false,
+    required this.primaryTextColor,
+    required this.secondaryTextColor,
   });
 
   final String japanese;
@@ -450,6 +481,8 @@ class _ExampleRow extends StatelessWidget {
   final String id;
   final Function(String, String, String)? onSpeak;
   final bool isPlaying;
+  final Color primaryTextColor;
+  final Color secondaryTextColor;
 
   @override
   Widget build(BuildContext context) {
@@ -462,14 +495,12 @@ class _ExampleRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Simplified Furigana representation (Kanji above Hiragana logic is complex)
-                // For now, achieving the clean spacing look
-                Text(
-                  japanese,
-                  style: const TextStyle(
+                NemoFuriganaText(
+                  text: japanese,
+                  baseTextStyle: TextStyle(
                     fontSize: 15,
                     height: 1.6,
-                    color: NemoColors.textMain,
+                    color: primaryTextColor,
                     fontWeight: FontWeight.normal,
                   ),
                 ),
@@ -477,7 +508,7 @@ class _ExampleRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     chinese!,
-                    style: const TextStyle(fontSize: 12, color: NemoColors.textSub),
+                    style: TextStyle(fontSize: 12, color: secondaryTextColor),
                   ),
                 ],
               ],
@@ -488,7 +519,7 @@ class _ExampleRow extends StatelessWidget {
               onPressed: () => onSpeak!(japanese, chinese ?? '', id),
               icon: Icon(
                 isPlaying ? Icons.volume_up_rounded : Icons.volume_down_rounded,
-                color: NemoColors.textSub.withValues(alpha: 0.6),
+                color: secondaryTextColor.withValues(alpha: 0.6),
                 size: 20,
               ),
               padding: EdgeInsets.zero,
@@ -516,12 +547,12 @@ class _SpeakerButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 44, // Refined to 44dp
-      height: 44,
+      width: 48,
+      height: 48,
       decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
       child: IconButton(
         onPressed: onPressed,
-        icon: Icon(isPlaying ? Icons.volume_up_rounded : Icons.volume_down_rounded, color: color, size: 24),
+        icon: Icon(isPlaying ? Icons.volume_up_rounded : Icons.volume_down_rounded, color: color, size: 26),
         padding: EdgeInsets.zero,
       ),
     );
@@ -543,13 +574,13 @@ class _PracticeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(24),
       child: Container(
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
         alignment: Alignment.center,
-        child: Icon(Icons.translate_rounded, color: color, size: 24),
+        child: Icon(Icons.translate_rounded, color: color, size: 26),
       ),
     );
   }

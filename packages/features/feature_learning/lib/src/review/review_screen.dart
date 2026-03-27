@@ -7,6 +7,7 @@ import '../learning/components/cards/srs_learning_card.dart';
 import '../learning/components/cards/srs_grammar_card.dart';
 import '../learning/components/srs_action_area.dart';
 import '../learning/components/common/nemo_learn_header.dart';
+import '../domain/srs_scheduler.dart';
 
 class ReviewScreen extends ConsumerWidget {
   const ReviewScreen({super.key, required this.mode});
@@ -104,7 +105,9 @@ class ReviewScreen extends ConsumerWidget {
                   onRate: (score) {
                     ref.read(reviewNotifierProvider(mode).notifier).rate(ReviewRating.values[score]);
                   },
-                  ratingIntervals: null, // TODO: Implement dynamic intervals for review session
+                  ratingIntervals: session.ratingIntervals.map(
+                    (key, value) => MapEntry(SrsRating.values.firstWhere((e) => e.name == key), value),
+                  ),
                 ),
               ),
             ],
