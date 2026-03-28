@@ -72,8 +72,6 @@ class _GrammarListScreenState extends ConsumerState<GrammarListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Trigger importer if needed
-    final importerAsync = ref.watch(assetDataImporterProvider);
     final grammarsAsync = ref.watch(allGrammarsWithDetailsProvider);
 
     return Scaffold(
@@ -107,115 +105,102 @@ class _GrammarListScreenState extends ConsumerState<GrammarListScreen> {
           ),
         ),
       ),
-      body: importerAsync.when(
-        data: (_) => grammarsAsync.when(
-          data: (grammars) {
-            final grouped = _groupGrammars(grammars);
-            final levels = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+      body: grammarsAsync.when(
+        data: (grammars) {
+          final grouped = _groupGrammars(grammars);
+          final levels = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
-            if (grouped.isEmpty) {
-              return const Center(child: _EmptyState(message: '未找到相关语法'));
-            }
+          if (grouped.isEmpty) {
+            return const Center(child: _EmptyState(message: '未找到相关语法'));
+          }
 
-            return ListView.builder(
-              padding: const EdgeInsets.only(bottom: 32),
-              itemCount: levels.length,
-              itemBuilder: (context, index) {
-                final level = levels[index];
-                final levelGrammars = grouped[level]!;
-                final isExpanded = _searchQuery.isNotEmpty || _expandedLevels.contains(level);
-                final levelColor = _getLevelColor(level);
+          return ListView.builder(
+            padding: const EdgeInsets.only(bottom: 32),
+            itemCount: levels.length,
+            itemBuilder: (context, index) {
+              final level = levels[index];
+              final levelGrammars = grouped[level]!;
+              final isExpanded = _searchQuery.isNotEmpty || _expandedLevels.contains(level);
+              final levelColor = _getLevelColor(level);
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Level Header
-                    InkWell(
-                      onTap: () => _toggleLevel(level),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 4,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: levelColor,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Level Header
+                  InkWell(
+                    onTap: () => _toggleLevel(level),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 4,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: levelColor,
+                              borderRadius: BorderRadius.circular(2),
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              level,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w900,
-                              ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            level,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${levelGrammars.length} 条',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                              ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${levelGrammars.length} 条',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                             ),
-                            const Spacer(),
-                            AnimatedRotation(
-                              turns: isExpanded ? 0.5 : 0,
-                              duration: const Duration(milliseconds: 300),
-                              child: Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                              ),
+                          ),
+                          const Spacer(),
+                          AnimatedRotation(
+                            turns: isExpanded ? 0.5 : 0,
+                            duration: const Duration(milliseconds: 300),
+                            child: Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Grammars List
+                  if (isExpanded)
+                    ...levelGrammars.map(
+                      (grammar) => Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                        child: _GrammarListItemPremium(
+                          grammar: grammar,
+                          onClick: () {
+                            context.pushNamed(
+                              LibraryRouteNames.grammarDetail,
+                              pathParameters: {'grammarId': grammar.id},
+                            );
+                          },
                         ),
                       ),
                     ),
-                    // Grammars List
-                    if (isExpanded)
-                      ...levelGrammars.map(
-                        (grammar) => Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                          child: _GrammarListItemPremium(
-                            grammar: grammar,
-                            onClick: () {
-                              context.pushNamed(
-                                LibraryRouteNames.grammarDetail,
-                                pathParameters: {'grammarId': grammar.id},
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                  ],
-                );
-              },
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, stack) => Center(child: Text('Grammar Loading Error: $err')),
-        ),
-        loading: () => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              const Text('正在初始化语法库...', style: TextStyle(fontSize: 14)),
-            ],
-          ),
-        ),
-        error: (err, stack) => Center(child: Text('数据导入失败: $err')),
+                ],
+              );
+            },
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Grammar Loading Error: $err')),
       ),
     );
   }

@@ -15,6 +15,9 @@ dependencies:
     path: ../core_designsystem
   core_domain:
     path: ../core_domain
+  core_storage:
+    path: ../core_storage
+  hooks_riverpod: ^2.6.1
 
 dev_dependencies:
   flutter_test:
