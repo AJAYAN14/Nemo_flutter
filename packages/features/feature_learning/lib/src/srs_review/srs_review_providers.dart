@@ -188,9 +188,9 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
         lastSnapshot: snapshot,
         revealedItemIds: {...value.revealedItemIds}..remove(id),
         message: result.isLeech ? '钉子户已自动处理' : null,
+        showUndoHint: true,
       ));
   }
-
   Future<void> undo() async {
     final value = state.valueOrNull;
     if (value == null || value.lastSnapshot == null) return;
@@ -203,7 +203,14 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
     await ref.read(learningRepositoryProvider).undoUpdateProgress(id, type, snapshot.previousProgress);
 
     state = AsyncData(_buildStateWithItems(snapshot.items, snapshot.currentIndex, snapshot.completedCount)
-      .copyWith(lastSnapshot: null));
+      .copyWith(lastSnapshot: null, showUndoHint: false));
+  }
+
+  void dismissUndoHint() {
+    final value = state.valueOrNull;
+    if (value != null) {
+      state = AsyncData(value.copyWith(showUndoHint: false));
+    }
   }
 
   Future<void> suspendCurrent() async {

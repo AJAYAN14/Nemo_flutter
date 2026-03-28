@@ -168,6 +168,25 @@ class SrsReviewScreen extends HookConsumerWidget {
                   ratingIntervals: session.ratingIntervals,
                 ),
               ),
+              // Undo Hint Snackbar (Primary interaction)
+              Positioned(
+                top: 8,
+                left: 0,
+                right: 0,
+                child: SafeArea(
+                  child: NemoSnackbar(
+                    visible: session.showUndoHint && session.lastSnapshot != null,
+                    message: '点击撤销上一次评分',
+                    actionText: '撤销',
+                    icon: Icons.undo_rounded,
+                    onDismiss: () => notifier.dismissUndoHint(),
+                    onClick: () {
+                      notifier.undo();
+                      notifier.dismissUndoHint();
+                    },
+                  ),
+                ),
+              ),
             ],
           ),
         );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:core_designsystem/core_designsystem.dart';
+import 'package:core_ui/core_ui.dart';
 import 'package:core_prefs/core_prefs.dart';
 import 'package:core_storage/core_storage.dart';
 import 'package:feature_learning/src/srs_study/srs_study_providers.dart';
@@ -213,6 +214,25 @@ class SrsStudyScreen extends HookConsumerWidget {
                   ratingIntervals: session.ratingIntervals,
                   showAnswerAvailableAt: session.showAnswerAvailableAt,
                   isShowAnswerDelayEnabled: showAnswerWait,
+                ),
+              ),
+              // Undo Hint Snackbar (Primary interaction)
+              Positioned(
+                top: 8,
+                left: 0,
+                right: 0,
+                child: SafeArea(
+                  child: NemoSnackbar(
+                    visible: session.showUndoHint && session.lastSnapshot != null,
+                    message: '点击撤销上一次评分',
+                    actionText: '撤销',
+                    icon: Icons.undo_rounded,
+                    onDismiss: () => notifier.dismissUndoHint(),
+                    onClick: () {
+                      notifier.undo();
+                      notifier.dismissUndoHint();
+                    },
+                  ),
                 ),
               ),
             ],

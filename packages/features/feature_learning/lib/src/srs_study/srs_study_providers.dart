@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:core_domain/core_domain.dart';
 import 'package:core_prefs/core_prefs.dart';
 import '../data/learning_repository.dart';
 import '../domain/learning_item.dart';
@@ -23,6 +22,7 @@ class SrsStudyUiModel {
     this.lastSnapshot,
     this.showAnswerAvailableAt,
     this.message,
+    this.showUndoHint = false,
   });
 
   final LearningSessionState sessionState;
@@ -36,6 +36,7 @@ class SrsStudyUiModel {
   final SessionSnapshot? lastSnapshot;
   final int? showAnswerAvailableAt;
   final String? message;
+  final bool showUndoHint;
 
   bool get isCompleted => sessionState is LearningSessionEmpty;
 
@@ -67,6 +68,7 @@ class SrsStudyUiModel {
     SessionSnapshot? lastSnapshot,
     int? showAnswerAvailableAt,
     String? message,
+    bool? showUndoHint,
   }) {
     return SrsStudyUiModel(
       sessionState: sessionState ?? this.sessionState,
@@ -80,6 +82,7 @@ class SrsStudyUiModel {
       lastSnapshot: lastSnapshot ?? this.lastSnapshot,
       showAnswerAvailableAt: showAnswerAvailableAt ?? this.showAnswerAvailableAt,
       message: message ?? this.message,
+      showUndoHint: showUndoHint ?? this.showUndoHint,
     );
   }
 
@@ -269,9 +272,9 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
         lastSnapshot: snapshot,
         revealedItemIds: {...value.revealedItemIds}..remove(id),
         message: result.isLeech ? '钉子户已自动处理' : null,
+        showUndoHint: true,
       ));
   }
-
   Future<void> undo() async {
     final value = state.valueOrNull;
     if (value == null || value.lastSnapshot == null) return;
@@ -284,7 +287,14 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
     await ref.read(learningRepositoryProvider).undoUpdateProgress(id, type, snapshot.previousProgress);
 
     state = AsyncData(_buildStateWithItems(snapshot.items, snapshot.currentIndex, snapshot.completedCount)
-      .copyWith(lastSnapshot: null));
+      .copyWith(lastSnapshot: null, showUndoHint: false));
+  }
+
+  void dismissUndoHint() {
+    final value = state.valueOrNull;
+    if (value != null) {
+      state = AsyncData(value.copyWith(showUndoHint: false));
+    }
   }
 
   Future<void> suspendCurrent() async {
