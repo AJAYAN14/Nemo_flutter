@@ -360,6 +360,10 @@ class LearnAheadLimit extends _$LearnAheadLimit {
     await service.setLearnAheadLimit(value);
     ref.invalidateSelf();
   }
+
+  Future<void> reset() async {
+    await set(120); // Default value from PreferenceService
+  }
 }
 
 @riverpod
@@ -434,6 +438,10 @@ class LeechThreshold extends _$LeechThreshold {
     await ref.read(preferenceServiceProvider).setLeechThreshold(value);
     ref.invalidateSelf();
   }
+
+  Future<void> reset() async {
+    await set(5); // Default value from PreferenceService
+  }
 }
 
 @riverpod
@@ -446,6 +454,10 @@ class LeechAction extends _$LeechAction {
   Future<void> set(String value) async {
     await ref.read(preferenceServiceProvider).setLeechAction(value);
     ref.invalidateSelf();
+  }
+
+  Future<void> reset() async {
+    await set('skip'); // Default value from PreferenceService
   }
 }
 
@@ -460,6 +472,10 @@ class LearningSteps extends _$LearningSteps {
     await ref.read(preferenceServiceProvider).setLearningSteps(value);
     ref.invalidateSelf();
   }
+
+  Future<void> reset() async {
+    await set('1 10'); // Default value from PreferenceService
+  }
 }
 
 @riverpod
@@ -472,5 +488,9 @@ class RelearningSteps extends _$RelearningSteps {
   Future<void> set(String value) async {
     await ref.read(preferenceServiceProvider).setRelearningSteps(value);
     ref.invalidateSelf();
+  }
+
+  Future<void> reset() async {
+    await set('1 10'); // Default value from PreferenceService
   }
 }

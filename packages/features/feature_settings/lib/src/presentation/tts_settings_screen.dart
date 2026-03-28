@@ -74,7 +74,7 @@ class TtsSettingsScreen extends HookConsumerWidget {
           const SettingsSectionTitle('语速调节'),
           PremiumCard(
             padding: EdgeInsets.zero,
-            child: _FlatSliderSettingItem(
+            child: PremiumSliderSettingItem(
               icon: Icons.speed_rounded,
               iconColor: accentColor,
               title: '语速 (Speed)',
@@ -101,7 +101,7 @@ class TtsSettingsScreen extends HookConsumerWidget {
           const SettingsSectionTitle('音调调节'),
           PremiumCard(
             padding: EdgeInsets.zero,
-            child: _FlatSliderSettingItem(
+            child: PremiumSliderSettingItem(
               icon: Icons.music_note_rounded,
               iconColor: secondaryAccent,
               title: '音调 (Pitch)',
@@ -143,6 +143,7 @@ class TtsSettingsScreen extends HookConsumerWidget {
                   text: '重置为默认值',
                   color: Colors.grey,
                   onClick: () async {
+                    HapticFeedback.mediumImpact();
                     await prefs.setTtsSpeed(1.0);
                     await prefs.setTtsPitch(1.0);
                     ref.read(ttsServiceProvider).updateSettings();
@@ -154,110 +155,6 @@ class TtsSettingsScreen extends HookConsumerWidget {
           ),
 
           const SizedBox(height: 32),
-        ],
-      ),
-    );
-  }
-}
-
-class _FlatSliderSettingItem extends StatelessWidget {
-  const _FlatSliderSettingItem({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.value,
-    required this.valueDisplay,
-    required this.onChanged,
-    required this.min,
-    required this.max,
-    required this.divisions,
-    required this.accentColor,
-    required this.labels,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final double value;
-  final String valueDisplay;
-  final ValueChanged<double> onChanged;
-  final double min;
-  final double max;
-  final int divisions;
-  final Color accentColor;
-  final List<String> labels;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              // Squircle Icon Box
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: iconColor, size: 22),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-                ),
-              ),
-              // Value Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  valueDisplay,
-                  style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 13),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 4,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-              activeTrackColor: accentColor,
-              inactiveTrackColor: Colors.grey.withValues(alpha: 0.2),
-              thumbColor: accentColor,
-              overlayColor: accentColor.withValues(alpha: 0.12),
-              tickMarkShape: SliderTickMarkShape.noTickMark,
-            ),
-            child: Slider(
-              value: value,
-              onChanged: (val) {
-                if (val != value) {
-                  HapticFeedback.selectionClick();
-                  onChanged(val);
-                }
-              },
-              min: min,
-              max: max,
-              divisions: divisions,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: labels.map((l) => Text(l, style: const TextStyle(fontSize: 11, color: Colors.grey))).toList(),
-            ),
-          ),
         ],
       ),
     );

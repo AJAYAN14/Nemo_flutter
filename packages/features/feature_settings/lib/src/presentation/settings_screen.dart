@@ -153,7 +153,7 @@ class SettingsScreen extends HookConsumerWidget {
                     iconColor: const Color(0xFFAF52DE), // NemoPurple
                     title: '记忆算法配置',
                     subtitle: '步进、提前复习与 Leech 策略',
-                    onClick: () => context.showNemoBottomSheet(child: const AdvancedLearningSettingsBottomSheet()),
+                    onClick: () => context.pushNamed(SettingsRouteNames.srs),
                     showDivider: false,
                   ),
                 ],

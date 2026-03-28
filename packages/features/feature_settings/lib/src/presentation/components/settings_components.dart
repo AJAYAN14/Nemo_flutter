@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class SettingsSectionTitle extends StatelessWidget {
   const SettingsSectionTitle(this.text, {super.key});
@@ -553,6 +554,174 @@ class _VoiceItem extends StatelessWidget {
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class PremiumSliderSettingItem extends StatelessWidget {
+  const PremiumSliderSettingItem({
+    super.key,
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.value,
+    required this.valueDisplay,
+    required this.onChanged,
+    required this.min,
+    required this.max,
+    this.divisions,
+    required this.accentColor,
+    this.labels = const [],
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final double value;
+  final String valueDisplay;
+  final ValueChanged<double> onChanged;
+  final double min;
+  final double max;
+  final int? divisions;
+  final Color accentColor;
+  final List<String> labels;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  valueDisplay,
+                  style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 4,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+              activeTrackColor: accentColor,
+              inactiveTrackColor: Colors.grey.withValues(alpha: 0.2),
+              thumbColor: accentColor,
+              overlayColor: accentColor.withValues(alpha: 0.12),
+              tickMarkShape: SliderTickMarkShape.noTickMark,
+            ),
+            child: Slider(
+              value: value.clamp(min, max),
+              onChanged: (val) {
+                if (val != value) {
+                  HapticFeedback.selectionClick();
+                  onChanged(val);
+                }
+              },
+              min: min,
+              max: max,
+              divisions: divisions,
+            ),
+          ),
+          if (labels.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: labels.map((l) => Text(l, style: const TextStyle(fontSize: 11, color: Colors.grey))).toList(),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class PremiumRadioSettingItem extends StatelessWidget {
+  const PremiumRadioSettingItem({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.groupValue,
+    required this.onSelected,
+    required this.accentColor,
+  });
+
+  final String title;
+  final String subtitle;
+  final String value;
+  final String groupValue;
+  final ValueChanged<String> onSelected;
+  final Color accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = value == groupValue;
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onSelected(value);
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: isSelected ? accentColor : Colors.transparent, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Radio<String>(
+              value: value,
+              groupValue: groupValue,
+              activeColor: accentColor,
+              onChanged: (v) {
+                if (v != null) {
+                   HapticFeedback.lightImpact();
+                   onSelected(v);
+                }
+              },
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
