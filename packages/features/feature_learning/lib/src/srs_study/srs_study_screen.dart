@@ -70,10 +70,18 @@ class SrsStudyScreen extends HookConsumerWidget {
         final showAnswerWait = ref.watch(showAnswerWaitProvider);
         final answerWaitDuration = ref.watch(answerWaitDurationProvider);
 
-        // Synchronize PageController with state
+        // Synchronize PageController with state — prefer smooth scroll when possible
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (pageController.hasClients && pageController.page?.round() != currentIndex) {
+          if (!pageController.hasClients) return;
+          final currentPage = pageController.page;
+          if (currentPage == null) {
             pageController.jumpToPage(currentIndex);
+          } else if (currentPage.round() != currentIndex) {
+            pageController.animateToPage(
+              currentIndex,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
           }
         });
 
@@ -85,6 +93,30 @@ class SrsStudyScreen extends HookConsumerWidget {
             remainingCount: session.items.length - session.completedCount,
             progress: session.progress,
             onClose: () => Navigator.of(context).pop(),
+            onPrev: currentIndex > 0
+                ? () {
+                    if (pageController.hasClients) {
+                      pageController.previousPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    } else {
+                      notifier.onPageChanged(currentIndex - 1);
+                    }
+                  }
+                : null,
+            onNext: currentIndex < session.items.length - 1
+                ? () {
+                    if (pageController.hasClients) {
+                      pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    } else {
+                      notifier.onPageChanged(currentIndex + 1);
+                    }
+                  }
+                : null,
             canGoPrev: currentIndex > 0,
             canGoNext: currentIndex < session.items.length - 1,
             onUndo: session.lastSnapshot != null ? () => notifier.undo() : null,
@@ -103,7 +135,6 @@ class SrsStudyScreen extends HookConsumerWidget {
             children: [
               Positioned.fill(
                 child: PageView.builder(
-                  key: ValueKey(session.items.length),
                   itemCount: session.items.length,
                   controller: pageController,
                   physics: isAnswerShown ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
@@ -114,8 +145,13 @@ class SrsStudyScreen extends HookConsumerWidget {
                     final item = session.items[index];
                     final isRevealed = session.currentIndex == index && isAnswerShown;
 
+                    // use a stable key per item so AnimatedSwitcher can detect content replacement
+                    final contentKey = ValueKey(item is WordItem ? (item as WordItem).word.id : (item as GrammarItem).grammar.id);
+
+                    Widget card;
                     if (item is WordItem) {
-                      return SRSLearningCard(
+                      card = SRSLearningCard(
+                        key: contentKey,
                         word: item.word,
                         isAnswerShown: isRevealed,
                         badge: item.badge,
@@ -134,15 +170,34 @@ class SrsStudyScreen extends HookConsumerWidget {
                         playingAudioId: session.playingAudioId,
                       );
                     } else if (item is GrammarItem) {
-                      return SRSGrammarCard(
+                      card = SRSGrammarCard(
+                        key: contentKey,
                         grammar: item.grammar,
                         isAnswerShown: isRevealed,
                         badge: item.badge,
                         onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp, id),
                         playingAudioId: session.playingAudioId,
                       );
+                    } else {
+                      card = const SizedBox.shrink();
                     }
-                    return const SizedBox.shrink();
+
+                    return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder: (child, animation) {
+                        // incoming: slide from right -> center
+                        final inOffset = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(animation);
+                        // outgoing: slide center -> left (use ReverseAnimation to map animation correctly)
+                        final outOffset = Tween<Offset>(begin: Offset.zero, end: const Offset(-1, 0)).animate(ReverseAnimation(animation));
+
+                        if (child.key == contentKey) {
+                          return SlideTransition(position: inOffset, child: FadeTransition(opacity: animation, child: child));
+                        } else {
+                          return SlideTransition(position: outOffset, child: FadeTransition(opacity: animation, child: child));
+                        }
+                      },
+                      child: card,
+                    );
                   },
                 ),
               ),

@@ -77,8 +77,9 @@ class SrsScheduler {
     required List<int> learningSteps,
     required List<int> relearningSteps,
     int leechThreshold = 5,
+    int? nowMillis,
   }) {
-    final now = DateTime.now().millisecondsSinceEpoch;
+    final now = nowMillis ?? DateTime.now().millisecondsSinceEpoch;
     final currentState = MemoryState(
       stability: currentProgress?.stability ?? 0.0,
       difficulty: currentProgress?.difficulty ?? 0.0,
@@ -139,8 +140,9 @@ class SrsScheduler {
     required LearningProgressData? currentProgress,
     required List<int> learningSteps,
     required List<int> relearningSteps,
+    int? nowMillis,
   }) {
-    final now = DateTime.now().millisecondsSinceEpoch;
+    final now = nowMillis ?? DateTime.now().millisecondsSinceEpoch;
     final currentState = MemoryState(
       stability: currentProgress?.stability ?? 0.0,
       difficulty: currentProgress?.difficulty ?? 0.0,

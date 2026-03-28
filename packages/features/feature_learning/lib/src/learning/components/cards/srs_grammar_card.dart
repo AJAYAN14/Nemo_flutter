@@ -97,7 +97,7 @@ class _SRSGrammarCardState extends State<SRSGrammarCard> {
                 opacity: animation,
                 child: SlideTransition(
                   position: Tween<Offset>(
-                    begin: const Offset(0, 0.05),
+                    begin: const Offset(0, 0.125),
                     end: Offset.zero,
                   ).animate(animation),
                   child: child,
