@@ -1,7 +1,6 @@
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:core_prefs/core_prefs.dart';
@@ -12,7 +11,6 @@ class SrsSettingsScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     const accentColor = Color(0xFFAF52DE); // NemoPurple
 
     final learnAheadLimit = ref.watch(learnAheadLimitProvider).toDouble();
@@ -65,17 +63,7 @@ class SrsSettingsScreen extends HookConsumerWidget {
                   decoration: _inputDecoration('1 10', accentColor),
                   style: const TextStyle(fontSize: 15),
                   onSubmitted: (val) {
-                    final trimmed = val.trim();
-                    if (RegExp(r'^(\d+\s*)+$').hasMatch(trimmed)) {
-                      HapticFeedback.lightImpact();
-                      ref.read(learningStepsProvider.notifier).set(trimmed);
-                    } else {
-                      HapticFeedback.vibrate();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('格式非法：请输入由空格分隔的数字（如 1 10 1440）')),
-                      );
-                      stepsController.text = learningSteps;
-                    }
+                    ref.read(learningStepsProvider.notifier).set(val.trim());
                   },
                 ),
                 const SizedBox(height: 8),
@@ -90,17 +78,7 @@ class SrsSettingsScreen extends HookConsumerWidget {
                   decoration: _inputDecoration('1 10', accentColor),
                   style: const TextStyle(fontSize: 15),
                   onSubmitted: (val) {
-                    final trimmed = val.trim();
-                    if (RegExp(r'^(\d+\s*)+$').hasMatch(trimmed)) {
-                      HapticFeedback.lightImpact();
-                      ref.read(relearningStepsProvider.notifier).set(trimmed);
-                    } else {
-                      HapticFeedback.vibrate();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('格式非法：请输入由空格分隔的数字')),
-                      );
-                      relearnStepsController.text = relearningSteps;
-                    }
+                    ref.read(relearningStepsProvider.notifier).set(val.trim());
                   },
                 ),
                 const SizedBox(height: 8),
@@ -122,8 +100,8 @@ class SrsSettingsScreen extends HookConsumerWidget {
               valueDisplay: '${learnAheadLimit.toInt()} 分钟',
               onChanged: (v) => ref.read(learnAheadLimitProvider.notifier).set(v.toInt()),
               min: 0,
-              max: 180,
-              divisions: 180,
+              max: 60,
+              divisions: 60,
               accentColor: accentColor,
             ),
           ),
@@ -152,7 +130,6 @@ class SrsSettingsScreen extends HookConsumerWidget {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
-                          HapticFeedback.lightImpact();
                           ref.read(leechThresholdProvider.notifier).set((leechThreshold - 1).clamp(1, 12));
                         },
                         child: const Text('-1'),
@@ -162,7 +139,6 @@ class SrsSettingsScreen extends HookConsumerWidget {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
-                          HapticFeedback.lightImpact();
                           ref.read(leechThresholdProvider.notifier).set((leechThreshold + 1).clamp(1, 12));
                         },
                         child: const Text('+1'),
@@ -194,38 +170,6 @@ class SrsSettingsScreen extends HookConsumerWidget {
             ),
           ),
 
-          const SizedBox(height: 32),
-          
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              children: [
-                TextButton.icon(
-                  onPressed: () async {
-                    HapticFeedback.heavyImpact();
-                    await ref.read(learningStepsProvider.notifier).reset();
-                    await ref.read(relearningStepsProvider.notifier).reset();
-                    await ref.read(learnAheadLimitProvider.notifier).reset();
-                    await ref.read(leechThresholdProvider.notifier).reset();
-                    await ref.read(leechActionProvider.notifier).reset();
-                    
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('记忆算法配置已重置为默认值')),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.refresh_rounded, size: 18),
-                  label: const Text('重置为默认配置'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.grey,
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
           const SizedBox(height: 48),
         ],
       ),
@@ -269,7 +213,7 @@ class _AlgorithmInfoCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(color: theme.colorScheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-            child: Icon(Icons.psychology_rounded, color: theme.colorScheme.primary, size: 24),
+            child: Icon(Icons.info_rounded, color: theme.colorScheme.primary, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(

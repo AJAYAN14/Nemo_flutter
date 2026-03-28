@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class SettingsSectionTitle extends StatelessWidget {
   const SettingsSectionTitle(this.text, {super.key});
@@ -641,7 +640,6 @@ class PremiumSliderSettingItem extends StatelessWidget {
               value: value.clamp(min, max),
               onChanged: (val) {
                 if (val != value) {
-                  HapticFeedback.selectionClick();
                   onChanged(val);
                 }
               },
@@ -687,7 +685,6 @@ class PremiumRadioSettingItem extends StatelessWidget {
     final isSelected = value == groupValue;
     return InkWell(
       onTap: () {
-        HapticFeedback.lightImpact();
         onSelected(value);
       },
       borderRadius: BorderRadius.circular(14),
@@ -706,7 +703,6 @@ class PremiumRadioSettingItem extends StatelessWidget {
               activeColor: accentColor,
               onChanged: (v) {
                 if (v != null) {
-                   HapticFeedback.lightImpact();
                    onSelected(v);
                 }
               },

@@ -108,7 +108,7 @@ class SettingsScreen extends HookConsumerWidget {
                     trailing: _TrailingValue('$dailyGoal个'),
                   ),
                   PremiumSettingsItem(
-                    icon: Icons.subject_rounded,
+                    icon: Icons.join_left_rounded,
                     iconColor: const Color(0xFF34C759), // NemoGreen
                     title: '每日语法目标',
                     subtitle: '设置每天要学习的语法数量',
@@ -138,10 +138,10 @@ class SettingsScreen extends HookConsumerWidget {
                     iconColor: const Color(0xFF0E68FF), // NemoPrimary
                     title: '新内容乱序抽取',
                     subtitle: isRandom ? '随机抽取新内容' : '按顺序抽取新内容',
-                    onClick: () {},
+                    onClick: () => ref.read(randomContentProvider.notifier).toggle(!isRandom),
                     trailing: Transform.scale(
                       scale: 0.8,
-                      child: CupertinoSwitch(
+                      child: Switch(
                         value: isRandom,
                         activeTrackColor: const Color(0xFF0E68FF), // NemoPrimary
                         onChanged: (val) => ref.read(randomContentProvider.notifier).toggle(val),
@@ -149,7 +149,7 @@ class SettingsScreen extends HookConsumerWidget {
                     ),
                   ),
                   PremiumSettingsItem(
-                    icon: Icons.settings_suggest_rounded,
+                    icon: Icons.settings_rounded,
                     iconColor: const Color(0xFFAF52DE), // NemoPurple
                     title: '记忆算法配置',
                     subtitle: '步进、提前复习与 Leech 策略',
