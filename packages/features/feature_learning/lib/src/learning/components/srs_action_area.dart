@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'srs_rating_button.dart';
 import '../../domain/srs_scheduler.dart';
 
@@ -9,12 +11,16 @@ class SRSActionArea extends StatelessWidget {
     required this.onShowAnswer,
     required this.onRate,
     this.ratingIntervals,
+    this.showAnswerAvailableAt,
+    this.isShowAnswerDelayEnabled = false,
   });
 
   final bool showAnswer;
   final VoidCallback onShowAnswer;
   final Function(int) onRate;
   final Map<SrsRating, String>? ratingIntervals;
+  final int? showAnswerAvailableAt;
+  final bool isShowAnswerDelayEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +31,11 @@ class SRSActionArea extends StatelessWidget {
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: !showAnswer
-            ? _ShowAnswerButton(onPressed: onShowAnswer)
+            ? _ShowAnswerButton(
+                onPressed: onShowAnswer,
+                revealAt: showAnswerAvailableAt,
+                delayEnabled: isShowAnswerDelayEnabled,
+              )
             : Row(
                 key: const ValueKey('rating_buttons'),
                 children: [
@@ -64,8 +74,15 @@ class SRSActionArea extends StatelessWidget {
 }
 
 class _ShowAnswerButton extends StatefulWidget {
-  const _ShowAnswerButton({required this.onPressed});
+  const _ShowAnswerButton({
+    required this.onPressed,
+    this.revealAt,
+    this.delayEnabled = false,
+  });
+  
   final VoidCallback onPressed;
+  final int? revealAt;
+  final bool delayEnabled;
 
   @override
   State<_ShowAnswerButton> createState() => _ShowAnswerButtonState();
@@ -74,6 +91,8 @@ class _ShowAnswerButton extends StatefulWidget {
 class _ShowAnswerButtonState extends State<_ShowAnswerButton> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
+  Timer? _timer;
+  int _remainingSec = 0;
 
   @override
   void initState() {
@@ -86,17 +105,53 @@ class _ShowAnswerButtonState extends State<_ShowAnswerButton> with SingleTickerP
       value: 1.0,
     );
     _scaleAnimation = _controller;
+    _startTimer();
+  }
+
+  @override
+  void didUpdateWidget(_ShowAnswerButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.revealAt != oldWidget.revealAt) {
+      _startTimer();
+    }
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    if (widget.delayEnabled && widget.revealAt != null) {
+      _updateRemaining();
+      _timer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
+        _updateRemaining();
+      });
+    } else {
+      setState(() => _remainingSec = 0);
+    }
+  }
+
+  void _updateRemaining() {
+    if (widget.revealAt == null) return;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final diff = widget.revealAt! - now;
+    final sec = (diff / 1000).ceil();
+    if (sec != _remainingSec) {
+      if (mounted) setState(() => _remainingSec = sec.clamp(0, 99));
+    }
+    if (diff <= 0) {
+      _timer?.cancel();
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _timer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isBlocked = _remainingSec > 0;
     
     return ScaleTransition(
       scale: _scaleAnimation,
@@ -104,15 +159,32 @@ class _ShowAnswerButtonState extends State<_ShowAnswerButton> with SingleTickerP
         onTapDown: (_) => _controller.reverse(),
         onTapUp: (_) {
           _controller.forward();
-          widget.onPressed();
+          if (isBlocked) {
+            HapticFeedback.mediumImpact();
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('请先回想一会儿 ($_remainingSec s)'),
+                duration: const Duration(milliseconds: 1500),
+                behavior: SnackBarBehavior.floating,
+                width: 240,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            );
+          } else {
+            widget.onPressed();
+          }
         },
         onTapCancel: () => _controller.forward(),
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
           width: double.infinity,
           height: 60,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF111827) : const Color(0xFF111827), // Deep black for premium look
+            color: isBlocked 
+                ? (isDark ? Colors.grey.shade800 : Colors.grey.shade400)
+                : const Color(0xFF111827),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
@@ -122,15 +194,19 @@ class _ShowAnswerButtonState extends State<_ShowAnswerButton> with SingleTickerP
               ),
             ],
           ),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.auto_awesome, color: Color(0xFFFACC15), size: 20),
-              SizedBox(width: 8),
+              Icon(
+                isBlocked ? Icons.access_time_rounded : Icons.auto_awesome, 
+                color: isBlocked ? Colors.white70 : const Color(0xFFFACC15), 
+                size: 20,
+              ),
+              const SizedBox(width: 12),
               Text(
-                '显示答案',
+                isBlocked ? '显示答案 (${_remainingSec}s)' : '显示答案',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: isBlocked ? Colors.white70 : Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.5,

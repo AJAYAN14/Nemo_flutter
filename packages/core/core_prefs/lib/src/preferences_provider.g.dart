@@ -212,7 +212,7 @@ final showAnswerWaitProvider =
 
 typedef _$ShowAnswerWait = AutoDisposeNotifier<bool>;
 String _$answerWaitDurationHash() =>
-    r'd3bb9e39ac80e22e5c658813a879f7d1508cff46';
+    r'26d11fd80b5e60fcdf4119a3ea9ac12b7e3ff794';
 
 /// See also [AnswerWaitDuration].
 @ProviderFor(AnswerWaitDuration)

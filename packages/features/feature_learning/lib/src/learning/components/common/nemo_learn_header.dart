@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import './learn_action_sheet.dart';
 
 class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
   const NemoLearnHeader({
@@ -20,6 +21,8 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
     this.onToggleShowAnswerWait,
     this.showAnswerWaitEnabled = false,
     this.answerWaitDuration = 1.0,
+    this.onShowRatingGuide,
+    this.onCycleAnswerWaitDuration,
   });
 
   final String title;
@@ -39,6 +42,8 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
   final ValueChanged<bool>? onToggleShowAnswerWait;
   final bool showAnswerWaitEnabled;
   final double answerWaitDuration;
+  final VoidCallback? onShowRatingGuide;
+  final VoidCallback? onCycleAnswerWaitDuration;
 
   @override
   Size get preferredSize => const Size.fromHeight(88); // 56 (Content) + 32 (Progress area)
@@ -155,95 +160,35 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                       const SizedBox(width: 8),
   
                       if (showMoreMenu)
-                        Theme(
-                          data: theme.copyWith(
-                            hoverColor: Colors.transparent,
-                            splashColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: navGroupBg,
+                            shape: BoxShape.circle,
+                            boxShadow: isDark ? null : [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: navGroupBg,
-                              shape: BoxShape.circle,
-                              boxShadow: isDark ? null : [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.more_vert_rounded,
+                              color: contentColor,
+                              size: 24,
                             ),
-                            child: PopupMenuButton<int>(
-                              icon: Icon(
-                                Icons.more_vert_rounded,
-                                color: contentColor,
-                                size: 24,
-                              ),
-                              onSelected: (value) {
-                                switch (value) {
-                                  case 1: onUndo?.call(); break;
-                                  case 3: onSuspend?.call(); break;
-                                  case 4: onBury?.call(); break;
-                                }
-                              },
-                              offset: const Offset(0, 48),
-                              color: isDark ? theme.colorScheme.surface : Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              itemBuilder: (context) => [
-                                _buildMenuItem(
-                                  value: 1,
-                                  icon: Icons.undo_rounded,
-                                  text: '撤销上一次评分',
-                                  theme: theme,
-                                  enabled: onUndo != null,
-                                ),
-                                const PopupMenuDivider(),
-                                _buildMenuItem(
-                                  value: 2,
-                                  icon: Icons.check_circle_outline_rounded,
-                                  text: '评分说明（新学/复习）',
-                                  theme: theme,
-                                ),
-                                const PopupMenuDivider(),
-                                _buildMenuItem(
-                                  value: 3,
-                                  icon: Icons.pause_rounded,
-                                  text: '暂停此卡片 (Suspend)',
-                                  theme: theme,
-                                ),
-                                _buildMenuItem(
-                                  value: 4,
-                                  icon: Icons.access_time_rounded,
-                                  text: '今日暂缓此项 (Bury)',
-                                  theme: theme,
-                                ),
-                                const PopupMenuDivider(),
-                                _buildSwitchMenuItem(
-                                  value: 5,
-                                  text: '翻面自动朗读',
-                                  initialValue: autoReadEnabled,
-                                  theme: theme,
-                                  onChanged: (val) => onToggleAutoRead?.call(val),
-                                ),
-                                _buildSwitchMenuItem(
-                                  value: 6,
-                                  text: '显示答案等待',
-                                  initialValue: showAnswerWaitEnabled,
-                                  theme: theme,
-                                  onChanged: (val) => onToggleShowAnswerWait?.call(val),
-                                ),
-                                _buildMenuItem(
-                                  value: 7,
-                                  icon: Icons.timer_rounded,
-                                  text: '等待时长: ${answerWaitDuration.toStringAsFixed(1)}s',
-                                  theme: theme,
-                                ),
-                              ],
-                            ),
+                            onPressed: () {
+                              LearnActionSheet.show(
+                                context,
+                                onUndo: onUndo,
+                                onSuspend: onSuspend,
+                                onBury: onBury,
+                                onShowRatingGuide: onShowRatingGuide,
+                              );
+                            },
                           ),
                         ),
                       const SizedBox(width: 4),
@@ -267,75 +212,6 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                   valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  PopupMenuItem<int> _buildMenuItem({
-    required int value,
-    required IconData icon,
-    required String text,
-    required ThemeData theme,
-    bool enabled = true,
-  }) {
-    final isDark = theme.brightness == Brightness.dark;
-    return PopupMenuItem<int>(
-      value: value,
-      enabled: enabled,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Icon(
-            icon, 
-            size: 20, 
-            color: const Color(0xFF0E68FF), // Nemo brand blue
-          ),
-          const SizedBox(width: 12),
-          Text(
-            text, 
-            style: TextStyle(
-              fontSize: 14,
-              color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  PopupMenuItem<int> _buildSwitchMenuItem({
-    required int value,
-    required String text,
-    required bool initialValue,
-    required ThemeData theme,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return PopupMenuItem<int>(
-      value: value,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            text, 
-            style: TextStyle(
-              fontSize: 14,
-              color: theme.brightness == Brightness.dark 
-                  ? Colors.white.withOpacity(0.9) 
-                  : Colors.black87,
-            ),
-          ),
-          const SizedBox(width: 24),
-          SizedBox(
-            height: 24,
-            width: 40,
-            child: Switch(
-              value: initialValue,
-              onChanged: onChanged,
-              activeColor: const Color(0xFF0E68FF), 
             ),
           ),
         ],

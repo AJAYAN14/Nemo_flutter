@@ -21,6 +21,7 @@ class SrsStudyUiModel {
     this.ratingIntervals = const {},
     this.playingAudioId,
     this.lastSnapshot,
+    this.showAnswerAvailableAt,
   });
 
   final LearningSessionState sessionState;
@@ -32,6 +33,7 @@ class SrsStudyUiModel {
   final Map<SrsRating, String> ratingIntervals;
   final String? playingAudioId;
   final SessionSnapshot? lastSnapshot;
+  final int? showAnswerAvailableAt;
 
   bool get isCompleted => sessionState is LearningSessionEmpty;
 
@@ -61,6 +63,7 @@ class SrsStudyUiModel {
     String? playingAudioId,
     bool cancelPlayingAudio = false,
     SessionSnapshot? lastSnapshot,
+    int? showAnswerAvailableAt,
   }) {
     return SrsStudyUiModel(
       sessionState: sessionState ?? this.sessionState,
@@ -72,6 +75,7 @@ class SrsStudyUiModel {
       ratingIntervals: ratingIntervals ?? this.ratingIntervals,
       playingAudioId: cancelPlayingAudio ? null : (playingAudioId ?? this.playingAudioId),
       lastSnapshot: lastSnapshot ?? this.lastSnapshot,
+      showAnswerAvailableAt: showAnswerAvailableAt ?? this.showAnswerAvailableAt,
     );
   }
 
@@ -138,6 +142,10 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
 
     final intervals = _scheduler.getIntervalPreviews(currentProgress: currentItem.progress);
 
+    final showWait = ref.read(showAnswerWaitProvider);
+    final waitDuration = ref.read(answerWaitDurationProvider);
+    final revealAt = showWait ? (now + (waitDuration * 1000).toInt()) : null;
+
     return SrsStudyUiModel(
       sessionState: LearningSessionActive(
         item: currentItem,
@@ -149,6 +157,7 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
       totalItems: items.length + completedCount,
       completedCount: completedCount,
       ratingIntervals: intervals,
+      showAnswerAvailableAt: revealAt,
     );
   }
 
@@ -167,12 +176,10 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
     final next = <String>{...value.revealedItemIds};
     final isRevealing = !next.contains(id);
     
+    String? audioId;
     if (isRevealing) {
-      final showWait = ref.read(showAnswerWaitProvider);
-      if (showWait) {
-        final duration = ref.read(answerWaitDurationProvider);
-        await Future.delayed(Duration(milliseconds: (duration * 1000).toInt()));
-      }
+      // Logic for blocking has been moved to UI level for better feedback, 
+      // but we still ensure consistency here.
       next.add(id);
       
       // Auto speak when revealed
@@ -180,44 +187,45 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
       if (autoSpeak) {
         final item = value.items[value.currentIndex];
         if (item is WordItem) {
-          playWordAudio(item.word.hiragana);
+          audioId = 'word';
         }
       }
     } else {
       next.remove(id);
     }
     
-    state = AsyncData(value.copyWith(revealedItemIds: next));
+    state = AsyncData(value.copyWith(
+      revealedItemIds: next,
+      showAnswerAvailableAt: 0, // Clear delay when shown
+      playingAudioId: audioId,
+    ));
+
+    if (audioId == 'word') {
+      _speak(value.items[value.currentIndex] is WordItem ? (value.items[value.currentIndex] as WordItem).word.hiragana : '', 'word');
+    }
+  }
+
+  void _speak(String text, String audioId) {
+    if (text.isEmpty) return;
+    ref.read(ttsServiceProvider).setCompletionHandler(() {
+      final current = state.valueOrNull;
+      if (current != null && current.playingAudioId == audioId) {
+        state = AsyncData(current.copyWith(cancelPlayingAudio: true));
+      }
+    });
+    ref.read(ttsServiceProvider).speak(text);
   }
 
   void playWordAudio(String text) {
     if (state.valueOrNull == null) return;
-    
-    // Set completion handler dynamcially before speaking to ensure we update THIS state instance
-    ref.read(ttsServiceProvider).setCompletionHandler(() {
-      final current = state.valueOrNull;
-      if (current != null) {
-        state = AsyncData(current.copyWith(cancelPlayingAudio: true));
-      }
-    });
-
     state = AsyncData(state.value!.copyWith(playingAudioId: 'word'));
-    ref.read(ttsServiceProvider).speak(text);
+    _speak(text, 'word');
   }
 
   void playExampleAudio(String text, String id) {
     if (state.valueOrNull == null) return;
-
-    // Set completion handler dynamcially before speaking to ensure we update THIS state instance
-    ref.read(ttsServiceProvider).setCompletionHandler(() {
-      final current = state.valueOrNull;
-      if (current != null) {
-        state = AsyncData(current.copyWith(cancelPlayingAudio: true));
-      }
-    });
-
     state = AsyncData(state.value!.copyWith(playingAudioId: id));
-    ref.read(ttsServiceProvider).speak(text);
+    _speak(text, id);
   }
 
   void stopAudio() {

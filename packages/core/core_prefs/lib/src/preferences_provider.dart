@@ -376,4 +376,23 @@ class AnswerWaitDuration extends _$AnswerWaitDuration {
     await service.setAnswerWaitDuration(value);
     ref.invalidateSelf();
   }
+
+  Future<void> cycle() async {
+    final current = state;
+    double next;
+    if (current < 1.0) {
+      next = 1.0;
+    } else if (current < 1.5) {
+      next = 1.5;
+    } else if (current < 2.0) {
+      next = 2.0;
+    } else if (current < 3.0) {
+      next = 3.0;
+    } else if (current < 5.0) {
+      next = 5.0;
+    } else {
+      next = 1.0;
+    }
+    await set(next);
+  }
 }

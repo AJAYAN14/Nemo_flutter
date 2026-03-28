@@ -14,6 +14,7 @@ import '../learning/components/common/nemo_completion_view.dart';
 import '../learning/components/common/audio_wave_indicator.dart';
 import '../domain/learning_session_state.dart';
 import '../learning/typing_practice_dialog.dart';
+import '../learning/components/common/rating_guide_sheet.dart';
 
 class SrsStudyScreen extends HookConsumerWidget {
   const SrsStudyScreen({super.key, required this.mode});
@@ -94,6 +95,8 @@ class SrsStudyScreen extends HookConsumerWidget {
             showAnswerWaitEnabled: showAnswerWait,
             onToggleShowAnswerWait: (val) => ref.read(showAnswerWaitProvider.notifier).toggle(),
             answerWaitDuration: answerWaitDuration.toDouble(),
+            onShowRatingGuide: () => RatingGuideSheet.show(context),
+            onCycleAnswerWaitDuration: () => ref.read(answerWaitDurationProvider.notifier).cycle(),
           ),
           body: Stack(
             fit: StackFit.expand,
@@ -153,6 +156,8 @@ class SrsStudyScreen extends HookConsumerWidget {
                   onShowAnswer: () => notifier.showAnswer(currentId),
                   onRate: (rating) => notifier.submitSrsRating(rating),
                   ratingIntervals: session.ratingIntervals,
+                  showAnswerAvailableAt: session.showAnswerAvailableAt,
+                  isShowAnswerDelayEnabled: showAnswerWait,
                 ),
               ),
             ],
