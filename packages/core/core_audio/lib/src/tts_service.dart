@@ -19,6 +19,16 @@ class TtsService {
     _flutterTts.setErrorHandler((msg) {
       print("TTS Error: $msg");
     });
+
+    _flutterTts.setCompletionHandler(() {
+      _onCompletion?.call();
+    });
+  }
+
+  void Function()? _onCompletion;
+
+  void setCompletionHandler(void Function()? handler) {
+    _onCompletion = handler;
   }
 
   Future<void> updateSettings() async {

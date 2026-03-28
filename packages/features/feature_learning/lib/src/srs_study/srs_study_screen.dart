@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_prefs/core_prefs.dart';
+import 'package:core_storage/core_storage.dart';
 import 'package:feature_learning/src/srs_study/srs_study_providers.dart';
 import '../domain/learning_item.dart';
 import '../learning/components/cards/srs_learning_card.dart';
@@ -10,9 +11,9 @@ import '../learning/components/cards/srs_grammar_card.dart';
 import '../learning/components/srs_action_area.dart';
 import '../learning/components/common/nemo_learn_header.dart';
 import '../learning/components/common/nemo_completion_view.dart';
+import '../learning/components/common/audio_wave_indicator.dart';
 import '../domain/learning_session_state.dart';
 import '../learning/typing_practice_dialog.dart';
-import 'package:core_storage/core_storage.dart';
 
 class SrsStudyScreen extends HookConsumerWidget {
   const SrsStudyScreen({super.key, required this.mode});
@@ -63,6 +64,7 @@ class SrsStudyScreen extends HookConsumerWidget {
         final currentId = session.currentId;
         final isAnswerShown = session.isRevealed(currentId);
         
+        // Adaptive Settings for Header
         final autoSpeak = ref.watch(autoSpeakProvider);
         final showAnswerWait = ref.watch(showAnswerWaitProvider);
         final answerWaitDuration = ref.watch(answerWaitDurationProvider);
@@ -75,30 +77,13 @@ class SrsStudyScreen extends HookConsumerWidget {
         });
 
         final notifier = ref.read(srsStudyNotifierProvider(mode).notifier);
-
         return Scaffold(
           backgroundColor: isDark ? NemoColors.bgBaseDark : NemoColors.bgBase,
           appBar: NemoLearnHeader(
             title: activeState.item is WordItem ? '单词学习' : '语法学习',
-            remainingCount: session.items.length,
+            remainingCount: session.items.length - session.completedCount,
             progress: session.progress,
             onClose: () => Navigator.of(context).pop(),
-            onPrev: () {
-              if (currentIndex > 0) {
-                pageController.previousPage(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-              }
-            },
-            onNext: () {
-              if (currentIndex < session.items.length - 1) {
-                pageController.nextPage(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-              }
-            },
             canGoPrev: currentIndex > 0,
             canGoNext: currentIndex < session.items.length - 1,
             onUndo: session.lastSnapshot != null ? () => notifier.undo() : null,
@@ -111,10 +96,11 @@ class SrsStudyScreen extends HookConsumerWidget {
             answerWaitDuration: answerWaitDuration.toDouble(),
           ),
           body: Stack(
+            fit: StackFit.expand,
             children: [
               Positioned.fill(
                 child: PageView.builder(
-                  key: ValueKey(session.items.length), 
+                  key: ValueKey(session.items.length),
                   itemCount: session.items.length,
                   controller: pageController,
                   physics: isAnswerShown ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
@@ -123,43 +109,41 @@ class SrsStudyScreen extends HookConsumerWidget {
                   },
                   itemBuilder: (context, index) {
                     final item = session.items[index];
-                    final isShown = session.currentIndex == index && isAnswerShown;
+                    final isRevealed = session.currentIndex == index && isAnswerShown;
 
                     if (item is WordItem) {
                       return SRSLearningCard(
                         word: item.word,
-                        isAnswerShown: isShown,
+                        isAnswerShown: isRevealed,
                         badge: item.badge,
                         onSpeakWord: () => notifier.playWordAudio(item.word.hiragana),
-                        onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp),
+                        onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp, id),
                         onPracticeClick: () {
-                          // Note: showTypingPracticeDialog needs a WordEntry
-                          // Word domain object needs to be converted or we need to find the entry.
-                          // For now, I'll assume we can pass the word or implement a conversion.
-                          // Based on typing_practice_dialog.dart, it takes WordEntry.
-                          // I'll check if the item contains the entry.
                           showTypingPracticeDialog(context, ref, word: WordEntry(
                             id: item.word.id,
                             japanese: item.word.japanese,
                             hiragana: item.word.hiragana,
                             chinese: item.word.chinese,
                             level: item.word.level,
-                            isFavorite: false, // Defaulting as we don't have it in the card model yet
+                            isFavorite: false,
                           ));
                         },
+                        playingAudioId: session.playingAudioId,
                       );
                     } else if (item is GrammarItem) {
                       return SRSGrammarCard(
                         grammar: item.grammar,
-                        isAnswerShown: isShown,
+                        isAnswerShown: isRevealed,
                         badge: item.badge,
-                        onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp),
+                        onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp, id),
+                        playingAudioId: session.playingAudioId,
                       );
                     }
                     return const SizedBox.shrink();
                   },
                 ),
               ),
+              AudioWaveIndicator(playingId: session.playingAudioId),
               Positioned(
                 left: 0,
                 right: 0,

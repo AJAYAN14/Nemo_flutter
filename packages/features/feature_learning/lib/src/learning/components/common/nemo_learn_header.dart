@@ -52,9 +52,9 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
     final contentColor = isDark ? Colors.white : Colors.black87;
     
     // MD3: Navigation group background
-    final navGroupBg = isDark ? Colors.white.withValues(alpha: 0.15) : Colors.white;
+    final navGroupBg = isDark ? Colors.white.withOpacity(0.15) : Colors.white;
 
-    final progressBackground = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
+    final progressBackground = isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05);
 
     return Container(
       color: Colors.transparent,
@@ -104,7 +104,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                             borderRadius: BorderRadius.circular(12), // Aligned with RoundedCornerShape(12.dp)
                             boxShadow: isDark ? null : [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
+                                color: Colors.black.withOpacity(0.05),
                                 blurRadius: 10,
                                 offset: const Offset(0, 2),
                               ),
@@ -122,7 +122,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                                   onPressed: canGoPrev ? onPrev : null,
                                   icon: const Icon(Icons.keyboard_arrow_left_rounded),
                                   color: contentColor,
-                                  disabledColor: contentColor.withValues(alpha: 0.38),
+                                  disabledColor: contentColor.withOpacity(0.38),
                                   iconSize: 24,
                                 ),
                               ),
@@ -131,7 +131,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                                 child: Text(
                                   '剩余 $remainingCount',
                                   style: theme.textTheme.labelMedium?.copyWith(
-                                    color: contentColor.withValues(alpha: 0.6),
+                                    color: contentColor.withOpacity(0.6),
                                     fontWeight: FontWeight.w500, // Medium
                                   ),
                                 ),
@@ -144,7 +144,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                                   onPressed: canGoNext ? onNext : null,
                                   icon: const Icon(Icons.keyboard_arrow_right_rounded),
                                   color: contentColor,
-                                  disabledColor: contentColor.withValues(alpha: 0.38),
+                                  disabledColor: contentColor.withOpacity(0.38),
                                   iconSize: 24,
                                 ),
                               ),
@@ -169,7 +169,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                               shape: BoxShape.circle,
                               boxShadow: isDark ? null : [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
+                                  color: Colors.black.withOpacity(0.05),
                                   blurRadius: 10,
                                   offset: const Offset(0, 2),
                                 ),

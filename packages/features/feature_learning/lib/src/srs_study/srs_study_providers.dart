@@ -19,6 +19,7 @@ class SrsStudyUiModel {
     this.totalItems = 0,
     this.completedCount = 0,
     this.ratingIntervals = const {},
+    this.playingAudioId,
     this.lastSnapshot,
   });
 
@@ -29,6 +30,7 @@ class SrsStudyUiModel {
   final int totalItems;
   final int completedCount;
   final Map<SrsRating, String> ratingIntervals;
+  final String? playingAudioId;
   final SessionSnapshot? lastSnapshot;
 
   bool get isCompleted => sessionState is LearningSessionEmpty;
@@ -56,6 +58,8 @@ class SrsStudyUiModel {
     int? totalItems,
     int? completedCount,
     Map<SrsRating, String>? ratingIntervals,
+    String? playingAudioId,
+    bool cancelPlayingAudio = false,
     SessionSnapshot? lastSnapshot,
   }) {
     return SrsStudyUiModel(
@@ -66,6 +70,7 @@ class SrsStudyUiModel {
       totalItems: totalItems ?? this.totalItems,
       completedCount: completedCount ?? this.completedCount,
       ratingIntervals: ratingIntervals ?? this.ratingIntervals,
+      playingAudioId: cancelPlayingAudio ? null : (playingAudioId ?? this.playingAudioId),
       lastSnapshot: lastSnapshot ?? this.lastSnapshot,
     );
   }
@@ -82,6 +87,7 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
     final repository = ref.watch(learningRepositoryProvider);
     final prefs = ref.watch(preferenceServiceProvider);
     
+    // TTS completion handler is now set dynamically in play methods to ensure correct instance state update
     final savedIds = prefs.getLearningSessionItems(mode);
     final savedIndex = prefs.getLearningSessionIndex(mode);
 
@@ -185,11 +191,38 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
   }
 
   void playWordAudio(String text) {
+    if (state.valueOrNull == null) return;
+    
+    // Set completion handler dynamcially before speaking to ensure we update THIS state instance
+    ref.read(ttsServiceProvider).setCompletionHandler(() {
+      final current = state.valueOrNull;
+      if (current != null) {
+        state = AsyncData(current.copyWith(cancelPlayingAudio: true));
+      }
+    });
+
+    state = AsyncData(state.value!.copyWith(playingAudioId: 'word'));
     ref.read(ttsServiceProvider).speak(text);
   }
 
-  void playExampleAudio(String text) {
+  void playExampleAudio(String text, String id) {
+    if (state.valueOrNull == null) return;
+
+    // Set completion handler dynamcially before speaking to ensure we update THIS state instance
+    ref.read(ttsServiceProvider).setCompletionHandler(() {
+      final current = state.valueOrNull;
+      if (current != null) {
+        state = AsyncData(current.copyWith(cancelPlayingAudio: true));
+      }
+    });
+
+    state = AsyncData(state.value!.copyWith(playingAudioId: id));
     ref.read(ttsServiceProvider).speak(text);
+  }
+
+  void stopAudio() {
+    ref.read(ttsServiceProvider).stop();
+    state = AsyncData(state.value!.copyWith(cancelPlayingAudio: true));
   }
 
   Future<void> submitSrsRating(int score) async {

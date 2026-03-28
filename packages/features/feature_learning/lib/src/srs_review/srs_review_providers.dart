@@ -17,6 +17,8 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
   @override
   FutureOr<SrsStudyUiModel> build(String mode) async {
     final repository = ref.watch(learningRepositoryProvider);
+
+    // TTS completion handler is set dynamically in play methods for reliable state updates
     final prefs = ref.watch(preferenceServiceProvider);
     
     final savedIds = prefs.getLearningSessionItems('${mode}_review');
@@ -120,11 +122,38 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
   }
 
   void playWordAudio(String text) {
+    if (state.valueOrNull == null) return;
+    
+    // Set completion handler before speaking to ensure we update this instance
+    ref.read(ttsServiceProvider).setCompletionHandler(() {
+      final current = state.valueOrNull;
+      if (current != null) {
+        state = AsyncData(current.copyWith(cancelPlayingAudio: true));
+      }
+    });
+
+    state = AsyncData(state.value!.copyWith(playingAudioId: 'word'));
     ref.read(ttsServiceProvider).speak(text);
   }
 
-  void playExampleAudio(String text) {
+  void playExampleAudio(String text, String id) {
+    if (state.valueOrNull == null) return;
+    
+    // Set completion handler before speaking to ensure we update this instance
+    ref.read(ttsServiceProvider).setCompletionHandler(() {
+      final current = state.valueOrNull;
+      if (current != null) {
+        state = AsyncData(current.copyWith(cancelPlayingAudio: true));
+      }
+    });
+
+    state = AsyncData(state.value!.copyWith(playingAudioId: id));
     ref.read(ttsServiceProvider).speak(text);
+  }
+
+  void stopAudio() {
+    ref.read(ttsServiceProvider).stop();
+    state = AsyncData(state.value!.copyWith(playingAudioId: null));
   }
 
   Future<void> submitSrsRating(int score) async {

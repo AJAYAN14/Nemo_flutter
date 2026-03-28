@@ -30,8 +30,8 @@ class SRSLearningCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final cardBackground = isDark ? NemoColors.surfaceCardDark : NemoColors.surfaceCard;
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
-    final shadowColor = isDark ? Colors.black.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.03);
+    final borderColor = isDark ? Colors.white.withOpacity(0.1) : NemoColors.gray100;
+    final shadowColor = isDark ? Colors.black.withOpacity(0.4) : Colors.black.withOpacity(0.03);
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -158,7 +158,7 @@ class _QuestionBox extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w500,
-                    color: isAnswerShown ? NemoColors.blue600 : (isDark ? Colors.white.withValues(alpha: 0.2) : NemoColors.gray300),
+                    color: isAnswerShown ? NemoColors.blue600 : (isDark ? Colors.white.withOpacity(0.2) : NemoColors.gray300),
                   ),
                 ),
               ],
@@ -207,9 +207,13 @@ class _BlurredText extends StatelessWidget {
     if (!isBlurred) {
       return Text(text, style: style);
     }
-    return ImageFiltered(
-      imageFilter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-      child: Text(text, style: style),
+    return Container(
+      width: text.length * 20.0, // Dynamic width based on text length
+      height: 24,
+      decoration: BoxDecoration(
+        color: (style.color ?? Colors.grey).withOpacity(0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
     );
   }
 }
@@ -267,16 +271,16 @@ class _AnswerBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final practiceColor = _getColorForWord(word.id.hashCode);
-    final practiceBgColor = practiceColor.withValues(alpha: isDark ? 0.2 : 0.1);
+    final practiceBgColor = practiceColor.withOpacity(isDark ? 0.2 : 0.1);
 
     final primaryTextColor = isDark ? NemoColors.darkTextPrimary : NemoColors.gray900;
     final secondaryTextColor = isDark ? NemoColors.gray400 : NemoColors.gray400;
-    final dividerColor = isDark ? Colors.white.withValues(alpha: 0.1) : NemoColors.gray100;
+    final dividerColor = isDark ? Colors.white.withOpacity(0.1) : NemoColors.gray100;
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: backgroundColor.withValues(alpha: 0.95),
+        color: backgroundColor.withOpacity(0.95),
         borderRadius: BorderRadius.circular(26),
         border: Border.all(color: borderColor, width: 0.5),
         boxShadow: [
@@ -328,7 +332,7 @@ class _AnswerBox extends StatelessWidget {
                   primaryTextColor: primaryTextColor,
                   secondaryTextColor: secondaryTextColor,
                 );
-              }),
+              }).toList(),
             ],
           ),
 
@@ -340,11 +344,12 @@ class _AnswerBox extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (onSpeakWord != null)
-                  _SpeakerButton(
-                    onPressed: onSpeakWord!,
+                  NemoSpeakerButton(
+                    onClick: onSpeakWord!,
                     isPlaying: playingAudioId == 'word',
-                    color: practiceColor,
+                    tint: practiceColor,
                     backgroundColor: practiceBgColor,
+                    size: 48,
                   ),
                 const SizedBox(width: 8),
                 if (onPracticeClick != null)
@@ -387,7 +392,7 @@ class _PosPill extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.1) : NemoColors.gray100,
+        color: isDark ? Colors.white.withOpacity(0.1) : NemoColors.gray100,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
@@ -472,45 +477,12 @@ class _ExampleRow extends StatelessWidget {
             ),
           ),
           if (onSpeak != null)
-            IconButton(
-              onPressed: () => onSpeak!(japanese, chinese ?? '', id),
-              icon: Icon(
-                isPlaying ? Icons.volume_up_rounded : Icons.volume_down_rounded,
-                color: secondaryTextColor.withValues(alpha: 0.6),
-                size: 20,
-              ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+            NemoSpeakerButton(
+              onClick: () => onSpeak!(japanese, chinese ?? '', id),
+              isPlaying: isPlaying,
+              tint: secondaryTextColor.withOpacity(0.5),
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _SpeakerButton extends StatelessWidget {
-  const _SpeakerButton({
-    required this.onPressed,
-    required this.isPlaying,
-    required this.color,
-    required this.backgroundColor,
-  });
-
-  final VoidCallback onPressed;
-  final bool isPlaying;
-  final Color color;
-  final Color backgroundColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
-      child: IconButton(
-        onPressed: onPressed,
-        icon: Icon(isPlaying ? Icons.volume_up_rounded : Icons.volume_down_rounded, color: color, size: 26),
-        padding: EdgeInsets.zero,
       ),
     );
   }

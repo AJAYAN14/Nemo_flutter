@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:core_designsystem/core_designsystem.dart';
+import 'package:core_ui/core_ui.dart';
 import 'package:core_prefs/core_prefs.dart';
 import 'package:feature_learning/src/srs_review/srs_review_providers.dart';
 import '../learning/components/cards/srs_learning_card.dart';
@@ -58,6 +59,7 @@ class SrsReviewScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text('下一项将在 ${state.waitingUntil.difference(DateTime.now()).inMinutes} 分钟后开始'),
                   const SizedBox(height: 24),
+                  // _SpeakerButton is no longer needed as we use NemoSpeakerButton
                   ElevatedButton(
                     onPressed: () => ref.invalidate(srsReviewNotifierProvider(mode)),
                     child: const Text('刷新'),
@@ -115,7 +117,7 @@ class SrsReviewScreen extends ConsumerWidget {
                           isAnswerShown: isAnswerShown,
                           badge: item.badge,
                           onSpeakWord: () => notifier.playWordAudio(item.word.hiragana),
-                          onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp),
+                          onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp, id),
                           onPracticeClick: () {
                             showTypingPracticeDialog(context, ref, word: WordEntry(
                               id: item.word.id,
@@ -126,13 +128,15 @@ class SrsReviewScreen extends ConsumerWidget {
                               isFavorite: false,
                             ));
                           },
+                          playingAudioId: session.playingAudioId,
                         );
                       } else if (item is GrammarItem) {
                         return SRSGrammarCard(
                           grammar: item.grammar,
                           isAnswerShown: isAnswerShown,
                           badge: item.badge,
-                          onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp),
+                          onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp, id),
+                          playingAudioId: session.playingAudioId,
                         );
                       }
                       return const SizedBox.shrink();
@@ -140,6 +144,8 @@ class SrsReviewScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+              if (activeState.item is WordItem)
+                _AudioWaveIndicator(playingId: session.playingAudioId),
               Positioned(
                 left: 0,
                 right: 0,
@@ -155,6 +161,42 @@ class SrsReviewScreen extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _AudioWaveIndicator extends StatelessWidget {
+  const _AudioWaveIndicator({required this.playingId});
+  final String? playingId;
+
+  @override
+  Widget build(BuildContext context) {
+    if (playingId == null) return const SizedBox.shrink();
+
+    return Positioned(
+      bottom: 120,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SoundWaveAnimation(color: Colors.white, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                playingId == 'word' ? '正在播放发音...' : '正在播放例句...',
+                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
