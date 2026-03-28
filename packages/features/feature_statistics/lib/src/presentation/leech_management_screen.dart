@@ -1,32 +1,20 @@
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:feature_learning/feature_learning.dart';
+import 'leech_management_providers.dart';
 
-class LeechManagementScreen extends StatefulWidget {
+class LeechManagementScreen extends HookConsumerWidget {
   const LeechManagementScreen({super.key});
 
   @override
-  State<LeechManagementScreen> createState() => _LeechManagementScreenState();
-}
-
-enum _LeechTab { word, grammar }
-
-class _LeechManagementScreenState extends State<LeechManagementScreen> {
-  _LeechTab _selectedTab = _LeechTab.word;
-
-  final List<Map<String, dynamic>> _mockWords = [
-    {'kanji': '曖昧', 'kana': 'あいまい', 'meaning': '模棱两可，含糊', 'fails': 15},
-    {'kanji': '遠慮', 'kana': 'えんりょ', 'meaning': '客气，谢绝', 'fails': 12},
-    {'kanji': '偶然', 'kana': 'ぐうぜん', 'meaning': '偶然', 'fails': 8},
-  ];
-
-  final List<Map<String, dynamic>> _mockGrammars = [
-    {'title': '～にしたがって', 'meaning': '随着...', 'fails': 5},
-    {'title': '～ざるを得ない', 'meaning': '不得不...', 'fails': 4},
-  ];
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final leechAsync = ref.watch(leechManagementNotifierProvider);
+    final notifier = ref.read(leechManagementNotifierProvider.notifier);
+    final selectedTab = useState(_LeechTab.word);
+    
     return Scaffold(
       backgroundColor: NemoColors.bgBase,
       appBar: AppBar(
@@ -39,78 +27,107 @@ class _LeechManagementScreenState extends State<LeechManagementScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Column(
-        children: [
-          // 1. Floating Pill Tabs
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
+      body: leechAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: NemoColors.brandBlue)),
+        error: (err, stack) => Center(child: Text('加载失败: $err')),
+        data: (state) => Stack(
+          children: [
+            Column(
               children: [
-                Expanded(
-                  child: _PillTab(
-                    title: '单词',
-                    count: _mockWords.length,
-                    isSelected: _selectedTab == _LeechTab.word,
-                    onTap: () => setState(() => _selectedTab = _LeechTab.word),
+                // 1. Floating Pill Tabs
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _PillTab(
+                          title: '单词',
+                          count: state.skippedWords.length,
+                          isSelected: selectedTab.value == _LeechTab.word,
+                          onTap: () => selectedTab.value = _LeechTab.word,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _PillTab(
+                          title: '语法',
+                          count: state.skippedGrammars.length,
+                          isSelected: selectedTab.value == _LeechTab.grammar,
+                          onTap: () => selectedTab.value = _LeechTab.grammar,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(height: 8),
+
+                // 2. Content List
                 Expanded(
-                  child: _PillTab(
-                    title: '语法',
-                    count: _mockGrammars.length,
-                    isSelected: _selectedTab == _LeechTab.grammar,
-                    onTap: () => setState(() => _selectedTab = _LeechTab.grammar),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: _buildList(context, state, selectedTab.value, notifier),
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 8),
-
-          // 2. Content List
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: _buildList(),
+            
+            // Undo/Message Snackbar
+            Positioned(
+              top: 8,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                child: NemoSnackbar(
+                  visible: state.successMessage != null || state.error != null,
+                  message: state.successMessage ?? state.error ?? '',
+                  type: state.error != null ? NemoSnackbarType.error : NemoSnackbarType.success,
+                  onDismiss: () => notifier.clearMessages(),
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildList() {
-    final items = _selectedTab == _LeechTab.word ? _mockWords : _mockGrammars;
+  Widget _buildList(BuildContext context, LeechManagementState state, _LeechTab tab, LeechManagementNotifier notifier) {
+    final items = tab == _LeechTab.word ? state.skippedWords : state.skippedGrammars;
     
     if (items.isEmpty) {
       return _EmptyLeechView(
-        message: _selectedTab == _LeechTab.word ? '太棒了！\n没有需要复学的单词' : '太棒了！\n没有需要复学的语法',
+        key: ValueKey('empty_$tab'),
+        message: tab == _LeechTab.word ? '太棒了！\n没有需要复学的单词' : '太棒了！\n没有需要复学的语法',
       );
     }
 
     return ListView.builder(
-      key: ValueKey(_selectedTab),
+      key: ValueKey(tab),
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
+        final id = item is WordItem ? item.word.id : (item as GrammarItem).grammar.id;
+        final type = item is WordItem ? 'word' : 'grammar';
+        final title = item is WordItem ? item.word.japanese : (item as GrammarItem).grammar.grammar;
+        final subtitle = item is WordItem 
+            ? '${item.word.hiragana} ${item.word.chinese}' 
+            : (item as GrammarItem).grammar.usages.firstOrNull?.explanation ?? '';
+
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: _LeechItemCard(
-            title: item['kanji'] ?? item['title'],
-            subtitle: _selectedTab == _LeechTab.word 
-                ? '${item['kana']} ${item['meaning']}' 
-                : item['meaning'],
-            onRecover: () {
-              // TODO: Implement recover logic
-            },
+            title: title,
+            subtitle: subtitle,
+            onRecover: () => notifier.recover(id, type),
           ),
         );
       },
     );
   }
 }
+
+enum _LeechTab { word, grammar }
 
 class _PillTab extends StatelessWidget {
   const _PillTab({
@@ -160,7 +177,7 @@ class _PillTab extends StatelessWidget {
   }
 }
 
-class _LeechItemCard extends StatelessWidget {
+class _LeechItemCard extends HookWidget {
   const _LeechItemCard({
     required this.title,
     required this.subtitle,
@@ -173,6 +190,8 @@ class _LeechItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isRecovering = useState(false);
+
     return PremiumCard(
       padding: const EdgeInsets.all(20),
       borderRadius: BorderRadius.circular(24),
@@ -221,12 +240,24 @@ class _LeechItemCard extends StatelessWidget {
             color: NemoColors.brandBlue.withValues(alpha: 0.1),
             shape: const CircleBorder(),
             child: IconButton(
-              onPressed: onRecover,
-              icon: const Icon(
-                Icons.restore_rounded,
-                color: NemoColors.brandBlue,
-                size: 22,
-              ),
+              onPressed: isRecovering.value 
+                ? null 
+                : () async {
+                    isRecovering.value = true;
+                    onRecover();
+                    // State will update and this widget will likely be removed from list
+                  },
+              icon: isRecovering.value
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: NemoColors.brandBlue),
+                  )
+                : const Icon(
+                    Icons.restore_rounded,
+                    color: NemoColors.brandBlue,
+                    size: 22,
+                  ),
             ),
           ),
         ],
@@ -236,7 +267,7 @@ class _LeechItemCard extends StatelessWidget {
 }
 
 class _EmptyLeechView extends StatelessWidget {
-  const _EmptyLeechView({required this.message});
+  const _EmptyLeechView({super.key, required this.message});
   final String message;
 
   @override

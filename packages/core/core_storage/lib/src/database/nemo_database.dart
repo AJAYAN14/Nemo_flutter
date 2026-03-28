@@ -349,6 +349,23 @@ class LearningDao extends DatabaseAccessor<NemoDatabase> with _$LearningDaoMixin
     final result = await query.get();
     return result.length;
   }
+
+  Future<List<LearningProgressData>> getSkippedItems({String? itemType}) {
+    final query = select(learningProgress)
+      ..where((t) => t.isSkipped.equals(true))
+      ..orderBy([(t) => OrderingTerm(expression: t.id, mode: OrderingMode.asc)]);
+    
+    if (itemType != null) {
+      query.where((t) => t.itemType.equals(itemType));
+    }
+    
+    return query.get();
+  }
+
+  Future<void> setSkipped(String id, bool isSkipped) {
+    return (update(learningProgress)..where((t) => t.id.equals(id)))
+        .write(LearningProgressCompanion(isSkipped: Value(isSkipped)));
+  }
 }
 
 @riverpod

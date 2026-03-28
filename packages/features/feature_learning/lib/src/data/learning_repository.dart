@@ -164,6 +164,30 @@ class LearningRepository {
     return items;
   }
 
+  Future<List<LearningItem>> getSkippedItems(String mode) async {
+    final List<LearningItem> items = [];
+    final skippedProgress = await _learningDao.getSkippedItems(
+      itemType: mode == 'all' ? null : mode,
+    );
+    
+    for (final progress in skippedProgress) {
+      if (progress.itemType == 'word') {
+        final idStr = progress.id.replaceFirst('word_', '');
+        final word = await _wordDao.getWordWithExamples(idStr);
+        if (word != null) {
+          items.add(WordItem(word.toDomain(), progress: progress));
+        }
+      } else {
+        final idStr = progress.id.replaceFirst('grammar_', '');
+        final grammar = await _grammarDao.getGrammarWithDetails(idStr);
+        if (grammar != null) {
+          items.add(GrammarItem(grammar.toDomain(), progress: progress));
+        }
+      }
+    }
+    return items;
+  }
+
   Future<List<LearningItem>> getItemsByIds(List<String> ids) async {
     final List<LearningItem> items = [];
     for (final id in ids) {
@@ -238,14 +262,49 @@ class LearningRepository {
 
   Future<void> suspend(String id, String itemType) async {
     final fullId = '${itemType}_$id';
-    await _learningDao.setSuspended(fullId, true);
+    
+    // Ensure progress record exists
+    final progress = await _learningDao.getProgress(fullId);
+    if (progress == null) {
+      // Create initial progress for new item
+      await _learningDao.updateProgress(LearningProgressCompanion.insert(
+        id: fullId,
+        itemType: itemType,
+        isSuspended: const Value(true),
+        isSkipped: const Value(true),
+        // Set a future due time just in case, though it's skipped
+        dueTime: Value(BigInt.from(DateTime.now().millisecondsSinceEpoch + 86400000)),
+      ));
+    } else {
+      // 1:1 Restoration: Both Suspended and Skipped flags should be set
+      // In the old project, Manual Suspend also moved the item to Leech Management (Skipped)
+      await _learningDao.setSuspended(fullId, true);
+      await _learningDao.setSkipped(fullId, true);
+    }
   }
 
   Future<void> bury(String id, String itemType, int resetHour) async {
     final fullId = '${itemType}_$id';
     // Move dueTime to the start of the next learning day
     final nextDayStart = DateTimeUtils.getLearningDayEnd(resetHour) + 1;
-    await _learningDao.updateDueTime(fullId, nextDayStart);
+    
+    final progress = await _learningDao.getProgress(fullId);
+    if (progress == null) {
+      await _learningDao.updateProgress(LearningProgressCompanion.insert(
+        id: fullId,
+        itemType: itemType,
+        dueTime: Value(BigInt.from(nextDayStart)),
+      ));
+    } else {
+      await _learningDao.updateDueTime(fullId, nextDayStart);
+    }
+  }
+
+  Future<void> recoverLeech(String id, String itemType) async {
+    final fullId = '${itemType}_$id';
+    // Ensure both flags are cleared for 1:1 parity
+    await _learningDao.setSkipped(fullId, false);
+    await _learningDao.setSuspended(fullId, false);
   }
 
   Map<SrsRating, String> getIntervalPreviews(LearningProgressData? progress) {

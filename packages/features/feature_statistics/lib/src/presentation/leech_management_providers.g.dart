@@ -1,0 +1,31 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'leech_management_providers.dart';
+
+// **************************************************************************
+// RiverpodGenerator
+// **************************************************************************
+
+String _$leechManagementNotifierHash() =>
+    r'02f7a8b0f8b39c8acd499585f7be3df0402f1063';
+
+/// See also [LeechManagementNotifier].
+@ProviderFor(LeechManagementNotifier)
+final leechManagementNotifierProvider =
+    AutoDisposeAsyncNotifierProvider<
+      LeechManagementNotifier,
+      LeechManagementState
+    >.internal(
+      LeechManagementNotifier.new,
+      name: r'leechManagementNotifierProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$leechManagementNotifierHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+typedef _$LeechManagementNotifier =
+    AutoDisposeAsyncNotifier<LeechManagementState>;
+// ignore_for_file: type=lint
+// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
