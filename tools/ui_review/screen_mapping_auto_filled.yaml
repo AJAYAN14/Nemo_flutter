@@ -1,4 +1,4 @@
-# Kotlin -> Flutter 屏幕映射（自动填充，需人工验证）
+# 自动匹配后生成的映射（请人工校验）
 screens:
   - id: categorycardlearningscreen
     kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/category/CategoryCardLearningScreen.kt
