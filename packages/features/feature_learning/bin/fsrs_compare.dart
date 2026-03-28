@@ -111,7 +111,7 @@ void main() async {
   }
   sb.writeln(']');
 
-  final file = File(r'E:\Nemo\fsrs_dart_outputs.json');
+  final file = File(r'../../../fsrs_dart_outputs.json');
   await file.writeAsString(sb.toString());
   print('Wrote Dart FSRS outputs to ${file.path}');
 }

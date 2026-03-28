@@ -8,8 +8,8 @@ def load(path):
         return json.load(f)
 
 def main():
-    kotlin_path = r"E:\Nemo\fsrs_kotlin_outputs.json"
-    dart_path = r"E:\Nemo\fsrs_dart_outputs.json"
+    kotlin_path = r"fsrs_kotlin_outputs.json"
+    dart_path = r"fsrs_dart_outputs.json"
     kotlin = load(kotlin_path)
     dart = load(dart_path)
 
@@ -57,10 +57,10 @@ def main():
             report.append({'id': idv, 'status': 'equal'})
 
     out_json = {'all_equal': all_equal, 'report': report}
-    with open(r"E:\Nemo\fsrs_diff_report.json", 'w', encoding='utf-8') as f:
+    with open(r"fsrs_diff_report.json", 'w', encoding='utf-8') as f:
         json.dump(out_json, f, ensure_ascii=False, indent=2)
 
-    with open(r"E:\Nemo\fsrs_diff_report.txt", 'w', encoding='utf-8') as f:
+    with open(r"fsrs_diff_report.txt", 'w', encoding='utf-8') as f:
         for item in report:
             if item['status'] == 'equal':
                 f.write(f"{item['id']}: equal\n")
@@ -71,7 +71,7 @@ def main():
             else:
                 f.write(f"{item['id']}: {item['status']}\n")
 
-    print('Wrote E:\\Nemo\\fsrs_diff_report.json and .txt')
+    print('Wrote fsrs_diff_report.json and .txt')
     if not all_equal:
         print('Differences found')
         sys.exit(2)

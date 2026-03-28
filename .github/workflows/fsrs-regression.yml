@@ -12,6 +12,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Generate Kotlin baseline
+        working-directory: old_nemo/Nemo
+        run: |
+          chmod +x ./gradlew || true
+          ./gradlew :core:domain:test --tests "com.jian.nemo.core.domain.algorithm.FsrsComparatorTest.generateFsrsOutputs" -q
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -28,8 +40,8 @@ jobs:
           flutter test --reporter expanded
 
       - name: Generate Dart FSRS outputs
+        working-directory: packages/features/feature_learning
         run: |
-          cd packages/features/feature_learning
           dart run bin/fsrs_compare.dart
 
       - name: Set up Python
