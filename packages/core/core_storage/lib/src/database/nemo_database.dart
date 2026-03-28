@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/foundation.dart';
 import 'package:core_domain/core_domain.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -154,6 +157,27 @@ LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'nemo.sqlite'));
+    // If the app bundle contains a prebuilt database asset, copy it to
+    // the application documents directory on first run to avoid expensive
+    // runtime JSON imports.
+    try {
+      // Check asset manifest first to avoid throwing if asset missing
+      final manifest = await rootBundle.loadString('AssetManifest.json');
+      final Map<String, dynamic> manifestMap = json.decode(manifest);
+      if (manifestMap.containsKey('assets/data/nemo.sqlite')) {
+        if (!await file.exists()) {
+          final data = await rootBundle.load('assets/data/nemo.sqlite');
+          final bytes = data.buffer.asUint8List();
+          await file.writeAsBytes(bytes, flush: true);
+          debugPrint('[NemoDatabase] Copied prebuilt DB to ${file.path}');
+        }
+      } else {
+        debugPrint('[NemoDatabase] No prebuilt DB asset found in AssetManifest.');
+      }
+    } catch (e) {
+      debugPrint('[NemoDatabase] Prebuilt DB copy skipped: $e');
+    }
+
     return NativeDatabase.createInBackground(file);
   });
 }
