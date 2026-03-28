@@ -73,8 +73,8 @@ class _WordListScreenState extends ConsumerState<WordListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Trigger importer if needed (run in background) but don't block UI here
-    ref.watch(assetDataImporterProvider);
+    // Trigger importer if needed
+    final importerAsync = ref.watch(assetDataImporterProvider);
     final wordsAsync = ref.watch(allWordsProvider);
 
     return Scaffold(
@@ -108,89 +108,93 @@ class _WordListScreenState extends ConsumerState<WordListScreen> {
           ),
         ),
       ),
-      body: wordsAsync.when(
-        data: (words) {
-          final grouped = _groupWords(words);
-          final levels = grouped.keys.toList()..sort();
+      body: importerAsync.when(
+        data: (_) => wordsAsync.when(
+          data: (words) {
+            final grouped = _groupWords(words);
+            final levels = grouped.keys.toList()..sort();
 
-          if (grouped.isEmpty) {
-            return const Center(child: _EmptyState(message: '未找到相关单词'));
-          }
+            if (grouped.isEmpty) {
+              return const Center(child: _EmptyState(message: '未找到相关单词'));
+            }
 
-          return ListView.builder(
-            padding: const EdgeInsets.only(bottom: 32),
-            itemCount: levels.length,
-            itemBuilder: (context, index) {
-              final level = levels[index];
-              final levelWords = grouped[level]!;
-              final isExpanded = _searchQuery.isNotEmpty || _expandedLevels.contains(level);
-              final levelColor = _getLevelColor(level);
+            return ListView.builder(
+              padding: const EdgeInsets.only(bottom: 32),
+              itemCount: levels.length,
+              itemBuilder: (context, index) {
+                final level = levels[index];
+                final levelWords = grouped[level]!;
+                final isExpanded = _searchQuery.isNotEmpty || _expandedLevels.contains(level);
+                final levelColor = _getLevelColor(level);
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Level Header
-                  InkWell(
-                    onTap: () => _toggleLevel(level),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 4,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: levelColor,
-                              borderRadius: BorderRadius.circular(2),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Level Header
+                    InkWell(
+                      onTap: () => _toggleLevel(level),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 4,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: levelColor,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            level,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
+                            const SizedBox(width: 8),
+                            Text(
+                              level,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${levelWords.length} 词',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${levelWords.length} 词',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                              ),
                             ),
-                          ),
-                          const Spacer(),
-                          AnimatedRotation(
-                            turns: isExpanded ? 0.5 : 0,
-                            duration: const Duration(milliseconds: 300),
-                            child: Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            const Spacer(),
+                            AnimatedRotation(
+                              turns: isExpanded ? 0.5 : 0,
+                              duration: const Duration(milliseconds: 300),
+                              child: Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Words List
-                  if (isExpanded)
-                    ...levelWords.map((word) => Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                      child: _WordListItemPremium(
-                        word: word,
-                        onClick: () => context.pushNamed(
-                          LibraryRouteNames.wordDetail,
-                          pathParameters: {'wordId': word.id},
+                          ],
                         ),
                       ),
-                    )),
-                ],
-              );
-            },
-          );
-        },
+                    ),
+                    // Words List
+                    if (isExpanded)
+                      ...levelWords.map((word) => Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                        child: _WordListItemPremium(
+                          word: word,
+                          onClick: () => context.pushNamed(
+                            LibraryRouteNames.wordDetail,
+                            pathParameters: {'wordId': word.id},
+                          ),
+                        ),
+                      )),
+                  ],
+                );
+              },
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(child: Text('Word Loading Error: $err')),
+        ),
         loading: () => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -201,7 +205,7 @@ class _WordListScreenState extends ConsumerState<WordListScreen> {
             ],
           ),
         ),
-        error: (err, stack) => Center(child: Text('Word Loading Error: $err')),
+        error: (err, stack) => Center(child: Text('数据导入失败: $err')),
       ),
     );
   }

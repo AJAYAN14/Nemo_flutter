@@ -31,8 +31,7 @@ class AssetDataImporter extends _$AssetDataImporter {
         debugPrint('[AssetDataImporter] Importing Words N$i...');
         final path = 'assets/data/words/N$i.json';
         final jsonString = await rootBundle.loadString(path);
-        // Parse large JSON in background isolate to avoid blocking UI thread
-        final List<dynamic> jsonList = await compute(_parseJsonList, jsonString);
+        final List<dynamic> jsonList = json.decode(jsonString);
         
         await db.batch((batch) {
           for (var item in jsonList) {
@@ -67,8 +66,7 @@ class AssetDataImporter extends _$AssetDataImporter {
         debugPrint('[AssetDataImporter] Importing Grammar N$i...');
         final path = 'assets/data/grammar/N$i.json';
         final jsonString = await rootBundle.loadString(path);
-        // Parse large JSON in background isolate to avoid blocking UI thread
-        final List<dynamic> jsonList = await compute(_parseJsonList, jsonString);
+        final List<dynamic> jsonList = json.decode(jsonString);
         
         await db.transaction(() async {
           for (var item in jsonList) {
@@ -119,9 +117,4 @@ class AssetDataImporter extends _$AssetDataImporter {
       rethrow; // Propagation is key for UI to show error state
     }
   }
-}
-
-// Top-level parse function so it can run inside a compute isolate.
-List<dynamic> _parseJsonList(String jsonString) {
-  return json.decode(jsonString) as List<dynamic>;
 }

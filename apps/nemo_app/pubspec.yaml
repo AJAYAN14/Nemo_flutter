@@ -90,7 +90,6 @@ flutter:
     - assets/data/words/
     - assets/data/grammar/
     - assets/data/questions/
-    - assets/data/nemo.sqlite
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
