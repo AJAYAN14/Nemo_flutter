@@ -1,0 +1,49 @@
+# Kotlin -> Flutter 屏幕映射清单（请补充 Flutter 路径并更新 status）
+screens:
+  - id: review_screen
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/review/ReviewScreen.kt
+    flutter: packages/features/feature_learning/lib/src/srs_review/srs_review_screen.dart
+    status: not-started
+    notes: "核对头部、评分按钮、ActionArea、页间间距与文案"
+
+  - id: review_session_screen
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/review/ReviewSessionScreen.kt
+    flutter: packages/features/feature_learning/lib/src/srs_study/srs_study_screen.dart
+    status: not-started
+    notes: "逐页卡片、翻页手势、评分反馈"
+
+  - id: session_prep
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/review/SessionPrepScreen.kt
+    flutter: packages/features/feature_learning/lib/src/session/session_prep_screen.dart
+    status: not-started
+    notes: "统计卡片、预览列表、开始按钮文案与对齐"
+
+  - id: learning_screen
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/LearningScreen.kt
+    flutter: packages/features/feature_learning/lib/src/learning/learning_screen.dart
+    status: not-started
+    notes: "学习流程入口、头部、悬浮按钮、过渡动画"
+
+  - id: home_screen
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/home/HomeScreen.kt
+    flutter: packages/features/feature_learning/lib/src/presentation/home_screen.dart
+    status: not-started
+    notes: "主页卡片、统计数字、快速入口"
+
+  - id: kana_chart
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/kana/KanaChartScreen.kt
+    flutter: packages/features/feature_learning/lib/src/kana/kana_chart_screen.dart
+    status: not-started
+    notes: "字符表、网格对齐与文案"
+
+  - id: srs_action_area
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/components/srs/SRSActionArea.kt
+    flutter: packages/features/feature_learning/lib/src/learning/components/srs_action_area.dart
+    status: not-started
+    notes: "评分交互、可访问性标签"
+
+  - id: srs_rating_button
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/components/srs/SRSRatingButton.kt
+    flutter: packages/features/feature_learning/lib/src/learning/components/srs_rating_button.dart
+    status: not-started
+    notes: "按钮形状、选中逻辑、动效"
