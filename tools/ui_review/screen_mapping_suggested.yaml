@@ -1,0 +1,170 @@
+# 自动生成的 Kotlin 屏幕映射草案，请补充 flutter 路径和备注
+screens:
+  - id: categorycardlearningscreen
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/category/CategoryCardLearningScreen.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: categorycardlearningviewmodel
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/category/CategoryCardLearningViewModel.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: srsgrammarcard
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/components/cards/SRSGrammarCard.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: srslearningcard
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/components/cards/SRSLearningCard.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: wordcard
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/components/cards/WordCard.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: learningcommoncomponents
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/components/common/LearningCommonComponents.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: typingpracticedialog
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/components/dialogs/TypingPracticeDialog.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: typingpracticedialogstate
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/components/dialogs/TypingPracticeDialogState.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: ratingguidescreen
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/components/guide/RatingGuideScreen.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: levelselectionsheet
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/components/sheets/LevelSelectionSheet.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: srsactionarea
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/components/srs/SRSActionArea.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: srsratingbutton
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/components/srs/SRSRatingButton.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: forcednotificationpopup
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/home/components/ForcedNotificationPopup.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: homecomponents
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/home/components/HomeComponents.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: homescreen
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/home/HomeScreen.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: homeviewmodel
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/home/HomeViewModel.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: kanachartscreen
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/kana/KanaChartScreen.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: kanachartviewmodel
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/kana/KanaChartViewModel.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: learningevent
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/LearningEvent.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: learningmode
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/LearningMode.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: learningscreen
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/LearningScreen.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: learninguistate
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/LearningUiState.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: learningviewmodel
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/LearningViewModel.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: reviewscreen
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/review/ReviewScreen.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: reviewsessionscreen
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/review/ReviewSessionScreen.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: reviewviewmodel
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/review/ReviewViewModel.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: sessionprepscreen
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/review/SessionPrepScreen.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
+  - id: sessionprepviewmodel
+    kotlin: old_nemo/Nemo/feature/learning/src/main/java/com/jian/nemo/feature/learning/presentation/review/SessionPrepViewModel.kt
+    flutter: ''
+    status: not-started
+    notes: ''
+
