@@ -1,0 +1,50 @@
+name: FSRS Regression
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  fsrs-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install Flutter deps
+        run: |
+          cd packages/features/feature_learning
+          flutter pub get
+
+      - name: Run Dart/Flutter regression tests
+        run: |
+          cd packages/features/feature_learning
+          flutter test --reporter expanded
+
+      - name: Generate Dart FSRS outputs
+        run: |
+          cd packages/features/feature_learning
+          dart run bin/fsrs_compare.dart
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Run comparator
+        run: |
+          python tools/fsrs_diff_report.py
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fsrs-artifacts
+          path: |
+            fsrs_diff_report.*
+            fsrs_dart_outputs.json

@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 /// FSRS 6 Memory State
 ///
@@ -96,7 +97,20 @@ class FsrsAlgorithm {
     this.desiredRetention = 0.9,
   }) : parameters = parameters ?? List.from(defaultParameters);
 
-  List<double> get w => parameters;
+  List<double> get w => parameters.map((p) => _f32(p)).toList();
+
+  // Helper: emulate 32-bit float rounding used in Kotlin `Float` computations
+  double _f32(double x) => Float32List.fromList([x])[0];
+
+  // Helper: float32-based power using exp(log(base)*exp) with intermediate f32 rounding
+  double _powf(double base, double exponent) {
+    final b = _f32(base);
+    final e = _f32(exponent);
+    final lb = log(b);
+    final prod = _f32(lb * e);
+    final res = exp(prod);
+    return _f32(res.toDouble());
+  }
 
   // ========== Core Formulas ==========
 
@@ -104,8 +118,13 @@ class FsrsAlgorithm {
   /// R(t, S) = (1 + factor * t/S)^(-decay)
   double forgettingCurve(double elapsedDays, double stability) {
     final decay = w[20];
-    final factor = pow(0.9, 1.0 / -decay) - 1.0;
-    return pow(elapsedDays / stability * factor + 1.0, -decay).toDouble();
+    final s = _f32(stability);
+    final factor = _f32(_powf(_f32(0.9), _f32(1.0 / -decay)) - 1.0);
+    final eDivS = _f32(_f32(elapsedDays) / s);
+    final eTimes = _f32(eDivS * factor);
+    final base = _f32(eTimes + 1.0);
+    final result = _f32(_powf(base, -decay));
+    return result;
   }
 
   /// Calculate optimal next interval
@@ -113,18 +132,26 @@ class FsrsAlgorithm {
   double nextInterval(double stability, {double? retention}) {
     final r = retention ?? desiredRetention;
     final decay = w[20];
-    final factor = pow(0.9, 1.0 / -decay) - 1.0;
-    return stability / factor * (pow(r, 1.0 / -decay) - 1.0);
+    final s = _f32(stability);
+    final factor = _f32(_powf(_f32(0.9), _f32(1.0 / -decay)) - 1.0);
+    final tmp = _f32(s / factor);
+    final powR = _f32(_powf(r, 1.0 / -decay) - 1.0);
+    final result = _f32(tmp * powR);
+    return result;
   }
 
   /// Initial stability for a new card
   double initStability(FsrsRating rating) {
-    return w[rating.value - 1].clamp(sMin, sMax);
+    return _f32(w[rating.value - 1].clamp(sMin, sMax));
   }
 
   /// Initial difficulty for a new card
   double initDifficulty(FsrsRating rating) {
-    return (w[4] - exp(w[5] * (rating.value - 1.0)) + 1.0).clamp(dMin, dMax);
+    final expTerm = _f32(exp(w[5] * (rating.value - 1.0)));
+    final a = _f32(w[4] - expTerm);
+    final b = _f32(a + 1.0);
+    final clamped = b.clamp(dMin, dMax);
+    return _f32(clamped);
   }
 
   /// New stability after success
@@ -134,18 +161,27 @@ class FsrsAlgorithm {
     double retrievability,
     FsrsRating rating,
   ) {
+    final s = _f32(stability);
+    final d = _f32(difficulty);
+    final r = _f32(retrievability);
     final hardPenalty = (rating == FsrsRating.hard) ? w[15] : 1.0;
     final easyBonus = (rating == FsrsRating.easy) ? w[16] : 1.0;
-
-    final newS = stability *
-        (exp(w[8]) *
-                (11.0 - difficulty) *
-                pow(stability, -w[9]) *
-                (exp((1.0 - retrievability) * w[10]) - 1.0) *
-                hardPenalty *
-                easyBonus +
-            1.0);
-    return newS.clamp(sMin, sMax);
+    // Match Kotlin: apply toFloat() at exp(...) sites and perform left-to-right
+    // float32 rounding across the multiplication chain.
+    final expW8 = _f32(exp(w[8]));
+    final elevenMinusD = _f32(11.0 - d);
+    final step1 = _f32(expW8 * elevenMinusD);
+    final powStab = _f32(_powf(s, -w[9]));
+    final step2 = _f32(step1 * powStab);
+    final inner = _f32((1.0 - r) * w[10]);
+    final expTerm = _f32(exp(inner).toDouble());
+    final diffExp = _f32(expTerm - 1.0);
+    final step3 = _f32(step2 * diffExp);
+    final step4 = _f32(step3 * hardPenalty);
+    final step5 = _f32(step4 * easyBonus);
+    final inside = _f32(step5 + 1.0);
+    final newS = _f32(s * inside);
+    return _f32(newS.clamp(sMin, sMax));
   }
 
   /// New stability after failure
@@ -154,35 +190,60 @@ class FsrsAlgorithm {
     double difficulty,
     double retrievability,
   ) {
-    final newS = w[11] *
-        pow(difficulty, -w[12]) *
-        (pow(stability + 1.0, w[13]) - 1.0) *
-        exp((1.0 - retrievability) * w[14]);
+    final s = _f32(stability);
+    final d = _f32(difficulty);
+    final r = _f32(retrievability);
+
+    // Compute exp term with f32 inner arg
+    final expInner = _f32(_f32(1.0 - r) * _f32(w[14]));
+    final expTerm = _f32(exp(expInner).toDouble());
+
+    // pow terms: quantize bases before pow to mimic Kotlin Float.pow behavior
+    final pow1 = _f32(_powf(_f32(d), -w[12]));
+    final pow2raw = _f32(_powf(_f32(s + 1.0), w[13]));
+    final pow2 = _f32(pow2raw - 1.0);
+
+    final a1 = _f32(_f32(w[11]) * _f32(pow1));
+    final a2 = _f32(_f32(a1) * _f32(pow2));
+    final a3 = _f32(_f32(a2) * _f32(expTerm));
+    final newS = a3;
 
     // Minimum constraint: stability after failure must not be lower than S / exp(w[17]*w[18])
-    final minS = stability / exp(w[17] * w[18]);
+    final minExpArg = _f32(_f32(w[17]) * _f32(w[18]));
+    final minS = _f32(s / _f32(exp(minExpArg).toDouble()));
 
-    return max(newS, minS).clamp(sMin, sMax);
+    return _f32(max(newS, minS).clamp(sMin, sMax));
   }
 
   /// Short-term stability (for same-day learning steps)
   double stabilityShortTerm(double stability, FsrsRating rating) {
-    final sinc = exp(w[17] * (rating.value - 3.0 + w[18])) * pow(stability, -w[19]);
+    final s = _f32(stability);
+    // Match Kotlin float evaluation order: compute inner arg as f32, then exp->f32,
+    // compute pow term as f32, then multiply as f32.
+    final innerArg = _f32(_f32(w[17]) * _f32(rating.value - 3.0 + w[18]));
+    final expTerm = _f32(exp(innerArg).toDouble());
+    final powTerm = _f32(_powf(s, -w[19]));
+    final sinc = _f32(_f32(expTerm) * _f32(powTerm));
     final clampedSinc = (rating.value >= 2) ? max(sinc, 1.0) : sinc;
-    return (stability * clampedSinc).clamp(sMin, sMax);
+    final newS = _f32(s * clampedSinc);
+    return _f32(newS.clamp(sMin, sMax));
   }
 
   /// Calculate next difficulty
   double nextDifficulty(double difficulty, FsrsRating rating) {
-    final deltaD = -w[6] * (rating.value - 3.0);
-    final linearDamped = deltaD * (10.0 - difficulty) / 9.0;
-    final newD = difficulty + linearDamped;
+    final d = _f32(difficulty);
+    final deltaD = _f32(-w[6] * (rating.value - 3.0));
+    final linearDamped = _f32(deltaD * (10.0 - d) / 9.0);
+    final newD = _f32(d + linearDamped);
 
     // Mean reversion
-    final d0Good = w[4] - exp(w[5] * (4.0 - 1.0)) + 1.0;
-    final reverted = w[7] * (d0Good - newD) + newD;
+    final expTerm = _f32(exp(w[5] * (4.0 - 1.0)));
+    final d0Good = _f32(w[4] - expTerm);
+    final d0GoodPlus = _f32(d0Good + 1.0);
+    final diff = _f32(d0GoodPlus - newD);
+    final reverted = _f32(_f32(w[7] * diff) + newD);
 
-    return reverted.clamp(dMin, dMax);
+    return _f32(reverted.clamp(dMin, dMax));
   }
 
   // ========== High-level API ==========
@@ -201,8 +262,8 @@ class FsrsAlgorithm {
       );
     }
 
-    final s = currentState.stability.clamp(sMin, sMax);
-    final d = currentState.difficulty.clamp(dMin, dMax);
+    final s = _f32(currentState.stability.clamp(sMin, sMax));
+    final d = _f32(currentState.difficulty.clamp(dMin, dMax));
 
     double newS;
     if (elapsedDays == 0.0) {
@@ -221,8 +282,8 @@ class FsrsAlgorithm {
     final newD = nextDifficulty(d, rating);
 
     return MemoryState(
-      stability: newS.clamp(sMin, sMax),
-      difficulty: newD.clamp(dMin, dMax),
+      stability: _f32(newS.clamp(sMin, sMax)),
+      difficulty: _f32(newD.clamp(dMin, dMax)),
     );
   }
 

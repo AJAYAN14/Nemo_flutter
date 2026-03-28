@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:core_prefs/core_prefs.dart';
 
 class ConflictResolutionDialog extends StatelessWidget {
   const ConflictResolutionDialog({super.key});
@@ -215,14 +217,14 @@ class _ConfirmResetDialogState extends State<ConfirmResetDialog> {
   }
 }
 
-class AdvancedLearningSettingsBottomSheet extends StatefulWidget {
+class AdvancedLearningSettingsBottomSheet extends ConsumerStatefulWidget {
   const AdvancedLearningSettingsBottomSheet({super.key});
 
   @override
-  State<AdvancedLearningSettingsBottomSheet> createState() => _AdvancedLearningSettingsBottomSheetState();
+  ConsumerState<AdvancedLearningSettingsBottomSheet> createState() => _AdvancedLearningSettingsBottomSheetState();
 }
 
-class _AdvancedLearningSettingsBottomSheetState extends State<AdvancedLearningSettingsBottomSheet> {
+class _AdvancedLearningSettingsBottomSheetState extends ConsumerState<AdvancedLearningSettingsBottomSheet> {
   late TextEditingController _stepsController;
   late TextEditingController _relearnStepsController;
   double _learnAheadLimit = 20.0;
@@ -234,6 +236,17 @@ class _AdvancedLearningSettingsBottomSheetState extends State<AdvancedLearningSe
     super.initState();
     _stepsController = TextEditingController(text: '1 10');
     _relearnStepsController = TextEditingController(text: '1 10');
+    
+    // Initialize from providers
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        _learnAheadLimit = ref.read(learnAheadLimitProvider).toDouble();
+        _leechThreshold = ref.read(leechThresholdProvider);
+        _leechAction = ref.read(leechActionProvider);
+        _stepsController.text = ref.read(learningStepsProvider);
+        _relearnStepsController.text = ref.read(relearningStepsProvider);
+      });
+    });
   }
 
   @override
@@ -406,7 +419,16 @@ class _AdvancedLearningSettingsBottomSheetState extends State<AdvancedLearningSe
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () async {
+                      // Save settings
+                      await ref.read(learnAheadLimitProvider.notifier).set(_learnAheadLimit.toInt());
+                      await ref.read(leechThresholdProvider.notifier).set(_leechThreshold);
+                      await ref.read(leechActionProvider.notifier).set(_leechAction);
+                      await ref.read(learningStepsProvider.notifier).set(_stepsController.text.trim());
+                      await ref.read(relearningStepsProvider.notifier).set(_relearnStepsController.text.trim());
+                      
+                      if (mounted) Navigator.pop(context);
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: accentColor,
                       foregroundColor: Colors.white,

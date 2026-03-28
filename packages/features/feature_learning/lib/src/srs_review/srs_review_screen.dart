@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:core_prefs/core_prefs.dart';
@@ -14,7 +15,7 @@ import '../domain/learning_item.dart';
 import '../learning/typing_practice_dialog.dart';
 import 'package:core_storage/core_storage.dart';
 
-class SrsReviewScreen extends ConsumerWidget {
+class SrsReviewScreen extends HookConsumerWidget {
   const SrsReviewScreen({super.key, required this.mode});
 
   final String mode;
@@ -23,6 +24,7 @@ class SrsReviewScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sessionAsync = ref.watch(srsReviewNotifierProvider(mode));
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final pageController = usePageController();
 
     return sessionAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -80,6 +82,13 @@ class SrsReviewScreen extends ConsumerWidget {
 
         final notifier = ref.read(srsReviewNotifierProvider(mode).notifier);
 
+        // Synchronize PageController with state
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (pageController.hasClients && pageController.page?.round() != currentIndex) {
+            pageController.jumpToPage(currentIndex);
+          }
+        });
+
         return Scaffold(
           backgroundColor: isDark ? NemoColors.bgBaseDark : NemoColors.bgBase,
           appBar: NemoLearnHeader(
@@ -87,14 +96,20 @@ class SrsReviewScreen extends ConsumerWidget {
             remainingCount: session.items.length,
             progress: session.progress,
             onClose: () => Navigator.of(context).pop(),
-            onPrev: () {
-              // Note: PageController management could be added if needed, 
-              // for now Review is single-item display based on queue.
-            },
-            onNext: () {
-            },
+            onPrev: currentIndex > 0 ? () {
+              pageController.previousPage(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            } : null,
+            onNext: currentIndex < session.items.length - 1 ? () {
+              pageController.nextPage(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            } : null,
             canGoPrev: currentIndex > 0,
-            canGoNext: false, // Review queue is usually consumed one by one
+            canGoNext: currentIndex < session.items.length - 1,
             onUndo: session.lastSnapshot != null ? () => notifier.undo() : null,
             onSuspend: () => notifier.suspendCurrent(),
             onBury: () => notifier.buryCurrent(),
@@ -107,41 +122,48 @@ class SrsReviewScreen extends ConsumerWidget {
           body: Stack(
             children: [
               Positioned.fill(
-                child: Center(
-                  child: Builder(
-                    builder: (context) {
-                      final item = activeState.item;
-                      if (item is WordItem) {
-                        return SRSLearningCard(
-                          word: item.word,
-                          isAnswerShown: isAnswerShown,
-                          badge: item.badge,
-                          onSpeakWord: () => notifier.playWordAudio(item.word.hiragana),
-                          onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp, id),
-                          onPracticeClick: () {
-                            showTypingPracticeDialog(context, ref, word: WordEntry(
-                              id: item.word.id,
-                              japanese: item.word.japanese,
-                              hiragana: item.word.hiragana,
-                              chinese: item.word.chinese,
-                              level: item.word.level,
-                              isFavorite: false,
-                            ));
-                          },
-                          playingAudioId: session.playingAudioId,
-                        );
-                      } else if (item is GrammarItem) {
-                        return SRSGrammarCard(
-                          grammar: item.grammar,
-                          isAnswerShown: isAnswerShown,
-                          badge: item.badge,
-                          onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp, id),
-                          playingAudioId: session.playingAudioId,
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
+                child: PageView.builder(
+                  key: ValueKey(session.items.length),
+                  itemCount: session.items.length,
+                  controller: pageController,
+                  physics: isAnswerShown ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
+                  onPageChanged: (index) {
+                    notifier.onPageChanged(index);
+                  },
+                  itemBuilder: (context, index) {
+                    final item = session.items[index];
+                    final isRevealed = session.currentIndex == index && isAnswerShown;
+
+                    if (item is WordItem) {
+                      return SRSLearningCard(
+                        word: item.word,
+                        isAnswerShown: isRevealed,
+                        badge: item.badge,
+                        onSpeakWord: () => notifier.playWordAudio(item.word.hiragana),
+                        onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp, id),
+                        onPracticeClick: () {
+                          showTypingPracticeDialog(context, ref, word: WordEntry(
+                            id: item.word.id,
+                            japanese: item.word.japanese,
+                            hiragana: item.word.hiragana,
+                            chinese: item.word.chinese,
+                            level: item.word.level,
+                            isFavorite: false,
+                          ));
+                        },
+                        playingAudioId: session.playingAudioId,
+                      );
+                    } else if (item is GrammarItem) {
+                      return SRSGrammarCard(
+                        grammar: item.grammar,
+                        isAnswerShown: isRevealed,
+                        badge: item.badge,
+                        onSpeakExample: (jp, cn, id) => notifier.playExampleAudio(jp, id),
+                        playingAudioId: session.playingAudioId,
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
                 ),
               ),
               if (activeState.item is WordItem)

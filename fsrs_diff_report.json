@@ -1,0 +1,85 @@
+{
+  "all_equal": true,
+  "report": [
+    {
+      "id": "new_0",
+      "status": "equal"
+    },
+    {
+      "id": "new_1",
+      "status": "equal"
+    },
+    {
+      "id": "s0.01_d1_e0",
+      "status": "equal"
+    },
+    {
+      "id": "s0.212_d1_e365",
+      "status": "equal"
+    },
+    {
+      "id": "s0.212_d5_e0",
+      "status": "equal"
+    },
+    {
+      "id": "s0.212_d5_e1",
+      "status": "equal"
+    },
+    {
+      "id": "s0.5_d9_e3",
+      "status": "equal"
+    },
+    {
+      "id": "s0.8_d2_e2",
+      "status": "equal"
+    },
+    {
+      "id": "s1.2931_d3_e7",
+      "status": "equal"
+    },
+    {
+      "id": "s100_d5_e365",
+      "status": "equal"
+    },
+    {
+      "id": "s10_d6_e365",
+      "status": "equal"
+    },
+    {
+      "id": "s2.3065_d4_e30",
+      "status": "equal"
+    },
+    {
+      "id": "s20_d7_e60",
+      "status": "equal"
+    },
+    {
+      "id": "s30_d6_e45",
+      "status": "equal"
+    },
+    {
+      "id": "s36500_d10_e365",
+      "status": "equal"
+    },
+    {
+      "id": "s3_d5_e10",
+      "status": "equal"
+    },
+    {
+      "id": "s50_d4_e14",
+      "status": "equal"
+    },
+    {
+      "id": "s5_d1_e1",
+      "status": "equal"
+    },
+    {
+      "id": "s7_d8_e21",
+      "status": "equal"
+    },
+    {
+      "id": "s8.2956_d2_e90",
+      "status": "equal"
+    }
+  ]
+}

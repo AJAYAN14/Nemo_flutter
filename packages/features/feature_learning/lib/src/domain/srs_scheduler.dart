@@ -33,6 +33,16 @@ class SrsRequeue extends SrsScheduleResult {
   });
 }
 
+class SrsLeech extends SrsScheduleResult {
+  final LearningProgressCompanion companion;
+  final int totalLapses;
+
+  const SrsLeech({
+    required this.companion,
+    required this.totalLapses,
+  });
+}
+
 class SrsGraduate extends SrsScheduleResult {
   final LearningProgressCompanion companion;
   final SrsRating rating;
@@ -47,15 +57,16 @@ class SrsGraduate extends SrsScheduleResult {
 class SrsFinalResult {
   final LearningProgressData updatedProgress;
   final bool isRequeue;
+  final bool isLeech;
 
   const SrsFinalResult({
     required this.updatedProgress,
     required this.isRequeue,
+    this.isLeech = false,
   });
 }
 
 class SrsScheduler {
-  static const List<int> learningSteps = [1, 10]; // Minutes
   final FsrsAlgorithm _fsrs = FsrsAlgorithm();
 
   SrsScheduleResult schedule({
@@ -63,6 +74,9 @@ class SrsScheduler {
     required String itemType,
     required SrsRating rating,
     required LearningProgressData? currentProgress,
+    required List<int> learningSteps,
+    required List<int> relearningSteps,
+    int leechThreshold = 5,
   }) {
     final now = DateTime.now().millisecondsSinceEpoch;
     final currentState = MemoryState(
@@ -81,30 +95,50 @@ class SrsScheduler {
     final isLearning = isNew || currentProgress.step < learningSteps.length;
 
     if (rating == SrsRating.again) {
-      return _handleAgain(id, itemType, now, firstLearned);
+      final currentLapses = currentProgress?.lapses ?? 0;
+      final newLapseCount = currentLapses + 1;
+
+      // Leech Detection
+      if (newLapseCount >= leechThreshold) {
+        final companion = LearningProgressCompanion(
+          id: Value(id),
+          itemType: Value(itemType),
+          lapses: Value(newLapseCount),
+          lastReviewed: Value(BigInt.from(now)),
+          firstLearned: Value(firstLearned),
+        );
+        return SrsLeech(
+          companion: companion,
+          totalLapses: newLapseCount,
+        );
+      }
+
+      return _handleAgain(id, itemType, now, firstLearned, newLapseCount, relearningSteps);
     }
 
     if (isLearning) {
       if (rating == SrsRating.hard) {
-        return _handleHard(id, itemType, currentStep, now, firstLearned);
+        return _handleHard(id, itemType, currentStep, now, firstLearned, learningSteps);
       } else if (rating == SrsRating.good) {
         if (currentStep < learningSteps.length - 1) {
-          return _handleGoodStep(id, itemType, currentStep, now, firstLearned);
+          return _handleGoodStep(id, itemType, currentStep, now, firstLearned, learningSteps);
         } else {
-          return _handleGraduate(id, itemType, currentState, rating.toFsrs(), elapsedDays, now, firstLearned, currentProgress?.repetitionCount ?? 0);
+          return _handleGraduate(id, itemType, currentState, rating.toFsrs(), elapsedDays, now, firstLearned, currentProgress?.repetitionCount ?? 0, learningSteps);
         }
       } else if (rating == SrsRating.easy) {
-        return _handleGraduate(id, itemType, currentState, rating.toFsrs(), elapsedDays, now, firstLearned, currentProgress?.repetitionCount ?? 0);
+        return _handleGraduate(id, itemType, currentState, rating.toFsrs(), elapsedDays, now, firstLearned, currentProgress?.repetitionCount ?? 0, learningSteps);
       }
     } else {
-      return _handleGraduate(id, itemType, currentState, rating.toFsrs(), elapsedDays, now, firstLearned, currentProgress.repetitionCount);
+      return _handleGraduate(id, itemType, currentState, rating.toFsrs(), elapsedDays, now, firstLearned, currentProgress.repetitionCount, learningSteps);
     }
 
-    return _handleAgain(id, itemType, now, firstLearned);
+    return _handleAgain(id, itemType, now, firstLearned, (currentProgress?.lapses ?? 0), relearningSteps);
   }
 
   Map<SrsRating, String> getIntervalPreviews({
     required LearningProgressData? currentProgress,
+    required List<int> learningSteps,
+    required List<int> relearningSteps,
   }) {
     final now = DateTime.now().millisecondsSinceEpoch;
     final currentState = MemoryState(
@@ -122,7 +156,7 @@ class SrsScheduler {
     final isLearning = isNew || currentProgress.step < learningSteps.length;
 
     final Map<SrsRating, String> previews = {};
-    previews[SrsRating.again] = '<${learningSteps[0]}m';
+    previews[SrsRating.again] = '${relearningSteps[0]}m';
 
     if (isLearning) {
       previews[SrsRating.hard] = '${learningSteps[currentStep]}m';
@@ -146,15 +180,16 @@ class SrsScheduler {
     return previews;
   }
 
-  SrsScheduleResult _handleAgain(String id, String itemType, int now, BigInt firstLearned) {
+  SrsScheduleResult _handleAgain(String id, String itemType, int now, BigInt firstLearned, int lapses, List<int> relearningSteps) {
     const nextStep = 0;
-    final intervalMin = learningSteps[nextStep];
+    final intervalMin = relearningSteps[nextStep];
     final dueTime = BigInt.from(now + intervalMin * 60 * 1000);
 
     final companion = LearningProgressCompanion(
       id: Value(id),
       itemType: Value(itemType),
       step: const Value(0),
+      lapses: Value(lapses),
       dueTime: Value(dueTime),
       lastReviewed: Value(BigInt.from(now)),
       firstLearned: Value(firstLearned),
@@ -167,7 +202,7 @@ class SrsScheduler {
     );
   }
 
-  SrsScheduleResult _handleHard(String id, String itemType, int currentStep, int now, BigInt firstLearned) {
+  SrsScheduleResult _handleHard(String id, String itemType, int currentStep, int now, BigInt firstLearned, List<int> learningSteps) {
     final intervalMin = learningSteps[currentStep];
     final dueTime = BigInt.from(now + intervalMin * 60 * 1000);
 
@@ -187,7 +222,7 @@ class SrsScheduler {
     );
   }
 
-  SrsScheduleResult _handleGoodStep(String id, String itemType, int currentStep, int now, BigInt firstLearned) {
+  SrsScheduleResult _handleGoodStep(String id, String itemType, int currentStep, int now, BigInt firstLearned, List<int> learningSteps) {
     final nextStep = currentStep + 1;
     final intervalMin = learningSteps[nextStep];
     final dueTime = BigInt.from(now + intervalMin * 60 * 1000);
@@ -217,6 +252,7 @@ class SrsScheduler {
     int now,
     BigInt firstLearned,
     int repetitionCount,
+    List<int> learningSteps,
   ) {
     final newState = _fsrs.step(currentState, rating, elapsedDays);
     

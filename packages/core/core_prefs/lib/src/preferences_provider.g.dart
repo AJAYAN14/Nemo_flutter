@@ -180,6 +180,22 @@ final randomContentProvider =
     );
 
 typedef _$RandomContent = AutoDisposeNotifier<bool>;
+String _$learnAheadLimitHash() => r'f6012792a0f2765c547fbde7c1a3440501dd9de3';
+
+/// See also [LearnAheadLimit].
+@ProviderFor(LearnAheadLimit)
+final learnAheadLimitProvider =
+    AutoDisposeNotifierProvider<LearnAheadLimit, int>.internal(
+      LearnAheadLimit.new,
+      name: r'learnAheadLimitProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$learnAheadLimitHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+typedef _$LearnAheadLimit = AutoDisposeNotifier<int>;
 String _$autoSpeakHash() => r'45d56005c911fd93b24ea4c275a8bda0e34c5923';
 
 /// See also [AutoSpeak].
@@ -228,5 +244,69 @@ final answerWaitDurationProvider =
     );
 
 typedef _$AnswerWaitDuration = AutoDisposeNotifier<double>;
+String _$leechThresholdHash() => r'fd0a5427cd2a6a368ec004b212869f206e87a51a';
+
+/// See also [LeechThreshold].
+@ProviderFor(LeechThreshold)
+final leechThresholdProvider =
+    AutoDisposeNotifierProvider<LeechThreshold, int>.internal(
+      LeechThreshold.new,
+      name: r'leechThresholdProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$leechThresholdHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+typedef _$LeechThreshold = AutoDisposeNotifier<int>;
+String _$leechActionHash() => r'6fc7dbfd4b71221ecad412591a7e0f71616c6b8e';
+
+/// See also [LeechAction].
+@ProviderFor(LeechAction)
+final leechActionProvider =
+    AutoDisposeNotifierProvider<LeechAction, String>.internal(
+      LeechAction.new,
+      name: r'leechActionProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$leechActionHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+typedef _$LeechAction = AutoDisposeNotifier<String>;
+String _$learningStepsHash() => r'026659ce1faffad99e7e8d83121d0aeac9eac6f0';
+
+/// See also [LearningSteps].
+@ProviderFor(LearningSteps)
+final learningStepsProvider =
+    AutoDisposeNotifierProvider<LearningSteps, String>.internal(
+      LearningSteps.new,
+      name: r'learningStepsProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$learningStepsHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+typedef _$LearningSteps = AutoDisposeNotifier<String>;
+String _$relearningStepsHash() => r'c68850abd91e411abd0b60228fac9acf8403d5fb';
+
+/// See also [RelearningSteps].
+@ProviderFor(RelearningSteps)
+final relearningStepsProvider =
+    AutoDisposeNotifierProvider<RelearningSteps, String>.internal(
+      RelearningSteps.new,
+      name: r'relearningStepsProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$relearningStepsHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+typedef _$RelearningSteps = AutoDisposeNotifier<String>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

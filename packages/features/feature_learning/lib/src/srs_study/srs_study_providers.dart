@@ -22,6 +22,7 @@ class SrsStudyUiModel {
     this.playingAudioId,
     this.lastSnapshot,
     this.showAnswerAvailableAt,
+    this.message,
   });
 
   final LearningSessionState sessionState;
@@ -34,6 +35,7 @@ class SrsStudyUiModel {
   final String? playingAudioId;
   final SessionSnapshot? lastSnapshot;
   final int? showAnswerAvailableAt;
+  final String? message;
 
   bool get isCompleted => sessionState is LearningSessionEmpty;
 
@@ -64,6 +66,7 @@ class SrsStudyUiModel {
     bool cancelPlayingAudio = false,
     SessionSnapshot? lastSnapshot,
     int? showAnswerAvailableAt,
+    String? message,
   }) {
     return SrsStudyUiModel(
       sessionState: sessionState ?? this.sessionState,
@@ -76,6 +79,7 @@ class SrsStudyUiModel {
       playingAudioId: cancelPlayingAudio ? null : (playingAudioId ?? this.playingAudioId),
       lastSnapshot: lastSnapshot ?? this.lastSnapshot,
       showAnswerAvailableAt: showAnswerAvailableAt ?? this.showAnswerAvailableAt,
+      message: message ?? this.message,
     );
   }
 
@@ -84,8 +88,6 @@ class SrsStudyUiModel {
 
 @riverpod
 class SrsStudyNotifier extends _$SrsStudyNotifier {
-  late final SrsScheduler _scheduler = SrsScheduler();
-
   @override
   FutureOr<SrsStudyUiModel> build(String mode) async {
     final repository = ref.watch(learningRepositoryProvider);
@@ -140,7 +142,8 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
       );
     }
 
-    final intervals = _scheduler.getIntervalPreviews(currentProgress: currentItem.progress);
+    final repository = ref.read(learningRepositoryProvider);
+    final intervals = repository.getIntervalPreviews(currentItem.progress);
 
     final showWait = ref.read(showAnswerWaitProvider);
     final waitDuration = ref.read(answerWaitDurationProvider);
@@ -265,6 +268,7 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
       .copyWith(
         lastSnapshot: snapshot,
         revealedItemIds: {...value.revealedItemIds}..remove(id),
+        message: result.isLeech ? '钉子户已自动处理' : null,
       ));
   }
 

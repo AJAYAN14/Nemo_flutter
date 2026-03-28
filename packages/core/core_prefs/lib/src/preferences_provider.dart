@@ -35,6 +35,10 @@ class PreferenceService {
   static const _keyTtsSpeed = 'tts_speed';
   static const _keyTtsPitch = 'tts_pitch';
   static const _keyTtsVoiceName = 'tts_voice_name';
+  static const _keyLeechThreshold = 'leech_threshold';
+  static const _keyLeechAction = 'leech_action';
+  static const _keyLearningSteps = 'learning_steps';
+  static const _keyRelearningSteps = 'relearning_steps';
 
 
   // Session keys
@@ -103,6 +107,18 @@ class PreferenceService {
       await _prefs.setString(_keyTtsVoiceName, value);
     }
   }
+
+  int get leechThreshold => _prefs.getInt(_keyLeechThreshold) ?? 5;
+  Future<void> setLeechThreshold(int value) => _prefs.setInt(_keyLeechThreshold, value);
+
+  String get leechAction => _prefs.getString(_keyLeechAction) ?? 'skip'; // 'skip' or 'bury'
+  Future<void> setLeechAction(String value) => _prefs.setString(_keyLeechAction, value);
+
+  String get learningSteps => _prefs.getString(_keyLearningSteps) ?? '1 10';
+  Future<void> setLearningSteps(String value) => _prefs.setString(_keyLearningSteps, value);
+
+  String get relearningSteps => _prefs.getString(_keyRelearningSteps) ?? '1 10';
+  Future<void> setRelearningSteps(String value) => _prefs.setString(_keyRelearningSteps, value);
 
   // Word Session
   Future<void> saveWordSession(List<String> ids, int index, String level, String stepsJson, int waitingUntil) async {
@@ -331,10 +347,20 @@ class RandomContent extends _$RandomContent {
   }
 }
 
-final learnAheadLimitProvider = Provider<int>((ref) {
-  final service = ref.watch(preferenceServiceProvider);
-  return service.learnAheadLimit;
-});
+@riverpod
+class LearnAheadLimit extends _$LearnAheadLimit {
+  @override
+  int build() {
+    final service = ref.watch(preferenceServiceProvider);
+    return service.learnAheadLimit;
+  }
+
+  Future<void> set(int value) async {
+    final service = ref.read(preferenceServiceProvider);
+    await service.setLearnAheadLimit(value);
+    ref.invalidateSelf();
+  }
+}
 
 @riverpod
 class AutoSpeak extends _$AutoSpeak {
@@ -394,5 +420,57 @@ class AnswerWaitDuration extends _$AnswerWaitDuration {
       next = 1.0;
     }
     await set(next);
+  }
+}
+
+@riverpod
+class LeechThreshold extends _$LeechThreshold {
+  @override
+  int build() {
+    return ref.watch(preferenceServiceProvider).leechThreshold;
+  }
+
+  Future<void> set(int value) async {
+    await ref.read(preferenceServiceProvider).setLeechThreshold(value);
+    ref.invalidateSelf();
+  }
+}
+
+@riverpod
+class LeechAction extends _$LeechAction {
+  @override
+  String build() {
+    return ref.watch(preferenceServiceProvider).leechAction;
+  }
+
+  Future<void> set(String value) async {
+    await ref.read(preferenceServiceProvider).setLeechAction(value);
+    ref.invalidateSelf();
+  }
+}
+
+@riverpod
+class LearningSteps extends _$LearningSteps {
+  @override
+  String build() {
+    return ref.watch(preferenceServiceProvider).learningSteps;
+  }
+
+  Future<void> set(String value) async {
+    await ref.read(preferenceServiceProvider).setLearningSteps(value);
+    ref.invalidateSelf();
+  }
+}
+
+@riverpod
+class RelearningSteps extends _$RelearningSteps {
+  @override
+  String build() {
+    return ref.watch(preferenceServiceProvider).relearningSteps;
+  }
+
+  Future<void> set(String value) async {
+    await ref.read(preferenceServiceProvider).setRelearningSteps(value);
+    ref.invalidateSelf();
   }
 }

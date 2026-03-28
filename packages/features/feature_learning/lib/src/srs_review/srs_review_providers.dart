@@ -12,8 +12,6 @@ part 'srs_review_providers.g.dart';
 
 @riverpod
 class SrsReviewNotifier extends _$SrsReviewNotifier {
-  late final SrsScheduler _scheduler = SrsScheduler();
-
   @override
   FutureOr<SrsStudyUiModel> build(String mode) async {
     final repository = ref.watch(learningRepositoryProvider);
@@ -74,7 +72,8 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
     _saveSession(items, currentIndex);
 
     final currentItem = items[currentIndex];
-    final intervals = _scheduler.getIntervalPreviews(currentProgress: currentItem.progress);
+    final repository = ref.read(learningRepositoryProvider);
+    final intervals = repository.getIntervalPreviews(currentItem.progress);
 
     return SrsStudyUiModel(
       sessionState: LearningSessionActive(
@@ -188,6 +187,7 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
       .copyWith(
         lastSnapshot: snapshot,
         revealedItemIds: {...value.revealedItemIds}..remove(id),
+        message: result.isLeech ? '钉子户已自动处理' : null,
       ));
   }
 
@@ -237,6 +237,14 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
     nextItems.removeAt(value.currentIndex);
 
     state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount));
+  }
+
+  void onPageChanged(int index) {
+    final value = state.valueOrNull;
+    if (value == null || index < 0 || index >= value.items.length) {
+      return;
+    }
+    state = AsyncData(_buildStateWithItems(value.items, index, value.completedCount));
   }
 
   void _saveSession(List<LearningItem> items, int currentIndex) {

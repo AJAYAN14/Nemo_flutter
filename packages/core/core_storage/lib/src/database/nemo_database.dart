@@ -18,7 +18,7 @@ class NemoDatabase extends _$NemoDatabase {
   NemoDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -40,6 +40,10 @@ class NemoDatabase extends _$NemoDatabase {
       }
       if (from < 6) {
         await m.addColumn(learningProgress, learningProgress.isSuspended);
+      }
+      if (from < 7) {
+        await m.addColumn(learningProgress, learningProgress.lapses);
+        await m.addColumn(learningProgress, learningProgress.isSkipped);
       }
       
       // Ensure clean state for other tables if from old version
@@ -284,6 +288,7 @@ class LearningDao extends DatabaseAccessor<NemoDatabase> with _$LearningDaoMixin
     final query = select(learningProgress)
       ..where((t) => t.dueTime.isSmallerOrEqualValue(BigInt.from(now)))
       ..where((t) => t.isSuspended.equals(false))
+      ..where((t) => t.isSkipped.equals(false))
       ..orderBy([(t) => OrderingTerm(expression: t.dueTime, mode: OrderingMode.asc)]);
     
     if (itemType != null) {
@@ -298,6 +303,7 @@ class LearningDao extends DatabaseAccessor<NemoDatabase> with _$LearningDaoMixin
       ..where((t) => t.dueTime.isBiggerThanValue(BigInt.from(now)))
       ..where((t) => t.dueTime.isSmallerOrEqualValue(BigInt.from(now + withinMillis)))
       ..where((t) => t.isSuspended.equals(false))
+      ..where((t) => t.isSkipped.equals(false))
       ..orderBy([(t) => OrderingTerm(expression: t.dueTime, mode: OrderingMode.asc)]);
     
     if (itemType != null) {

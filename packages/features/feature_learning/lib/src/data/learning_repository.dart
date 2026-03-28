@@ -1,6 +1,7 @@
 import 'package:core_domain/core_domain.dart';
 import 'package:core_storage/core_storage.dart';
 import 'package:core_prefs/core_prefs.dart';
+import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/learning_item.dart';
 import '../domain/srs_scheduler.dart';
@@ -19,6 +20,10 @@ class LearningRepository {
   final String _wordLevel;
   final String _grammarLevel;
   final bool _randomContent;
+  final int _leechThreshold;
+  final String _leechAction;
+  final List<int> _learningSteps;
+  final List<int> _relearningSteps;
 
   LearningRepository({
     required WordDao wordDao,
@@ -30,6 +35,10 @@ class LearningRepository {
     required String wordLevel,
     required String grammarLevel,
     required bool randomContent,
+    required int leechThreshold,
+    required String leechAction,
+    required List<int> learningSteps,
+    required List<int> relearningSteps,
   })  : _wordDao = wordDao,
         _grammarDao = grammarDao,
         _learningDao = learningDao,
@@ -38,7 +47,11 @@ class LearningRepository {
         _resetHour = resetHour,
         _wordLevel = wordLevel,
         _grammarLevel = grammarLevel,
-        _randomContent = randomContent;
+        _randomContent = randomContent,
+        _leechThreshold = leechThreshold,
+        _leechAction = leechAction,
+        _learningSteps = learningSteps,
+        _relearningSteps = relearningSteps;
 
   Future<List<LearningItem>> getLearningQueue(String mode) async {
     final dayStartMillis = DateTimeUtils.getLearningDayStart(_resetHour);
@@ -181,11 +194,28 @@ class LearningRepository {
       itemType: itemType,
       rating: rating,
       currentProgress: currentProgress,
+      learningSteps: _learningSteps,
+      relearningSteps: _relearningSteps,
+      leechThreshold: _leechThreshold,
     );
 
     final LearningProgressData updatedData;
     if (result is SrsRequeue) {
       updatedData = await _learningDao.updateProgress(result.companion);
+    } else if (result is SrsLeech) {
+      if (_leechAction == 'bury') {
+        final nextDayStart = DateTimeUtils.getLearningDayEnd(_resetHour) + 1;
+        final companion = result.companion.copyWith(
+          dueTime: Value(BigInt.from(nextDayStart)),
+        );
+        updatedData = await _learningDao.updateProgress(companion);
+      } else {
+        // 'skip'
+        final companion = result.companion.copyWith(
+          isSkipped: const Value(true),
+        );
+        updatedData = await _learningDao.updateProgress(companion);
+      }
     } else {
       updatedData = await _learningDao.updateProgress((result as SrsGraduate).companion);
     }
@@ -193,6 +223,7 @@ class LearningRepository {
     return SrsFinalResult(
       updatedProgress: updatedData,
       isRequeue: result is SrsRequeue,
+      isLeech: result is SrsLeech,
     );
   }
 
@@ -215,6 +246,14 @@ class LearningRepository {
     final nextDayStart = DateTimeUtils.getLearningDayEnd(resetHour) + 1;
     await _learningDao.updateDueTime(fullId, nextDayStart);
   }
+
+  Map<SrsRating, String> getIntervalPreviews(LearningProgressData? progress) {
+    return _scheduler.getIntervalPreviews(
+      currentProgress: progress,
+      learningSteps: _learningSteps,
+      relearningSteps: _relearningSteps,
+    );
+  }
 }
 
 @riverpod
@@ -229,5 +268,9 @@ LearningRepository learningRepository(LearningRepositoryRef ref) {
     wordLevel: ref.watch(wordLevelProvider),
     grammarLevel: ref.watch(grammarLevelProvider),
     randomContent: ref.watch(randomContentProvider),
+    leechThreshold: ref.watch(leechThresholdProvider),
+    leechAction: ref.watch(leechActionProvider),
+    learningSteps: ref.watch(learningStepsProvider).split(' ').map((e) => int.tryParse(e) ?? 1).toList(),
+    relearningSteps: ref.watch(relearningStepsProvider).split(' ').map((e) => int.tryParse(e) ?? 1).toList(),
   );
 }
