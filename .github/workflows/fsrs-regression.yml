@@ -24,6 +24,10 @@ jobs:
           chmod +x ./gradlew || true
           ./gradlew :core:domain:test --tests "com.jian.nemo.core.domain.algorithm.FsrsComparatorTest.generateFsrsOutputs" -q
 
+      - name: Copy Kotlin baseline to repo root
+        run: |
+          cp old_nemo/Nemo/fsrs_kotlin_outputs.json fsrs_kotlin_outputs.json || true
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
