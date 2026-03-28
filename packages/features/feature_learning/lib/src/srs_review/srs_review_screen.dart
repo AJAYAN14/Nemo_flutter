@@ -12,6 +12,7 @@ import '../learning/components/common/nemo_learn_header.dart';
 import '../learning/components/common/nemo_completion_view.dart';
 import '../domain/learning_session_state.dart';
 import '../domain/learning_item.dart';
+import '../learning/components/common/nemo_waiting_view.dart';
 import '../learning/typing_practice_dialog.dart';
 import 'package:core_storage/core_storage.dart';
 
@@ -51,22 +52,10 @@ class SrsReviewScreen extends HookConsumerWidget {
               onClose: () => Navigator.of(context).pop(),
               showMoreMenu: false,
             ),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.timer_outlined, size: 80, color: NemoColors.brandBlue),
-                  const SizedBox(height: 16),
-                  const Text('暂无到期项目', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Text('下一项将在 ${state.waitingUntil.difference(DateTime.now()).inMinutes} 分钟后开始'),
-                  const SizedBox(height: 24),
-                  // _SpeakerButton is no longer needed as we use NemoSpeakerButton
-                  ElevatedButton(
-                    onPressed: () => ref.invalidate(srsReviewNotifierProvider(mode)),
-                    child: const Text('刷新'),
-                  ),
-                ],
+            body: SafeArea(
+              child: NemoWaitingView(
+                until: state.waitingUntil,
+                onContinue: () => ref.read(srsReviewNotifierProvider(mode).notifier).learnAhead(),
               ),
             ),
           );

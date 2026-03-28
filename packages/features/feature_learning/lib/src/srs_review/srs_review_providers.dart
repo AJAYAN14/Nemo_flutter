@@ -260,4 +260,31 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
   void _clearSession() {
     ref.read(preferenceServiceProvider).clearLearningSession('${mode}_review');
   }
+
+  /// 提前复习：忽略当前的阈值，强制获取下一个即将到期的项目并开始
+  Future<void> learnAhead() async {
+    final value = state.valueOrNull;
+    if (value == null) return;
+
+    state = const AsyncLoading();
+    
+    final repository = ref.read(learningRepositoryProvider);
+    final now = DateTime.now().millisecondsSinceEpoch;
+    
+    // 获取距离现在最近的项目，不限制时间范围 (设置 1 年)
+    final upcoming = await repository.getUpcomingItems(
+      now, 
+      365 * 24 * 60 * 60 * 1000, 
+      itemType: mode,
+    );
+
+    if (upcoming.isNotEmpty) {
+      // 这里的逻辑是：只取第一个即将到期的项目作为 Session
+      // 当这个项目完成后，Provider 会再次 build 并检查是否有新的到期项目
+      state = AsyncData(_buildStateWithItems([upcoming.first], 0, 0));
+    } else {
+      // 如果真的没有任何未来项目，则重置回空状态
+      state = AsyncData(_buildStateWithItems([], 0, 0));
+    }
+  }
 }
