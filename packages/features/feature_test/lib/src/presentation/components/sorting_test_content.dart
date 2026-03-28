@@ -118,7 +118,7 @@ class _AnswerContainer extends ConsumerWidget {
               child: Text(
                 '在此处构建答案',
                 style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                 ),
               ),
             )
@@ -226,8 +226,8 @@ class _SortingFeedback extends StatelessWidget {
     final theme = Theme.of(context);
 
     final containerColor = question.isCorrect
-        ? theme.colorScheme.secondaryContainer.withOpacity(0.1)
-        : theme.colorScheme.errorContainer.withOpacity(0.1);
+        ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.1)
+        : theme.colorScheme.errorContainer.withValues(alpha: 0.1);
     
     final borderColor = question.isCorrect ? theme.colorScheme.secondary : theme.colorScheme.error;
 

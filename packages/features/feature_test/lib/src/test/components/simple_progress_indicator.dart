@@ -51,7 +51,7 @@ class SimpleProgressIndicator extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: value,
-                backgroundColor: theme.colorScheme.surfaceVariant,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
                 minHeight: 8, // Set explicit minHeight for 1:1 restoration
               ),

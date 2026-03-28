@@ -32,8 +32,8 @@ class AuroraPainter extends CustomPainter {
     // Left Top Main Aurora (Correctness based color)
     final mainGradient = RadialGradient(
       colors: [
-        primaryColor.withOpacity(isDark ? 0.25 : 0.35),
-        primaryColor.withOpacity(0),
+        primaryColor.withValues(alpha: isDark ? 0.25 : 0.35),
+        primaryColor.withValues(alpha: 0),
       ],
     );
     paint.shader = mainGradient.createShader(Rect.fromLTWH(-size.width * 0.2, -size.height * 0.2, size.width * 0.8, size.height * 0.8));
@@ -42,8 +42,8 @@ class AuroraPainter extends CustomPainter {
     // Right Bottom Auxiliary Aurora (Blue/Purple/Cyan)
     final auxGradient = RadialGradient(
       colors: [
-        const Color(0xFF8B5CF6).withOpacity(isDark ? 0.15 : 0.2), // Purple
-        const Color(0xFF3B82F6).withOpacity(0), // Blue
+        const Color(0xFF8B5CF6).withValues(alpha: isDark ? 0.15 : 0.2), // Purple
+        const Color(0xFF3B82F6).withValues(alpha: 0), // Blue
       ],
     );
     paint.shader = auxGradient.createShader(Rect.fromLTWH(size.width * 0.4, size.height * 0.4, size.width * 0.8, size.height * 0.8));
@@ -84,7 +84,7 @@ class CircularProgressBar extends StatelessWidget {
                 painter: _CircularProgressPainter(
                   progress: value,
                   color: color,
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                   strokeWidth: 16,
                 ),
               );
@@ -213,7 +213,7 @@ class StatCard extends StatelessWidget {
           Text(
             label,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: contentColor.withOpacity(0.75),
+              color: contentColor.withValues(alpha: 0.75),
               fontWeight: FontWeight.w700,
             ),
           ),

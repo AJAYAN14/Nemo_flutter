@@ -27,7 +27,7 @@ class TestHeader extends ConsumerWidget {
                   icon: Icon(
                     Icons.arrow_back,
                     size: 22,
-                    color: theme.colorScheme.onBackground,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -52,7 +52,7 @@ class TestHeader extends ConsumerWidget {
                     size: 24,
                     // Note: TestDanger red would be used if favorite
                   ),
-                  color: theme.colorScheme.onBackground,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ],
@@ -61,7 +61,7 @@ class TestHeader extends ConsumerWidget {
         Divider(
           height: 1, 
           thickness: 1, 
-          color: theme.colorScheme.surfaceVariant,
+          color: theme.colorScheme.surfaceContainerHighest,
         ),
       ],
     );
@@ -114,7 +114,7 @@ class _TimerDisplay extends StatelessWidget {
         style: TextStyle(
           fontFamily: 'Monospace',
           fontWeight: FontWeight.bold,
-          color: isUrgent ? Colors.red : Theme.of(context).colorScheme.onBackground,
+          color: isUrgent ? Colors.red : Theme.of(context).colorScheme.onSurface,
           fontSize: 16,
         ),
       ),

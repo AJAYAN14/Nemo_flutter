@@ -72,7 +72,7 @@ class PremiumSelectorChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final containerColor = selected ? NemoColors.brandBlue : theme.colorScheme.onSurface.withOpacity(0.08);
+    final containerColor = selected ? NemoColors.brandBlue : theme.colorScheme.onSurface.withValues(alpha: 0.08);
     final contentColor = selected ? Colors.white : theme.colorScheme.onSurface;
 
     return Material(
@@ -124,10 +124,10 @@ class PremiumLevelChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final containerColor = !isAvailable 
-        ? theme.colorScheme.onSurface.withOpacity(0.04)
-        : selected ? NemoColors.brandBlue : theme.colorScheme.onSurface.withOpacity(0.08);
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.04)
+        : selected ? NemoColors.brandBlue : theme.colorScheme.onSurface.withValues(alpha: 0.08);
     final contentColor = !isAvailable
-        ? theme.colorScheme.onSurfaceVariant.withOpacity(0.4)
+        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)
         : selected ? Colors.white : theme.colorScheme.onSurface;
 
     return Opacity(
@@ -157,7 +157,7 @@ class PremiumLevelChip extends StatelessWidget {
                       Text(
                         isAvailable ? "$count $unit" : "不可用",
                         style: theme.textTheme.bodySmall?.copyWith(
-                              color: selected ? Colors.white.withOpacity(0.8) : theme.colorScheme.onSurfaceVariant,
+                              color: selected ? Colors.white.withValues(alpha: 0.8) : theme.colorScheme.onSurfaceVariant,
                             ),
                       ),
                     ],

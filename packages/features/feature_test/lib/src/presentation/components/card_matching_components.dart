@@ -81,16 +81,16 @@ class _FlippableCardState extends State<FlippableCard> with SingleTickerProvider
 
     switch (widget.state) {
       case CardState.selected:
-        backgroundColor = colorScheme.primaryContainer.withOpacity(0.1);
+        backgroundColor = colorScheme.primaryContainer.withValues(alpha: 0.1);
         borderColor = colorScheme.primary;
         break;
       case CardState.correct:
-        backgroundColor = Colors.green.withOpacity(0.1);
+        backgroundColor = Colors.green.withValues(alpha: 0.1);
         borderColor = Colors.green;
         icon = const Icon(Icons.check_circle_rounded, color: Colors.green, size: 20);
         break;
       case CardState.incorrect:
-        backgroundColor = colorScheme.errorContainer.withOpacity(0.1);
+        backgroundColor = colorScheme.errorContainer.withValues(alpha: 0.1);
         borderColor = colorScheme.error;
         icon = Icon(Icons.cancel_rounded, color: colorScheme.error, size: 20);
         break;
@@ -119,7 +119,7 @@ class _FlippableCardState extends State<FlippableCard> with SingleTickerProvider
                 boxShadow: widget.state == CardState.selected
                     ? [
                         BoxShadow(
-                          color: colorScheme.primary.withOpacity(0.1),
+                          color: colorScheme.primary.withValues(alpha: 0.1),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         )
@@ -254,7 +254,7 @@ class MatchingFeedbackPanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
       decoration: BoxDecoration(
-        color: isComplete ? colorScheme.primaryContainer : colorScheme.errorContainer.withOpacity(0.9),
+        color: isComplete ? colorScheme.primaryContainer : colorScheme.errorContainer.withValues(alpha: 0.9),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -345,8 +345,8 @@ class CardMatchingTestHeader extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: isTimeLow 
-                  ? theme.colorScheme.errorContainer.withOpacity(0.5) 
-                  : theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                  ? theme.colorScheme.errorContainer.withValues(alpha: 0.5) 
+                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(

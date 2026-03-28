@@ -30,7 +30,7 @@ class ConflictResolutionDialog extends StatelessWidget {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
+                  color: primaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.cloud_sync_rounded, color: primaryColor, size: 32),
@@ -137,7 +137,7 @@ class _ConfirmResetDialogState extends State<ConfirmResetDialog> {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
+                  color: primaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.delete_forever_rounded, color: primaryColor, size: 32),
@@ -281,7 +281,7 @@ class _AdvancedLearningSettingsBottomSheetState extends ConsumerState<AdvancedLe
               children: [
                 Container(
                   width: 40, height: 40,
-                  decoration: BoxDecoration(color: accentColor.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: accentColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
                   child: const Icon(Icons.settings_suggest_rounded, color: accentColor, size: 20),
                 ),
                 const SizedBox(width: 16),
@@ -295,7 +295,7 @@ class _AdvancedLearningSettingsBottomSheetState extends ConsumerState<AdvancedLe
               ],
             ),
           ),
-          Divider(color: theme.colorScheme.outlineVariant.withOpacity(0.2)),
+          Divider(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2)),
           
           Flexible(
             child: ListView(
@@ -306,7 +306,7 @@ class _AdvancedLearningSettingsBottomSheetState extends ConsumerState<AdvancedLe
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.secondaryContainer.withOpacity(0.4),
+                    color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -322,7 +322,7 @@ class _AdvancedLearningSettingsBottomSheetState extends ConsumerState<AdvancedLe
                             const SizedBox(height: 4),
                             Text(
                               '此配置将改变新卡片的学习流程。错误的设置可能导致不得不频繁进行无效复习。',
-                              style: TextStyle(fontSize: 12, color: theme.colorScheme.onSecondaryContainer.withOpacity(0.8)),
+                              style: TextStyle(fontSize: 12, color: theme.colorScheme.onSecondaryContainer.withValues(alpha: 0.8)),
                             ),
                           ],
                         ),
@@ -365,7 +365,7 @@ class _AdvancedLearningSettingsBottomSheetState extends ConsumerState<AdvancedLe
                     _buildFieldTitle('提前复习阈值'),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(color: accentColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                      decoration: BoxDecoration(color: accentColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                       child: Text('${_learnAheadLimit.toInt()} 分钟', style: const TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
                   ],
@@ -375,7 +375,7 @@ class _AdvancedLearningSettingsBottomSheetState extends ConsumerState<AdvancedLe
                   onChanged: (v) => setState(() => _learnAheadLimit = v),
                   min: 0, max: 60, divisions: 60,
                   activeColor: accentColor,
-                  inactiveColor: accentColor.withOpacity(0.2),
+                  inactiveColor: accentColor.withValues(alpha: 0.2),
                 ),
                 _buildHelperText('当卡片剩余冷却时间小于此值时，允许立即复习，无需等待。'),
 
@@ -388,7 +388,7 @@ class _AdvancedLearningSettingsBottomSheetState extends ConsumerState<AdvancedLe
                     _buildFieldTitle('Leech 阈值（累计失败）'),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(color: accentColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                      decoration: BoxDecoration(color: accentColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                       child: Text('$_leechThreshold 次', style: const TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
                   ],
@@ -432,7 +432,7 @@ class _AdvancedLearningSettingsBottomSheetState extends ConsumerState<AdvancedLe
                     style: ElevatedButton.styleFrom(
                       backgroundColor: accentColor,
                       foregroundColor: Colors.white,
-                      shape: RoundedCornerShape(16),
+                      shape: roundedCornerShape(16),
                       elevation: 4,
                     ),
                     child: const Text('保存配置', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -471,7 +471,7 @@ class _AdvancedLearningSettingsBottomSheetState extends ConsumerState<AdvancedLe
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.35),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: isSelected ? color : Colors.transparent, width: 1.5),
         ),
@@ -500,4 +500,4 @@ class _AdvancedLearningSettingsBottomSheetState extends ConsumerState<AdvancedLe
   }
 }
 
-RoundedCornerShape(double radius) => RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius));
+OutlinedBorder roundedCornerShape(double radius) => RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius));

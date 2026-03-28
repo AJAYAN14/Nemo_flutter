@@ -126,7 +126,7 @@ class _DialogContainer extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -255,7 +255,7 @@ class _IconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Material(
-      color: enabled ? theme.colorScheme.secondaryContainer : theme.colorScheme.surfaceVariant.withOpacity(0.5),
+      color: enabled ? theme.colorScheme.secondaryContainer : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: enabled ? onPressed : null,
@@ -266,7 +266,7 @@ class _IconButton extends StatelessWidget {
           alignment: Alignment.center,
           child: Icon(
             icon,
-            color: enabled ? theme.colorScheme.onSecondaryContainer : theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
+            color: enabled ? theme.colorScheme.onSecondaryContainer : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
           ),
         ),
       ),

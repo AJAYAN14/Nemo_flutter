@@ -2,6 +2,7 @@ import 'package:core_domain/core_domain.dart';
 import 'package:core_storage/core_storage.dart';
 import 'package:core_prefs/core_prefs.dart';
 import 'package:drift/drift.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/learning_item.dart';
 import '../domain/srs_scheduler.dart';
@@ -257,7 +258,7 @@ class LearningRepository {
 }
 
 @riverpod
-LearningRepository learningRepository(LearningRepositoryRef ref) {
+LearningRepository learningRepository(Ref ref) {
   return LearningRepository(
     wordDao: ref.watch(wordDaoProvider),
     grammarDao: ref.watch(grammarDaoProvider),

@@ -23,7 +23,7 @@ class AudioWaveIndicator extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: isDark ? Colors.black.withOpacity(0.4) : Colors.black.withOpacity(0.03),
+            color: isDark ? Colors.black.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.03),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(

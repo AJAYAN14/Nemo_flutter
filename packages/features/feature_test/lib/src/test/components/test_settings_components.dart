@@ -38,13 +38,13 @@ class PremiumGroupCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDark 
-              ? Theme.of(context).colorScheme.outlineVariant.withOpacity(0.1)
-              : Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+              ? Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1)
+              : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
           width: 0.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.4) : Colors.black.withOpacity(0.03),
+            color: isDark ? Colors.black.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.03),
             blurRadius: isDark ? 2 : 10,
             offset: const Offset(0, 2),
           ),
@@ -62,8 +62,8 @@ class PremiumGroupCard extends StatelessWidget {
                   height: 1,
                   thickness: 0.5,
                   color: isDark
-                      ? Theme.of(context).colorScheme.outlineVariant.withOpacity(0.1)
-                      : Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+                      ? Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1)
+                      : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
                 ),
               ),
           ],
@@ -106,14 +106,14 @@ class PremiumSettingRow extends StatelessWidget {
                   value,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith( // Changed from titleMedium to bodyLarge
                         fontWeight: FontWeight.w500, // Medium
-                        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                       ),
                 ),
                 const SizedBox(width: 6), // Adjusted from 8 to 6
                 Icon(
                   Icons.chevron_right_rounded,
                   size: 18, // Adjusted from 20 to 18
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                 ),
               ],
             ),
@@ -155,7 +155,7 @@ class PremiumSwitchRow extends StatelessWidget {
             activeColor: Colors.white,
             activeTrackColor: NemoColors.brandBlue,
             inactiveThumbColor: Colors.white,
-            inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
+            inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
             trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
           ),
         ],

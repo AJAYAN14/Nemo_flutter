@@ -1,3 +1,4 @@
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:core_domain/core_domain.dart';
 import 'package:core_storage/core_storage.dart';
@@ -42,7 +43,7 @@ class SessionPrepViewModel {
 }
 
 @riverpod
-Future<List<SessionPrepWordItem>> sessionPrepWords(SessionPrepWordsRef ref) async {
+Future<List<SessionPrepWordItem>> sessionPrepWords(Ref ref) async {
   final repository = ref.watch(learningRepositoryProvider);
   // Default to 'all' to align with Kotlin unified review experience
   final items = await repository.getReviewQueue('all');
@@ -72,7 +73,7 @@ Future<List<SessionPrepWordItem>> sessionPrepWords(SessionPrepWordsRef ref) asyn
 }
 
 @riverpod
-Future<SessionPrepViewModel> sessionPrepViewModel(SessionPrepViewModelRef ref) async {
+Future<SessionPrepViewModel> sessionPrepViewModel(Ref ref) async {
   final wordsAsync = ref.watch(sessionPrepWordsProvider);
   final learningDao = ref.watch(learningDaoProvider);
   final resetHour = ref.watch(resetHourProvider);

@@ -23,7 +23,7 @@ class NemoCircularProgress extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final effectiveProgressColor = progressColor ?? theme.colorScheme.primary;
-    final effectiveTrackColor = trackColor ?? theme.dividerColor.withOpacity(0.1);
+    final effectiveTrackColor = trackColor ?? theme.dividerColor.withValues(alpha: 0.1);
 
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: progress.clamp(0.0, 1.0)),

@@ -290,7 +290,7 @@ class _UserProfileRow extends StatelessWidget {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -325,7 +325,7 @@ class _UserProfileRow extends StatelessWidget {
             Icon(
               Icons.arrow_forward_ios_rounded,
               size: 14,
-              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
             ),
           ],
         ),
@@ -344,7 +344,7 @@ class _SectionDivider extends StatelessWidget {
       child: Divider(
         height: 0.5,
         thickness: 0.5,
-        color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+        color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
       ),
     );
   }
@@ -365,7 +365,7 @@ class _ThemeSelector extends StatelessWidget {
       height: 32,
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.35),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -392,7 +392,7 @@ class _ThemeSelector extends StatelessWidget {
           boxShadow: active
               ? [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   )
@@ -432,7 +432,7 @@ class _TrailingValue extends StatelessWidget {
         Icon(
           Icons.arrow_forward_ios_rounded,
           size: 14,
-          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
+          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
         ),
       ],
     );

@@ -31,7 +31,7 @@ class MultipleChoiceTestContent extends HookConsumerWidget {
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
-              baseTextColor: Theme.of(context).colorScheme.onBackground,
+              baseTextColor: Theme.of(context).colorScheme.onSurface,
               furiganaTextSize: 12,
             ),
           ),
@@ -44,10 +44,10 @@ class MultipleChoiceTestContent extends HookConsumerWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+                    color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Text(
@@ -195,7 +195,7 @@ class _TestOptionState extends State<TestOption> with SingleTickerProviderStateM
               boxShadow: widget.status == OptionStatus.selected 
                   ? [
                       BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.1), 
+                        color: colorScheme.primary.withValues(alpha: 0.1), 
                         blurRadius: 8, 
                         offset: const Offset(0, 4),
                       )
@@ -258,7 +258,7 @@ class _TestOptionState extends State<TestOption> with SingleTickerProviderStateM
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: widget.status == OptionStatus.none 
-            ? colorScheme.surfaceVariant 
+            ? colorScheme.surfaceContainerHighest 
             : colors.contentColor,
         shape: BoxShape.circle,
       ),
@@ -278,26 +278,26 @@ class _TestOptionState extends State<TestOption> with SingleTickerProviderStateM
     switch (status) {
       case OptionStatus.selected:
         return _StateColors(
-          backgroundColor: colorScheme.primary.withOpacity(0.08),
+          backgroundColor: colorScheme.primary.withValues(alpha: 0.08),
           borderColor: colorScheme.primary,
           contentColor: colorScheme.primary,
         );
       case OptionStatus.correct:
         return _StateColors(
-          backgroundColor: colorScheme.secondary.withOpacity(0.08),
+          backgroundColor: colorScheme.secondary.withValues(alpha: 0.08),
           borderColor: colorScheme.secondary,
           contentColor: colorScheme.secondary,
         );
       case OptionStatus.incorrect:
         return _StateColors(
-          backgroundColor: colorScheme.error.withOpacity(0.08),
+          backgroundColor: colorScheme.error.withValues(alpha: 0.08),
           borderColor: colorScheme.error,
           contentColor: colorScheme.error,
         );
       default:
         return _StateColors(
           backgroundColor: colorScheme.surface,
-          borderColor: colorScheme.outlineVariant.withOpacity(0.4),
+          borderColor: colorScheme.outlineVariant.withValues(alpha: 0.4),
           contentColor: colorScheme.onSurface,
         );
     }

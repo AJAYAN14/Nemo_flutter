@@ -6,8 +6,7 @@ abstract final class NemoTheme {
   static ThemeData get light {
     final base = ThemeData(
       colorScheme: ColorScheme.fromSeed(seedColor: NemoColors.wordsPrimary).copyWith(
-        background: NemoColors.bgBase,
-        surface: NemoColors.surface,
+        surface: NemoColors.bgBase,
       ),
       useMaterial3: true,
     );
@@ -15,7 +14,7 @@ abstract final class NemoTheme {
     return base.copyWith(
       scaffoldBackgroundColor: NemoColors.bgBase,
       navigationBarTheme: base.navigationBarTheme.copyWith(
-        indicatorColor: NemoColors.wordsPrimary.withOpacity(0.14),
+        indicatorColor: NemoColors.wordsPrimary.withValues(alpha: 0.14),
       ),
     );
   }
@@ -33,7 +32,7 @@ abstract final class NemoTheme {
     return base.copyWith(
       scaffoldBackgroundColor: NemoColors.textMain,
       navigationBarTheme: base.navigationBarTheme.copyWith(
-        indicatorColor: NemoColors.wordsPrimary.withOpacity(0.24),
+        indicatorColor: NemoColors.wordsPrimary.withValues(alpha: 0.24),
       ),
     );
   }

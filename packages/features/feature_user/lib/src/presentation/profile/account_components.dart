@@ -36,7 +36,7 @@ class ProfileHeaderSection extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: theme.colorScheme.surface,
                     border: Border.all(
-                      color: theme.colorScheme.outlineVariant.withOpacity(0.2),
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
@@ -67,7 +67,7 @@ class ProfileHeaderSection extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: theme.colorScheme.primary,
-                    border: Border.all(color: theme.colorScheme.background, width: 2),
+                    border: Border.all(color: theme.colorScheme.surface, width: 2),
                   ),
                   child: const Icon(
                     Icons.edit_rounded,
@@ -96,7 +96,7 @@ class ProfileHeaderSection extends StatelessWidget {
                 Text(
                   email,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.8),
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -126,7 +126,7 @@ class PremiumSettingsGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cardBg = backgroundColor ?? (theme.brightness == Brightness.dark 
-        ? theme.colorScheme.surfaceVariant.withOpacity(0.5) 
+        ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5) 
         : theme.colorScheme.surface);
 
     return Column(
@@ -148,7 +148,7 @@ class PremiumSettingsGroup extends StatelessWidget {
             color: cardBg,
             borderRadius: BorderRadius.circular(26),
             border: Border.all(
-              color: theme.colorScheme.outlineVariant.withOpacity(0.3),
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -197,7 +197,7 @@ class PremiumSettingsItem extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: iconTint.withOpacity(0.1),
+                color: iconTint.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: iconTint, size: 22),
@@ -232,7 +232,7 @@ class PremiumSettingsItem extends StatelessWidget {
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 14,
-                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
               ),
           ],
         ),

@@ -58,7 +58,7 @@ class LearnActionSheet extends ConsumerWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 30,
             offset: const Offset(0, -5),
           ),
@@ -100,7 +100,7 @@ class LearnActionSheet extends ConsumerWidget {
                 onPressed: () => Navigator.pop(context),
                 icon: const Icon(Icons.close_rounded),
                 style: IconButton.styleFrom(
-                  backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                  backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                 ),
               ),
             ],
@@ -330,7 +330,7 @@ class _SwitchRow extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: NemoColors.brandBlue,
+            activeThumbColor: NemoColors.brandBlue,
           ),
         ],
       ),
@@ -394,7 +394,7 @@ class _Divider extends StatelessWidget {
       height: 1,
       indent: 58,
       endIndent: 20,
-      color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
     );
   }
 }

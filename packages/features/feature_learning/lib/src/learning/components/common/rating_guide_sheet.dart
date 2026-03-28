@@ -29,7 +29,7 @@ class RatingGuideSheet extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -71,7 +71,7 @@ class RatingGuideSheet extends StatelessWidget {
                 onPressed: () => Navigator.pop(context),
                 icon: const Icon(Icons.close_rounded),
                 style: IconButton.styleFrom(
-                  backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                  backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                 ),
               ),
             ],
@@ -133,9 +133,9 @@ class RatingGuideSheet extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: NemoColors.brandBlue.withOpacity(isDark ? 0.15 : 0.08),
+                      color: NemoColors.brandBlue.withValues(alpha: isDark ? 0.15 : 0.08),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: NemoColors.brandBlue.withOpacity(0.1)),
+                      border: Border.all(color: NemoColors.brandBlue.withValues(alpha: 0.1)),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,7 +193,7 @@ class _Card extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
       ),
       child: child,
     );
@@ -217,7 +217,7 @@ class _RatingSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? NemoColors.surfaceCardDark : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -239,7 +239,7 @@ class _RatingSection extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: isDark ? item.textColor.withOpacity(0.2) : item.bgColor,
+                    color: isDark ? item.textColor.withValues(alpha: 0.2) : item.bgColor,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(

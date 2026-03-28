@@ -23,7 +23,7 @@ class TtsSettingsScreen extends HookConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: const Text('语音设置', style: TextStyle(fontWeight: FontWeight.bold)),
         leading: IconButton(
@@ -200,7 +200,7 @@ class _FlatSliderSettingItem extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.15),
+                  color: iconColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: iconColor, size: 22),
@@ -216,7 +216,7 @@ class _FlatSliderSettingItem extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.12),
+                  color: accentColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -233,9 +233,9 @@ class _FlatSliderSettingItem extends StatelessWidget {
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
               activeTrackColor: accentColor,
-              inactiveTrackColor: Colors.grey.withOpacity(0.2),
+              inactiveTrackColor: Colors.grey.withValues(alpha: 0.2),
               thumbColor: accentColor,
-              overlayColor: accentColor.withOpacity(0.12),
+              overlayColor: accentColor.withValues(alpha: 0.12),
               tickMarkShape: SliderTickMarkShape.noTickMark,
             ),
             child: Slider(

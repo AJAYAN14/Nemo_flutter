@@ -63,7 +63,7 @@ class _PremiumCardState extends State<PremiumCard> with SingleTickerProviderStat
     final borderRadius = widget.borderRadius ?? BorderRadius.circular(26);
     
     final shadowElevation = isDark ? 4.0 : 12.0;
-    final shadowColor = isDark ? Colors.black.withOpacity(0.5) : Colors.black.withOpacity(0.06);
+    final shadowColor = isDark ? Colors.black.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.06);
 
     Widget card = Container(
       margin: widget.margin,
@@ -71,7 +71,7 @@ class _PremiumCardState extends State<PremiumCard> with SingleTickerProviderStat
         color: containerColor,
         borderRadius: borderRadius,
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
           width: 0.5,
         ),
         boxShadow: [
@@ -139,7 +139,7 @@ class SquircleListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = iconColor ?? theme.colorScheme.primary;
-    final bgColor = iconBgColor ?? color.withOpacity(0.15);
+    final bgColor = iconBgColor ?? color.withValues(alpha: 0.15);
 
     return InkWell(
       onTap: onClick,
@@ -185,7 +185,7 @@ class SquircleListItem extends StatelessWidget {
                     Icon(
                       Icons.arrow_forward_ios_rounded,
                       size: 14,
-                      color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                     ),
               ],
             ),
@@ -196,7 +196,7 @@ class SquircleListItem extends StatelessWidget {
               child: Divider(
                 height: 0.5,
                 thickness: 0.5,
-                color: theme.colorScheme.outlineVariant.withOpacity(0.2),
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
               ),
             ),
         ],

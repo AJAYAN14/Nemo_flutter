@@ -86,12 +86,12 @@ class _SRSRatingButtonState extends State<SRSRatingButton> with SingleTickerProv
               color: bgColor,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: textColor.withOpacity(0.1),
+                color: textColor.withValues(alpha: 0.1),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: (isDark ? Colors.black : textColor).withOpacity(0.08),
+                  color: (isDark ? Colors.black : textColor).withValues(alpha: 0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -112,7 +112,7 @@ class _SRSRatingButtonState extends State<SRSRatingButton> with SingleTickerProv
                   Text(
                     widget.interval!,
                     style: TextStyle(
-                      color: textColor.withOpacity(0.7),
+                      color: textColor.withValues(alpha: 0.7),
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),

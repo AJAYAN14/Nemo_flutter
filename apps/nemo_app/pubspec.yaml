@@ -42,6 +42,8 @@ dependencies:
     path: ../../packages/core/core_domain
   core_audio:
     path: ../../packages/core/core_audio
+  core_prefs:
+    path: ../../packages/core/core_prefs
   feature_learning:
     path: ../../packages/features/feature_learning
   feature_library:
@@ -60,6 +62,7 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:

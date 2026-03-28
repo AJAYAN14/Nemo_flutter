@@ -39,6 +39,7 @@ class _TestResultScreenState extends State<TestResultScreen> {
     
     if (widget.result.score > 85) {
       await Future.delayed(const Duration(milliseconds: 150));
+      if (!mounted) return;
       HapticFeedback.mediumImpact();
       
       Confetti.launch(
@@ -150,7 +151,7 @@ class _TestResultScreenState extends State<TestResultScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer.withOpacity(0.9),
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
@@ -158,7 +159,7 @@ class _TestResultScreenState extends State<TestResultScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(ratingIcon, color: theme.colorScheme.onPrimaryContainer, size: 32),
@@ -178,7 +179,7 @@ class _TestResultScreenState extends State<TestResultScreen> {
                 Text(
                   quote,
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer.withOpacity(0.8),
+                    color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -242,7 +243,7 @@ class _TestResultScreenState extends State<TestResultScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Theme.of(context).scaffoldBackgroundColor.withOpacity(0),
+              Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0),
               Theme.of(context).scaffoldBackgroundColor,
             ],
           ),

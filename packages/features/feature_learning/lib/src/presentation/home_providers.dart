@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:core_prefs/core_prefs.dart';
 import 'package:core_storage/core_storage.dart';
 import 'package:core_domain/core_domain.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../mock/home_mock_data.dart';
@@ -72,7 +73,7 @@ class HomeViewModel {
 }
 
 @riverpod
-FutureOr<HomeViewModel> homeViewModel(HomeViewModelRef ref) async {
+FutureOr<HomeViewModel> homeViewModel(Ref ref) async {
   final now = DateTime.now();
   final mode = ref.watch(learningModeNotifierProvider);
   final selectedLevel = ref.watch(selectedLevelNotifierProvider);

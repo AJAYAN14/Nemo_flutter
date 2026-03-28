@@ -63,7 +63,7 @@ class CardMatchingScreen extends HookConsumerWidget {
     final isTimeLow = state.timeRemainingSeconds <= 60;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Column(
         children: [
           CardMatchingTestHeader(

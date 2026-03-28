@@ -83,7 +83,7 @@ class AccountManagementScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: const Text('账户管理', style: TextStyle(fontWeight: FontWeight.bold)),
         leading: IconButton(
@@ -245,7 +245,7 @@ class AccountManagementScreen extends ConsumerWidget {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red,
                       backgroundColor: Colors.transparent,
-                      side: BorderSide(color: Colors.red.withOpacity(0.5)),
+                      side: BorderSide(color: Colors.red.withValues(alpha: 0.5)),
                       shape: const StadiumBorder(),
                     ),
                     child: const Text('退出登录', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -272,7 +272,7 @@ class _SettingsDivider extends StatelessWidget {
       child: Divider(
         height: 1,
         thickness: 0.5,
-        color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+        color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
       ),
     );
   }
@@ -302,7 +302,7 @@ class _SyncStatusIndicator extends StatelessWidget {
     return Icon(
       Icons.arrow_forward_ios_rounded,
       size: 14,
-      color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3),
+      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
     );
   }
 }

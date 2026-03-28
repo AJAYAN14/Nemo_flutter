@@ -55,7 +55,7 @@ class PremiumSettingsItem extends StatelessWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.15),
+                    color: iconColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: iconColor, size: 22),
@@ -87,7 +87,7 @@ class PremiumSettingsItem extends StatelessWidget {
                   Icon(
                     Icons.arrow_forward_ios_rounded,
                     size: 14,
-                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                   ),
               ],
             ),
@@ -98,7 +98,7 @@ class PremiumSettingsItem extends StatelessWidget {
               child: Divider(
                 height: 0.5,
                 thickness: 0.5,
-                color: theme.colorScheme.outlineVariant.withOpacity(0.2),
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
               ),
             ),
         ],
@@ -261,7 +261,7 @@ class _SelectionBottomSheetLayout extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.15),
+                    color: accentColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: accentColor, size: 20),
@@ -289,7 +289,7 @@ class _SelectionBottomSheetLayout extends StatelessWidget {
           
           Divider(
             height: 1,
-            color: theme.colorScheme.outlineVariant.withOpacity(0.2),
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
           ),
           const SizedBox(height: 16),
           
@@ -320,7 +320,7 @@ class _GoalSelectionItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final backgroundColor = isSelected ? color.withOpacity(0.12) : Colors.transparent;
+    final backgroundColor = isSelected ? color.withValues(alpha: 0.12) : Colors.transparent;
     final textColor = isSelected ? color : theme.colorScheme.onSurface;
 
     return Padding(
@@ -407,7 +407,7 @@ class VoiceSelectionBottomSheet extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.15),
+                    color: accentColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.record_voice_over_rounded, color: accentColor, size: 20),
@@ -420,7 +420,7 @@ class VoiceSelectionBottomSheet extends StatelessWidget {
               ],
             ),
           ),
-          Divider(color: theme.colorScheme.outlineVariant.withOpacity(0.2)),
+          Divider(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2)),
           
           if (isLoading)
             const Padding(
@@ -509,7 +509,7 @@ class _VoiceItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final backgroundColor = isSelected ? color.withOpacity(0.12) : theme.colorScheme.surfaceVariant.withOpacity(0.1);
+    final backgroundColor = isSelected ? color.withValues(alpha: 0.12) : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.1);
     
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -521,7 +521,7 @@ class _VoiceItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: isSelected ? color.withOpacity(0.5) : Colors.transparent),
+            border: Border.all(color: isSelected ? color.withValues(alpha: 0.5) : Colors.transparent),
           ),
           child: Row(
             children: [
@@ -529,7 +529,7 @@ class _VoiceItem extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: isSelected ? color.withOpacity(0.2) : theme.colorScheme.surfaceVariant,
+                    color: isSelected ? color.withValues(alpha: 0.2) : theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(Icons.person_rounded, color: isSelected ? color : Colors.grey, size: 20),

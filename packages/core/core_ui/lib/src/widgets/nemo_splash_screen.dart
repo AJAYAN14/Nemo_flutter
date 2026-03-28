@@ -93,7 +93,7 @@ class _NemoSplashScreenState extends ConsumerState<NemoSplashScreen> {
                         width: 160,
                         height: 160,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.12),
+                          color: Colors.white.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -115,7 +115,7 @@ class _NemoSplashScreenState extends ConsumerState<NemoSplashScreen> {
                       Text(
                         '解锁日语新视界',
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               fontWeight: FontWeight.w600,
                               letterSpacing: 1,
                             ),
@@ -146,7 +146,7 @@ class _NemoSplashScreenState extends ConsumerState<NemoSplashScreen> {
                     Text(
                       '正在准备学习资料...',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -164,7 +164,7 @@ class _NemoSplashScreenState extends ConsumerState<NemoSplashScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.2),
+                    color: Colors.red.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(

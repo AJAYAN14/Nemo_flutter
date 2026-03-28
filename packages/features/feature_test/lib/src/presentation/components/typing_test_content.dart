@@ -32,7 +32,7 @@ class TypingTestContent extends HookConsumerWidget {
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onBackground,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
             textAlign: TextAlign.center,
           ),
@@ -166,7 +166,7 @@ class _TypingInput extends HookWidget {
         ),
         filled: true,
         fillColor: question.isAnswered 
-            ? colorScheme.surfaceVariant.withOpacity(0.3) 
+            ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.3) 
             : colorScheme.surface,
       ),
       textAlign: TextAlign.start,
@@ -194,7 +194,7 @@ class _TypingFeedback extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: themeColor.withOpacity(0.08),
+          color: themeColor.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: themeColor, width: 1),
         ),

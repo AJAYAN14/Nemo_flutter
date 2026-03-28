@@ -60,7 +60,7 @@ class TestSettingsScreen extends HookConsumerWidget {
     final showCustomTimeLimitDialog = useState(false);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text(pageTitle, style: const TextStyle(fontWeight: FontWeight.w900)),
         leading: IconButton(
@@ -403,7 +403,7 @@ class _SettingsBottomSheetContent extends ConsumerWidget {
              Container(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+                color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -766,7 +766,7 @@ class _DistributionCounterRow extends StatelessWidget {
           ),
           Container(
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(

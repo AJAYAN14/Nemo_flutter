@@ -243,7 +243,7 @@ class _TestStatsCarouselState extends State<_TestStatsCarousel> {
                 decoration: BoxDecoration(
                   color: active
                       ? pages[_currentPage].accent
-                      : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.2),
+                      : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
@@ -253,7 +253,7 @@ class _TestStatsCarouselState extends State<_TestStatsCarousel> {
               '${_currentPage + 1}/${pages.length}',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                   ),
             ),
           ],
@@ -401,7 +401,7 @@ class _CompactStatsPage extends StatelessWidget {
                       ringLabel,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                           ),
                     ),
                   ],
@@ -469,7 +469,7 @@ class _CompactStatItem extends StatelessWidget {
                   unit,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                       ),
                 ),
               ],
@@ -479,7 +479,7 @@ class _CompactStatItem extends StatelessWidget {
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                 ),
           ),
         ],
@@ -514,7 +514,7 @@ class _DashboardTile extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 24),
@@ -579,7 +579,7 @@ class _DashboardBanner extends StatelessWidget {
             child: Icon(
               icon,
               size: 100,
-              color: color.withOpacity(0.08),
+              color: color.withValues(alpha: 0.08),
             ),
           ),
           Column(
