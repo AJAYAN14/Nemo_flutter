@@ -371,6 +371,8 @@ class LearningDao extends DatabaseAccessor<NemoDatabase> with _$LearningDaoMixin
 
   Future<List<LearningProgressData>> getAllProgress() => select(learningProgress).get();
 
+  Stream<List<LearningProgressData>> watchAllProgress() => select(learningProgress).watch();
+
   Future<List<LearningProgressData>> getDueItems(int now, {String? itemType}) {
     final query = select(learningProgress)
       ..where((t) => t.dueTime.isSmallerOrEqualValue(BigInt.from(now)))
@@ -435,6 +437,27 @@ class LearningDao extends DatabaseAccessor<NemoDatabase> with _$LearningDaoMixin
     
     final result = await query.get();
     return result.length;
+  }
+
+  Stream<int> watchNewItemsCount(String itemType, int startMillis, int endMillis) {
+    final query = select(learningProgress)
+      ..where((t) => t.itemType.equals(itemType))
+      ..where((t) => t.firstLearned.isBetweenValues(BigInt.from(startMillis), BigInt.from(endMillis)));
+    return query.watch().map((list) => list.length);
+  }
+
+  Stream<int> watchReviewedItemsCount(String itemType, int startMillis, int endMillis) {
+    final query = select(learningProgress)
+      ..where((t) => t.itemType.equals(itemType))
+      ..where((t) => t.lastReviewed.isBetweenValues(BigInt.from(startMillis), BigInt.from(endMillis)));
+    return query.watch().map((list) => list.length);
+  }
+
+  Stream<int> watchDueItemsCount(String itemType, int now) {
+    final query = select(learningProgress)
+      ..where((t) => t.itemType.equals(itemType))
+      ..where((t) => t.dueTime.isSmallerOrEqualValue(BigInt.from(now)));
+    return query.watch().map((list) => list.length);
   }
 
   Future<List<LearningProgressData>> getSkippedItems({String? itemType}) {
@@ -508,37 +531,65 @@ class StudyRecordDao extends DatabaseAccessor<NemoDatabase> with _$StudyRecordDa
 
   Future<void> incrementLearnedWords(int date, int count) async {
     await _ensureRecordExists(date);
-    await customStatement('UPDATE study_records SET learned_words = learned_words + ? WHERE date = ?', [count, date]);
+    await customUpdate(
+      'UPDATE study_records SET learned_words = learned_words + ? WHERE date = ?',
+      variables: [Variable<int>(count), Variable<int>(date)],
+      updates: {studyRecords},
+    );
   }
 
   Future<void> incrementLearnedGrammars(int date, int count) async {
     await _ensureRecordExists(date);
-    await customStatement('UPDATE study_records SET learned_grammars = learned_grammars + ? WHERE date = ?', [count, date]);
+    await customUpdate(
+      'UPDATE study_records SET learned_grammars = learned_grammars + ? WHERE date = ?',
+      variables: [Variable<int>(count), Variable<int>(date)],
+      updates: {studyRecords},
+    );
   }
 
   Future<void> incrementReviewedWords(int date, int count) async {
     await _ensureRecordExists(date);
-    await customStatement('UPDATE study_records SET reviewed_words = reviewed_words + ? WHERE date = ?', [count, date]);
+    await customUpdate(
+      'UPDATE study_records SET reviewed_words = reviewed_words + ? WHERE date = ?',
+      variables: [Variable<int>(count), Variable<int>(date)],
+      updates: {studyRecords},
+    );
   }
 
   Future<void> incrementReviewedGrammars(int date, int count) async {
     await _ensureRecordExists(date);
-    await customStatement('UPDATE study_records SET reviewed_grammars = reviewed_grammars + ? WHERE date = ?', [count, date]);
+    await customUpdate(
+      'UPDATE study_records SET reviewed_grammars = reviewed_grammars + ? WHERE date = ?',
+      variables: [Variable<int>(count), Variable<int>(date)],
+      updates: {studyRecords},
+    );
   }
 
   Future<void> incrementSkippedWords(int date, int count) async {
     await _ensureRecordExists(date);
-    await customStatement('UPDATE study_records SET skipped_words = skipped_words + ? WHERE date = ?', [count, date]);
+    await customUpdate(
+      'UPDATE study_records SET skipped_words = skipped_words + ? WHERE date = ?',
+      variables: [Variable<int>(count), Variable<int>(date)],
+      updates: {studyRecords},
+    );
   }
 
   Future<void> incrementSkippedGrammars(int date, int count) async {
     await _ensureRecordExists(date);
-    await customStatement('UPDATE study_records SET skipped_grammars = skipped_grammars + ? WHERE date = ?', [count, date]);
+    await customUpdate(
+      'UPDATE study_records SET skipped_grammars = skipped_grammars + ? WHERE date = ?',
+      variables: [Variable<int>(count), Variable<int>(date)],
+      updates: {studyRecords},
+    );
   }
 
   Future<void> incrementTestCount(int date, int count) async {
     await _ensureRecordExists(date);
-    await customStatement('UPDATE study_records SET test_count = test_count + ? WHERE date = ?', [count, date]);
+    await customUpdate(
+      'UPDATE study_records SET test_count = test_count + ? WHERE date = ?',
+      variables: [Variable<int>(count), Variable<int>(date)],
+      updates: {studyRecords},
+    );
   }
 }
 
