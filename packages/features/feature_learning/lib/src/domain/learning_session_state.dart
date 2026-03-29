@@ -47,11 +47,13 @@ class SessionSnapshot {
     required this.items,
     required this.currentIndex,
     required this.completedCount,
+    required this.completedToday,
     required this.previousProgress,
   });
 
   final List<LearningItem> items;
   final int currentIndex;
   final int completedCount;
+  final int completedToday;
   final LearningProgressData? previousProgress;
 }

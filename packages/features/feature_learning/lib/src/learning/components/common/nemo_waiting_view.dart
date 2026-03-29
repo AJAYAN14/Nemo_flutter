@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:core_designsystem/core_designsystem.dart';
+import 'package:core_domain/core_domain.dart';
 
 /// 阈值等待界面 (1:1 还原 Kotlin WaitingContent)
 /// 
@@ -18,12 +19,14 @@ class NemoWaitingView extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 实时计算剩余秒数
-    final remainingSeconds = useState(until.difference(DateTime.now()).inSeconds);
+    // 实时计算剩余秒数（使用补偿后的当前时间）
+    final now = DateTime.fromMillisecondsSinceEpoch(DateTimeUtils.getCurrentCompensatedMillis());
+    final remainingSeconds = useState(until.difference(now).inSeconds);
 
     useEffect(() {
       final timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        final diff = until.difference(DateTime.now()).inSeconds;
+        final now = DateTime.fromMillisecondsSinceEpoch(DateTimeUtils.getCurrentCompensatedMillis());
+        final diff = until.difference(now).inSeconds;
         if (diff <= 0) {
           timer.cancel();
           onContinue(); // 时间到，自动继续

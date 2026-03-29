@@ -21,6 +21,26 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
     final today = DateTimeUtils.getLearningDay(resetHour);
     final sessionMode = '${mode}_review';
 
+    // [1:1 Parity] 获取今日已学总数
+    final initialCompletedToday = await repository.getTodayCompletedCount(mode);
+
+    // [1:1 Parity] 监听目标变化并实时提示
+    if (mode == 'word') {
+      ref.listen(wordGoalProvider, (previous, next) {
+        final value = state.valueOrNull;
+        if (value != null && value.completedToday >= next && value.items.isNotEmpty) {
+          state = AsyncData(value.copyWith(message: '今日目标已达标！可继续学习或退出'));
+        }
+      });
+    } else {
+      ref.listen(grammarGoalProvider, (previous, next) {
+        final value = state.valueOrNull;
+        if (value != null && value.completedToday >= next && value.items.isNotEmpty) {
+          state = AsyncData(value.copyWith(message: '今日目标已达标！可继续学习或退出'));
+        }
+      });
+    }
+
     final session = prefs.getLearningSession(sessionMode);
     if (session != null) {
       final savedIds = session['ids'] as List<String>;
@@ -31,7 +51,7 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
         final items = await repository.getItemsByIds(savedIds);
         if (items.isNotEmpty) {
           final index = savedIndex.clamp(0, items.length - 1);
-          return _buildStateWithItems(items, index, 0);
+          return _buildStateWithItems(items, index, 0, initialCompletedToday);
         }
       }
     }
@@ -39,7 +59,7 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
     final items = await repository.getReviewQueue(mode);
     
     if (items.isEmpty) {
-      final now = DateTime.now().millisecondsSinceEpoch;
+      final now = DateTimeUtils.getCurrentCompensatedMillis();
       final limitMinutes = ref.watch(learnAheadLimitProvider);
       
       final upcoming = await repository.getUpcomingItems(
@@ -51,7 +71,7 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
       if (upcoming.isNotEmpty) {
         final waitingUntilMillis = upcoming.first.progress?.dueTime.toInt() ?? 0;
         if (waitingUntilMillis > now) {
-          return _buildStateWithItems([], 0, 0).copyWith(
+          return _buildStateWithItems([], 0, 0, initialCompletedToday).copyWith(
             sessionState: LearningSessionWaiting(
               waitingUntil: DateTime.fromMillisecondsSinceEpoch(waitingUntilMillis),
             ),
@@ -60,10 +80,10 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
       }
     }
 
-    return _buildStateWithItems(items, 0, 0);
+    return _buildStateWithItems(items, 0, 0, initialCompletedToday);
   }
 
-  SrsStudyUiModel _buildStateWithItems(List<LearningItem> items, int currentIndex, int completedCount) {
+  SrsStudyUiModel _buildStateWithItems(List<LearningItem> items, int currentIndex, int completedCount, int completedToday) {
     if (items.isEmpty) {
       _clearSession();
       return SrsStudyUiModel(
@@ -72,6 +92,7 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
         currentIndex: 0,
         totalItems: completedCount,
         completedCount: completedCount,
+        completedToday: completedToday,
       );
     }
 
@@ -91,6 +112,7 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
       currentIndex: currentIndex,
       totalItems: items.length + completedCount,
       completedCount: completedCount,
+      completedToday: completedToday,
       ratingIntervals: intervals,
     );
   }
@@ -173,6 +195,7 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
       items: List.from(value.items),
       currentIndex: value.currentIndex,
       completedCount: value.completedCount,
+      completedToday: value.completedToday,
       previousProgress: item.progress,
     );
 
@@ -189,8 +212,13 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
       nextItems.add(reItem);
     }
 
-    state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount + (result.isRequeue ? 0 : 1))
-      .copyWith(
+    final isLearnSuccess = !result.isRequeue;
+    state = AsyncData(_buildStateWithItems(
+      nextItems, 
+      0, 
+      value.completedCount + (isLearnSuccess ? 1 : 0),
+      value.completedToday + (isLearnSuccess ? 1 : 0),
+    ).copyWith(
         lastSnapshot: snapshot,
         revealedItemIds: {...value.revealedItemIds}..remove(id),
         message: result.isLeech ? '钉子户已自动处理' : null,
@@ -208,7 +236,7 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
 
     await ref.read(learningRepositoryProvider).undoUpdateProgress(id, type, snapshot.previousProgress);
 
-    state = AsyncData(_buildStateWithItems(snapshot.items, snapshot.currentIndex, snapshot.completedCount)
+    state = AsyncData(_buildStateWithItems(snapshot.items, snapshot.currentIndex, snapshot.completedCount, snapshot.completedToday)
       .copyWith(lastSnapshot: null, showUndoHint: false));
   }
 
@@ -232,7 +260,7 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
     final nextItems = List<LearningItem>.from(value.items);
     nextItems.removeAt(value.currentIndex);
 
-    state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount));
+    state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount, value.completedToday));
   }
 
   Future<void> buryCurrent() async {
@@ -249,7 +277,7 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
     final nextItems = List<LearningItem>.from(value.items);
     nextItems.removeAt(value.currentIndex);
 
-    state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount));
+    state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount, value.completedToday));
   }
 
   void onPageChanged(int index) {
@@ -257,7 +285,7 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
     if (value == null || index < 0 || index >= value.items.length) {
       return;
     }
-    state = AsyncData(_buildStateWithItems(value.items, index, value.completedCount));
+    state = AsyncData(_buildStateWithItems(value.items, index, value.completedCount, value.completedToday));
   }
 
   void _saveSession(List<LearningItem> items, int currentIndex) {
@@ -292,7 +320,7 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
     state = const AsyncLoading();
     
     final repository = ref.read(learningRepositoryProvider);
-    final now = DateTime.now().millisecondsSinceEpoch;
+    final now = DateTimeUtils.getCurrentCompensatedMillis();
     
     // 获取距离现在最近的项目，不限制时间范围 (设置 1 年)
     final upcoming = await repository.getUpcomingItems(
@@ -304,10 +332,10 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
     if (upcoming.isNotEmpty) {
       // 这里的逻辑是：只取第一个即将到期的项目作为 Session
       // 当这个项目完成后，Provider 会再次 build 并检查是否有新的到期项目
-      state = AsyncData(_buildStateWithItems([upcoming.first], 0, 0));
+      state = AsyncData(_buildStateWithItems([upcoming.first], 0, 0, value.completedToday));
     } else {
       // 如果真的没有任何未来项目，则重置回空状态
-      state = AsyncData(_buildStateWithItems([], 0, 0));
+      state = AsyncData(_buildStateWithItems([], 0, 0, value.completedToday));
     }
   }
 }

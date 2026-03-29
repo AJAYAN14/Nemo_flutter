@@ -1,24 +1,17 @@
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:core_domain/core_domain.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'learning_calendar_providers.dart';
 
-class LearningCalendarScreen extends StatefulWidget {
+class LearningCalendarScreen extends ConsumerWidget {
   const LearningCalendarScreen({super.key});
 
   @override
-  State<LearningCalendarScreen> createState() => _LearningCalendarScreenState();
-}
-
-class _LearningCalendarScreenState extends State<LearningCalendarScreen> {
-  DateTime _selectedDate = DateTime.now();
-
-  @override
-  Widget build(BuildContext context) {
-    // Mock data
-    const todayLearnedWords = 12;
-    const todayLearnedGrammars = 2;
-    const dueCount = 84;
-    const completedCount = 38;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(learningCalendarNotifierProvider);
+    final notifier = ref.read(learningCalendarNotifierProvider.notifier);
 
     return Scaffold(
       backgroundColor: NemoColors.bgBase,
@@ -37,27 +30,29 @@ class _LearningCalendarScreenState extends State<LearningCalendarScreen> {
         children: [
           // 1. 今日概览
           const _SectionTitle('今日概览'),
-          _TodaySummaryCard(
-            learnedWords: todayLearnedWords,
-            learnedGrammars: todayLearnedGrammars,
-            dueCount: dueCount,
-            completedCount: completedCount,
-          ),
+          _TodaySummaryCard(stats: state.todayStats),
           
           const SizedBox(height: 24),
 
           // 2. 本周进度 (Week View)
           const _SectionTitle('本周进度'),
           _WeekViewCard(
-            selectedDate: _selectedDate,
-            onDateSelected: (date) => setState(() => _selectedDate = date),
+            selectedDate: state.selectedDate,
+            weekForecast: state.weekForecast,
+            onDateSelected: (date) => notifier.onDateSelected(date),
           ),
 
           const SizedBox(height: 24),
 
           // 3. 详细记录 (Day Detail)
           const _SectionTitle('详细记录'),
-          _DayDetailPanel(selectedDate: _selectedDate),
+          _DayDetailPanel(
+            selectedDate: state.selectedDate,
+            todayEpochDay: state.todayEpochDay,
+            todayStats: state.todayStats,
+            selectedDateRecord: state.selectedDateRecord,
+            weekForecast: state.weekForecast,
+          ),
         ],
       ),
     );
@@ -84,20 +79,16 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _TodaySummaryCard extends StatelessWidget {
-  const _TodaySummaryCard({
-    required this.learnedWords,
-    required this.learnedGrammars,
-    required this.dueCount,
-    required this.completedCount,
-  });
-
-  final int learnedWords;
-  final int learnedGrammars;
-  final int dueCount;
-  final int completedCount;
+  const _TodaySummaryCard({this.stats});
+  final LearningStats? stats;
 
   @override
   Widget build(BuildContext context) {
+    final learnedWords = stats?.todayLearnedWords ?? 0;
+    final learnedGrammars = stats?.todayLearnedGrammars ?? 0;
+    final dueCount = stats?.totalDue ?? 0;
+    final completedCount = stats?.todayTotalReviewed ?? 0;
+
     return PremiumCard(
       child: Column(
         children: [
@@ -134,7 +125,7 @@ class _TodaySummaryCard extends StatelessWidget {
               Expanded(
                 child: _StatItem(
                   value: '$completedCount',
-                  label: '已完成',
+                  label: '今日已复',
                   color: const Color(0xFF6366F1), // Indigo
                 ),
               ),
@@ -193,18 +184,21 @@ class _StatItem extends StatelessWidget {
 class _WeekViewCard extends StatelessWidget {
   const _WeekViewCard({
     required this.selectedDate,
+    required this.weekForecast,
     required this.onDateSelected,
   });
 
   final DateTime selectedDate;
+  final List<ReviewForecast> weekForecast;
   final ValueChanged<DateTime> onDateSelected;
 
   @override
   Widget build(BuildContext context) {
+    // 1:1 Parity check: Use current time to generate the 7-day window
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     
-    // Generate 7 days starting from today
+    // Generate 7 days starting from today (Fixed to today in Kotlin)
     final days = List.generate(7, (i) => today.add(Duration(days: i)));
     final weekDayLabels = ['一', '二', '三', '四', '五', '六', '日'];
 
@@ -217,6 +211,11 @@ class _WeekViewCard extends StatelessWidget {
               final isToday = date.day == today.day && date.month == today.month;
               final isSelected = date.day == selectedDate.day && date.month == selectedDate.month;
               
+              // Find forecast for this date
+              final epochDay = DateTimeUtils.dateToEpochDay(date);
+              final forecast = weekForecast.where((f) => f.date == epochDay).firstOrNull;
+              final hasActivity = (forecast?.count ?? 0) > 0;
+
               // Get day of week (Monday=1, Sunday=7)
               final label = weekDayLabels[date.weekday - 1];
 
@@ -225,6 +224,7 @@ class _WeekViewCard extends StatelessWidget {
                 dayNumber: '${date.day}',
                 isToday: isToday,
                 isSelected: isSelected,
+                hasActivity: hasActivity,
                 onTap: () => onDateSelected(date),
               );
             }).toList(),
@@ -257,6 +257,7 @@ class _WeekDayItem extends StatelessWidget {
     required this.dayNumber,
     required this.isToday,
     required this.isSelected,
+    required this.hasActivity,
     required this.onTap,
   });
 
@@ -264,6 +265,7 @@ class _WeekDayItem extends StatelessWidget {
   final String dayNumber;
   final bool isToday;
   final bool isSelected;
+  final bool hasActivity;
   final VoidCallback onTap;
 
   @override
@@ -275,11 +277,11 @@ class _WeekDayItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 36,
+        width: 40,
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? NemoColors.brandBlue : (isToday ? NemoColors.brandBlue.withValues(alpha: 0.1) : Colors.transparent),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
           children: [
@@ -300,6 +302,17 @@ class _WeekDayItem extends StatelessWidget {
                 color: color,
               ),
             ),
+            if (hasActivity && !isSelected) ...[
+              const SizedBox(height: 4),
+              Container(
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isToday ? NemoColors.brandBlue : NemoColors.accentOrange,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -308,61 +321,138 @@ class _WeekDayItem extends StatelessWidget {
 }
 
 class _DayDetailPanel extends StatelessWidget {
-  const _DayDetailPanel({required this.selectedDate});
+  const _DayDetailPanel({
+    required this.selectedDate,
+    required this.todayEpochDay,
+    this.todayStats,
+    this.selectedDateRecord,
+    required this.weekForecast,
+  });
+
   final DateTime selectedDate;
+  final int todayEpochDay;
+  final LearningStats? todayStats;
+  final StudyRecord? selectedDateRecord;
+  final List<ReviewForecast> weekForecast;
 
   @override
   Widget build(BuildContext context) {
-    // Mock check for data
-    final hasData = selectedDate.day % 2 == 0;
+    // 1:1 Restoration: Determine date state
+    final selectedEpochDay = DateTimeUtils.dateToEpochDay(selectedDate);
+    
+    if (selectedEpochDay < todayEpochDay) {
+      // Past Date: Show History
+      final record = selectedDateRecord;
+      if (record == null || record.totalActivity == 0) {
+        return _EmptyState(text: '该日无学习记录');
+      }
+      return PremiumCard(
+        child: Column(
+          children: [
+            _DetailSquircleItem(
+              icon: Icons.history_rounded,
+              color: NemoColors.accentIndigo,
+              label: '历史复习',
+              value: '${record.totalReviewed} 项',
+            ),
+            _DetailSquircleItem(
+              icon: Icons.book_rounded,
+              color: NemoColors.brandBlue,
+              label: '新学单词',
+              value: '${record.learnedWords} 个',
+            ),
+            _DetailSquircleItem(
+              icon: Icons.edit_note_rounded,
+              color: NemoColors.accentPurple,
+              label: '新学语法',
+              value: '${record.learnedGrammars} 条',
+              showDivider: false,
+            ),
+          ],
+        ),
+      );
+    } else if (selectedEpochDay == todayEpochDay) {
+      // Today: Show Today Stats
+      if (todayStats == null || todayStats!.todayTotalLearned + todayStats!.todayTotalReviewed == 0) {
+        return _EmptyState(text: '今日尚未开始学习');
+      }
+      return PremiumCard(
+        child: Column(
+          children: [
+            _DetailSquircleItem(
+              icon: Icons.play_arrow_rounded,
+              color: NemoColors.accentOrange,
+              label: '今日已复',
+              value: '${todayStats!.todayTotalReviewed} 项',
+            ),
+            _DetailSquircleItem(
+              icon: Icons.book_rounded,
+              color: NemoColors.brandBlue,
+              label: '新学单词',
+              value: '${todayStats!.todayLearnedWords} 个',
+            ),
+            _DetailSquircleItem(
+              icon: Icons.edit_note_rounded,
+              color: NemoColors.accentPurple,
+              label: '新学语法',
+              value: '${todayStats!.todayLearnedGrammars} 条',
+              showDivider: false,
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Future: Show Forecast
+      final forecast = weekForecast.where((f) => f.date == selectedEpochDay).firstOrNull;
+      if (forecast == null || forecast.count == 0) {
+        return _EmptyState(text: '该日暂无复习计划');
+      }
+      return PremiumCard(
+        child: Column(
+          children: [
+            _DetailSquircleItem(
+              icon: Icons.event_available_rounded,
+              color: NemoColors.accentOrange,
+              label: '预计复习',
+              value: '${forecast.count} 项',
+              showDivider: false,
+            ),
+          ],
+        ),
+      );
+    }
+  }
+}
 
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
     return PremiumCard(
-      child: hasData 
-        ? Column(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: Center(
+          child: Column(
             children: [
-              _DetailSquircleItem(
-                icon: Icons.play_arrow_rounded,
-                color: NemoColors.accentOrange,
-                label: '待复习',
-                value: '84 项',
+              Icon(
+                Icons.event_note_rounded,
+                size: 48,
+                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
               ),
-              _DetailSquircleItem(
-                icon: Icons.book_rounded,
-                color: NemoColors.brandBlue,
-                label: '新学单词',
-                value: '12 个',
-              ),
-              _DetailSquircleItem(
-                icon: Icons.edit_note_rounded,
-                color: NemoColors.accentPurple,
-                label: '新学语法',
-                value: '2 条',
-                showDivider: false,
+              const SizedBox(height: 12),
+              Text(
+                text,
+                style: const TextStyle(
+                  color: NemoColors.textMuted,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
-          )
-        : Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    size: 48,
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    '该日无学习记录',
-                    style: TextStyle(
-                      color: NemoColors.textMuted,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
+        ),
+      ),
     );
   }
 }

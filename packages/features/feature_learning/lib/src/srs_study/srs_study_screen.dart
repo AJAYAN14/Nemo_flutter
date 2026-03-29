@@ -92,7 +92,7 @@ class SrsStudyScreen extends HookConsumerWidget {
           backgroundColor: isDark ? NemoColors.bgBaseDark : NemoColors.bgBase,
           appBar: NemoLearnHeader(
             title: activeState.item is WordItem ? '单词学习' : '语法学习',
-            remainingCount: session.items.length - session.completedCount,
+            remainingCount: session.items.length,
             progress: session.progress,
             onClose: () => Navigator.of(context).pop(),
             onPrev: currentIndex > 0

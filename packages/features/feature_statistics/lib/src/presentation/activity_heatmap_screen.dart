@@ -2,6 +2,7 @@ import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:core_domain/core_domain.dart';
 
 class ActivityHeatmapScreen extends StatefulWidget {
   const ActivityHeatmapScreen({super.key});
@@ -177,7 +178,7 @@ class _LearningHeatmapCard extends StatelessWidget {
 
                     return GestureDetector(
                       onTap: () {
-                        final date = DateTime.now().subtract(Duration(days: weekIndex * 7 + dayIndex));
+                        final date = DateTime.fromMillisecondsSinceEpoch(DateTimeUtils.getCurrentCompensatedMillis()).subtract(Duration(days: weekIndex * 7 + dayIndex));
                         onDaySelected(date, count);
                       },
                       child: Container(

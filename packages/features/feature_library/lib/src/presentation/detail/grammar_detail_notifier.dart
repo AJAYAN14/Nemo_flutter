@@ -63,7 +63,7 @@ class GrammarDetail extends _$GrammarDetail {
           isDialog: e.isDialog,
         )).toList(),
       )).toList(),
-      lastModifiedTime: DateTime.now().millisecondsSinceEpoch,
+      lastModifiedTime: DateTimeUtils.getCurrentCompensatedMillis(),
     );
   }
 }

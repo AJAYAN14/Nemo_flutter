@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:core_domain/core_domain.dart';
+import 'package:core_audio/core_audio.dart';
 import 'srs_rating_button.dart';
 import '../../domain/srs_scheduler.dart';
 
@@ -39,32 +41,48 @@ class SRSActionArea extends StatelessWidget {
             : Row(
                 key: const ValueKey('rating_buttons'),
                 children: [
+                  // 1:1 Parity: Again → SoundEffectPlayer.playOtherSound
                   SRSRatingButton(
                     type: SRSRatingType.again,
                     label: '重来',
                     interval: ratingIntervals?[SrsRating.again] ?? '<1m',
-                    onPressed: () => onRate(0),
+                    onPressed: () {
+                      SoundEffectService().playOtherSound();
+                      onRate(0);
+                    },
                   ),
                   const SizedBox(width: 8),
+                  // 1:1 Parity: Hard → SoundEffectPlayer.playOtherSound
                   SRSRatingButton(
                     type: SRSRatingType.hard,
                     label: '困难',
                     interval: ratingIntervals?[SrsRating.hard] ?? '1d',
-                    onPressed: () => onRate(1),
+                    onPressed: () {
+                      SoundEffectService().playOtherSound();
+                      onRate(1);
+                    },
                   ),
                   const SizedBox(width: 8),
+                  // 1:1 Parity: Good → SoundEffectPlayer.playGoodSound
                   SRSRatingButton(
                     type: SRSRatingType.good,
                     label: '良好',
                     interval: ratingIntervals?[SrsRating.good] ?? '3d',
-                    onPressed: () => onRate(2),
+                    onPressed: () {
+                      SoundEffectService().playGoodSound();
+                      onRate(2);
+                    },
                   ),
                   const SizedBox(width: 8),
+                  // 1:1 Parity: Easy → SoundEffectPlayer.playGoodSound
                   SRSRatingButton(
                     type: SRSRatingType.easy,
                     label: '简单',
                     interval: ratingIntervals?[SrsRating.easy] ?? '7d',
-                    onPressed: () => onRate(3),
+                    onPressed: () {
+                      SoundEffectService().playGoodSound();
+                      onRate(3);
+                    },
                   ),
                 ],
               ),
@@ -130,7 +148,7 @@ class _ShowAnswerButtonState extends State<_ShowAnswerButton> with SingleTickerP
 
   void _updateRemaining() {
     if (widget.revealAt == null) return;
-    final now = DateTime.now().millisecondsSinceEpoch;
+    final now = DateTimeUtils.getCurrentCompensatedMillis();
     final diff = widget.revealAt! - now;
     final sec = (diff / 1000).ceil();
     if (sec != _remainingSec) {

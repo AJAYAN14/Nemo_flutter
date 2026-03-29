@@ -77,3 +77,19 @@ class LearningProgress extends Table {
   @override
   Set<Column>? get primaryKey => {id};
 }
+
+@DataClassName('StudyRecordEntry')
+class StudyRecords extends Table {
+  IntColumn get date => integer()(); // Epoch Day as primary key
+  IntColumn get learnedWords => integer().withDefault(const Constant(0))();
+  IntColumn get learnedGrammars => integer().withDefault(const Constant(0))();
+  IntColumn get reviewedWords => integer().withDefault(const Constant(0))();
+  IntColumn get reviewedGrammars => integer().withDefault(const Constant(0))();
+  IntColumn get skippedWords => integer().withDefault(const Constant(0))();
+  IntColumn get skippedGrammars => integer().withDefault(const Constant(0))();
+  IntColumn get testCount => integer().withDefault(const Constant(0))();
+  Int64Column get timestamp => int64()(); // Creation time
+
+  @override
+  Set<Column>? get primaryKey => {date};
+}

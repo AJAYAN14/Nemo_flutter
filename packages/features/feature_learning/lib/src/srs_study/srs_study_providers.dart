@@ -18,6 +18,7 @@ class SrsStudyUiModel {
     this.revealedItemIds = const {},
     this.totalItems = 0,
     this.completedCount = 0,
+    this.completedToday = 0,
     this.ratingIntervals = const {},
     this.playingAudioId,
     this.lastSnapshot,
@@ -32,6 +33,7 @@ class SrsStudyUiModel {
   final Set<String> revealedItemIds;
   final int totalItems;
   final int completedCount;
+  final int completedToday;
   final Map<SrsRating, String> ratingIntervals;
   final String? playingAudioId;
   final SessionSnapshot? lastSnapshot;
@@ -63,6 +65,7 @@ class SrsStudyUiModel {
     Set<String>? revealedItemIds,
     int? totalItems,
     int? completedCount,
+    int? completedToday,
     Map<SrsRating, String>? ratingIntervals,
     String? playingAudioId,
     bool cancelPlayingAudio = false,
@@ -78,6 +81,7 @@ class SrsStudyUiModel {
       revealedItemIds: revealedItemIds ?? this.revealedItemIds,
       totalItems: totalItems ?? this.totalItems,
       completedCount: completedCount ?? this.completedCount,
+      completedToday: completedToday ?? this.completedToday,
       ratingIntervals: ratingIntervals ?? this.ratingIntervals,
       playingAudioId: cancelPlayingAudio ? null : (playingAudioId ?? this.playingAudioId),
       lastSnapshot: lastSnapshot ?? this.lastSnapshot,
@@ -102,6 +106,26 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
     final today = DateTimeUtils.getLearningDay(resetHour);
     final currentLevel = mode == 'word' ? ref.watch(wordLevelProvider) : ref.watch(grammarLevelProvider);
 
+    // [1:1 Parity] 获取今日已学总数
+    final initialCompletedToday = await repository.getTodayCompletedCount(mode);
+
+    // [1:1 Parity] 监听目标变化并实时提示
+    if (mode == 'word') {
+      ref.listen(wordGoalProvider, (previous, next) {
+        final value = state.valueOrNull;
+        if (value != null && value.completedToday >= next && value.items.isNotEmpty) {
+          state = AsyncData(value.copyWith(message: '今日目标已达标！可继续学习或退出'));
+        }
+      });
+    } else {
+      ref.listen(grammarGoalProvider, (previous, next) {
+        final value = state.valueOrNull;
+        if (value != null && value.completedToday >= next && value.items.isNotEmpty) {
+          state = AsyncData(value.copyWith(message: '今日目标已达标！可继续学习或退出'));
+        }
+      });
+    }
+
     final session = prefs.getLearningSession(mode);
     if (session != null) {
       final savedIds = session['ids'] as List<String>;
@@ -113,16 +137,16 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
         final items = await repository.getItemsByIds(savedIds);
         if (items.isNotEmpty) {
           final index = savedIndex.clamp(0, items.length - 1);
-          return _buildStateWithItems(items, index, 0);
+          return _buildStateWithItems(items, index, 0, initialCompletedToday);
         }
       }
     }
 
     final items = await repository.getLearningQueue(mode);
-    return _buildStateWithItems(items, 0, 0);
+    return _buildStateWithItems(items, 0, 0, initialCompletedToday);
   }
 
-  SrsStudyUiModel _buildStateWithItems(List<LearningItem> items, int currentIndex, int completedCount) {
+  SrsStudyUiModel _buildStateWithItems(List<LearningItem> items, int currentIndex, int completedCount, int completedToday) {
     if (items.isEmpty) {
       _clearSession();
       return SrsStudyUiModel(
@@ -131,12 +155,13 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
         currentIndex: 0,
         totalItems: completedCount,
         completedCount: completedCount,
+        completedToday: completedToday,
       );
     }
 
     _saveSession(items, currentIndex);
 
-    final now = DateTime.now().millisecondsSinceEpoch;
+    final now = DateTimeUtils.getCurrentCompensatedMillis();
     final learnAheadMins = ref.read(learnAheadLimitProvider);
     final learnAheadLimitMs = learnAheadMins * 60 * 1000;
 
@@ -152,6 +177,7 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
         currentIndex: currentIndex,
         totalItems: items.length + completedCount,
         completedCount: completedCount,
+        completedToday: completedToday,
       );
     }
 
@@ -172,6 +198,7 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
       currentIndex: currentIndex,
       totalItems: items.length + completedCount,
       completedCount: completedCount,
+      completedToday: completedToday,
       ratingIntervals: intervals,
       showAnswerAvailableAt: revealAt,
     );
@@ -182,7 +209,7 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
     if (value == null || index < 0 || index >= value.items.length) {
       return;
     }
-    state = AsyncData(_buildStateWithItems(value.items, index, value.completedCount));
+    state = AsyncData(_buildStateWithItems(value.items, index, value.completedCount, value.completedToday));
   }
 
   Future<void> showAnswer(String id) async {
@@ -261,6 +288,7 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
       items: List.from(value.items),
       currentIndex: value.currentIndex,
       completedCount: value.completedCount,
+      completedToday: value.completedToday,
       previousProgress: item.progress,
     );
 
@@ -277,8 +305,13 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
       nextItems.add(reItem);
     }
 
-    state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount + (result.isRequeue ? 0 : 1))
-      .copyWith(
+    final isLearnSuccess = !result.isRequeue;
+    state = AsyncData(_buildStateWithItems(
+      nextItems, 
+      0, 
+      value.completedCount + (isLearnSuccess ? 1 : 0),
+      value.completedToday + (isLearnSuccess ? 1 : 0),
+    ).copyWith(
         lastSnapshot: snapshot,
         revealedItemIds: {...value.revealedItemIds}..remove(id),
         message: result.isLeech ? '钉子户已自动处理' : null,
@@ -296,7 +329,7 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
 
     await ref.read(learningRepositoryProvider).undoUpdateProgress(id, type, snapshot.previousProgress);
 
-    state = AsyncData(_buildStateWithItems(snapshot.items, snapshot.currentIndex, snapshot.completedCount)
+    state = AsyncData(_buildStateWithItems(snapshot.items, snapshot.currentIndex, snapshot.completedCount, snapshot.completedToday)
       .copyWith(lastSnapshot: null, showUndoHint: false));
   }
 
@@ -320,7 +353,7 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
     final nextItems = List<LearningItem>.from(value.items);
     nextItems.removeAt(value.currentIndex);
 
-    state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount));
+    state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount, value.completedToday));
   }
 
   Future<void> buryCurrent() async {
@@ -337,7 +370,7 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
     final nextItems = List<LearningItem>.from(value.items);
     nextItems.removeAt(value.currentIndex);
 
-    state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount));
+    state = AsyncData(_buildStateWithItems(nextItems, 0, value.completedCount, value.completedToday));
   }
 
   void _saveSession(List<LearningItem> items, int currentIndex) {

@@ -3,6 +3,7 @@ import 'package:core_storage/core_storage.dart';
 import 'card_badge.dart';
 
 abstract class LearningItem {
+  String get id;
   LearningProgressData? get progress;
 
   CardBadge get badge {
@@ -27,6 +28,9 @@ class WordItem extends LearningItem {
   WordItem(this.word, {this.progress});
   final Word word;
   @override
+  String get id => 'word_${word.id}';
+
+  @override
   final LearningProgressData? progress;
 
   WordItem copyWith({LearningProgressData? progress}) => WordItem(word, progress: progress ?? this.progress);
@@ -35,6 +39,9 @@ class WordItem extends LearningItem {
 class GrammarItem extends LearningItem {
   GrammarItem(this.grammar, {this.progress});
   final Grammar grammar;
+  @override
+  String get id => 'grammar_${grammar.id}';
+
   @override
   final LearningProgressData? progress;
 

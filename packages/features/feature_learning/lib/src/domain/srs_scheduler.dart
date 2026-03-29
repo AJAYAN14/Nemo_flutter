@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:core_storage/core_storage.dart';
+import 'package:core_domain/core_domain.dart';
 import 'fsrs_algorithm.dart';
 
 enum SrsRating {
@@ -67,7 +68,12 @@ class SrsFinalResult {
 }
 
 class SrsScheduler {
-  final FsrsAlgorithm _fsrs = FsrsAlgorithm();
+  final FsrsAlgorithm _fsrs;
+
+  /// Accepts optional optimized parameters — matches Kotlin SrsCalculatorImpl
+  /// which loads personalized parameters asynchronously at startup.
+  SrsScheduler({List<double>? optimizedParameters})
+      : _fsrs = FsrsAlgorithm(parameters: optimizedParameters);
 
   SrsScheduleResult schedule({
     required String id,
@@ -79,7 +85,7 @@ class SrsScheduler {
     int leechThreshold = 5,
     int? nowMillis,
   }) {
-    final now = nowMillis ?? DateTime.now().millisecondsSinceEpoch;
+    final now = nowMillis ?? DateTimeUtils.getCurrentCompensatedMillis();
     final currentState = MemoryState(
       stability: currentProgress?.stability ?? 0.0,
       difficulty: currentProgress?.difficulty ?? 0.0,
@@ -142,7 +148,7 @@ class SrsScheduler {
     required List<int> relearningSteps,
     int? nowMillis,
   }) {
-    final now = nowMillis ?? DateTime.now().millisecondsSinceEpoch;
+    final now = nowMillis ?? DateTimeUtils.getCurrentCompensatedMillis();
     final currentState = MemoryState(
       stability: currentProgress?.stability ?? 0.0,
       difficulty: currentProgress?.difficulty ?? 0.0,

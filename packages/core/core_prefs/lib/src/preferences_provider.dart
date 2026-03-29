@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:core_domain/core_domain.dart';
 
 part 'preferences_provider.g.dart';
 
@@ -60,25 +61,25 @@ class PreferenceService {
   int get wordGoal => _prefs.getInt(_keyWordGoal) ?? 20;
   Future<void> setWordGoal(int value) async {
     await _prefs.setInt(_keyWordGoal, value);
-    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTimeUtils.getCurrentCompensatedMillis());
   }
 
   int get grammarGoal => _prefs.getInt(_keyGrammarGoal) ?? 10;
   Future<void> setGrammarGoal(int value) async {
     await _prefs.setInt(_keyGrammarGoal, value);
-    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTimeUtils.getCurrentCompensatedMillis());
   }
 
   String get wordLevel => _prefs.getString(_keyWordLevel) ?? 'N5';
   Future<void> setWordLevel(String value) async {
     await _prefs.setString(_keyWordLevel, value);
-    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTimeUtils.getCurrentCompensatedMillis());
   }
 
   String get grammarLevel => _prefs.getString(_keyGrammarLevel) ?? 'N5';
   Future<void> setGrammarLevel(String value) async {
     await _prefs.setString(_keyGrammarLevel, value);
-    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTimeUtils.getCurrentCompensatedMillis());
   }
 
   int get darkMode => _prefs.getInt(_keyDarkMode) ?? 2; // 0=Light, 1=Dark, 2=System
@@ -89,8 +90,9 @@ class PreferenceService {
 
   int get resetHour => _prefs.getInt(_keyResetHour) ?? 4;
   Future<void> setResetHour(int value) async {
-    await _prefs.setInt(_keyResetHour, value);
-    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+    final valid = value < 0 ? 0 : (value > 23 ? 23 : value);
+    await _prefs.setInt(_keyResetHour, valid);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTimeUtils.getCurrentCompensatedMillis());
   }
 
   bool get randomContent => _prefs.getBool(_keyRandomContent) ?? true;
@@ -102,7 +104,7 @@ class PreferenceService {
   int get learnAheadLimit => _prefs.getInt(_keyLearnAheadLimit) ?? 20;
   Future<void> setLearnAheadLimit(int value) async {
     await _prefs.setInt(_keyLearnAheadLimit, value);
-    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTimeUtils.getCurrentCompensatedMillis());
   }
 
   bool get autoSpeak => _prefs.getBool(_keyAutoSpeak) ?? true;
@@ -131,26 +133,28 @@ class PreferenceService {
 
   int get leechThreshold => _prefs.getInt(_keyLeechThreshold) ?? 5;
   Future<void> setLeechThreshold(int value) async {
-    await _prefs.setInt(_keyLeechThreshold, value);
-    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+    final normalized = value < 1 ? 1 : value;
+    await _prefs.setInt(_keyLeechThreshold, normalized);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTimeUtils.getCurrentCompensatedMillis());
   }
 
   String get leechAction => _prefs.getString(_keyLeechAction) ?? 'skip'; // 'skip' or 'bury'
   Future<void> setLeechAction(String value) async {
-    await _prefs.setString(_keyLeechAction, value);
-    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+    final normalized = (value == 'bury_today') ? 'bury_today' : 'skip';
+    await _prefs.setString(_keyLeechAction, normalized);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTimeUtils.getCurrentCompensatedMillis());
   }
 
   String get learningSteps => _prefs.getString(_keyLearningSteps) ?? '1 10';
   Future<void> setLearningSteps(String value) async {
     await _prefs.setString(_keyLearningSteps, value);
-    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTimeUtils.getCurrentCompensatedMillis());
   }
 
   String get relearningSteps => _prefs.getString(_keyRelearningSteps) ?? '1 10';
   Future<void> setRelearningSteps(String value) async {
     await _prefs.setString(_keyRelearningSteps, value);
-    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTimeUtils.getCurrentCompensatedMillis());
   }
 
   // Word Session
@@ -387,7 +391,7 @@ class RandomContent extends _$RandomContent {
     final service = ref.read(preferenceServiceProvider);
     await service.setRandomContent(value);
     // 1:1 Parity: Update last modified time
-    await service._prefs.setInt(PreferenceService.keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+    await service._prefs.setInt(PreferenceService.keyLastSettingsModifiedTime, DateTimeUtils.getCurrentCompensatedMillis());
     ref.invalidateSelf();
   }
 }

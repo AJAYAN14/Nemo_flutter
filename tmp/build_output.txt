@@ -1,0 +1,19 @@
+﻿flutter : Flutter assets will be downloade
+d from https://storage.flutter-io.cn. Make
+ sure you trust this source!
+所在位置 行:1 字符: 1
++ flutter build apk --debug 2>&1 | Out-Fil
+e -FilePath "e:\Nemo\tmp\buil ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecifie 
+   d: (Flutter assets ...st this source!  
+  :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeComma 
+   ndError
+ 
+Running Gradle task 'assembleDebug'...                          
+Flutter assets will be downloaded from htt
+ps://storage.flutter-io.cn. Make sure you 
+trust this source!
+Running Gradle task 'assembleDebug'...                             12.8s
+鈭?Built build\app\outputs\flutter-apk\app-debug.apk

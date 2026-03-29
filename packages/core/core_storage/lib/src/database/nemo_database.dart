@@ -11,14 +11,14 @@ import 'tables.dart';
 part 'nemo_database.g.dart';
 
 @DriftDatabase(
-  tables: [Words, WordExamples, Grammars, GrammarUsages, GrammarExamples, LearningProgress],
-  daos: [WordDao, GrammarDao, LearningDao],
+  tables: [Words, WordExamples, Grammars, GrammarUsages, GrammarExamples, LearningProgress, StudyRecords],
+  daos: [WordDao, GrammarDao, LearningDao, StudyRecordDao],
 )
 class NemoDatabase extends _$NemoDatabase {
   NemoDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -44,6 +44,9 @@ class NemoDatabase extends _$NemoDatabase {
       if (from < 7) {
         await m.addColumn(learningProgress, learningProgress.lapses);
         await m.addColumn(learningProgress, learningProgress.isSkipped);
+      }
+      if (from < 8) {
+        await m.createTable(studyRecords);
       }
       
       // Ensure clean state for other tables if from old version
@@ -252,7 +255,7 @@ class WordDao extends DatabaseAccessor<NemoDatabase> with _$WordDaoMixin {
       ..where(
         learningProgress.dueTime.isNull() |
         learningProgress.dueTime.isSmallerOrEqualValue(
-          BigInt.from(DateTime.now().millisecondsSinceEpoch),
+          BigInt.from(DateTimeUtils.getCurrentCompensatedMillis()),
         ),
       );
 
@@ -339,7 +342,7 @@ class GrammarDao extends DatabaseAccessor<NemoDatabase> with _$GrammarDaoMixin {
       ..where(
         learningProgress.dueTime.isNull() |
         learningProgress.dueTime.isSmallerOrEqualValue(
-          BigInt.from(DateTime.now().millisecondsSinceEpoch),
+          BigInt.from(DateTimeUtils.getCurrentCompensatedMillis()),
         ),
       );
 
@@ -449,6 +452,109 @@ class LearningDao extends DatabaseAccessor<NemoDatabase> with _$LearningDaoMixin
   Future<void> setSkipped(String id, bool isSkipped) {
     return (update(learningProgress)..where((t) => t.id.equals(id)))
         .write(LearningProgressCompanion(isSkipped: Value(isSkipped)));
+  }
+
+  Future<List<LearningProgressData>> getNewItems(String itemType, int startMillis, int endMillis) {
+    return (select(learningProgress)
+          ..where((t) => t.itemType.equals(itemType))
+          ..where((t) => t.firstLearned.isBetweenValues(BigInt.from(startMillis), BigInt.from(endMillis))))
+        .get();
+  }
+
+  Future<List<LearningProgressData>> getReviewedItems(String itemType, int startMillis, int endMillis) {
+    return (select(learningProgress)
+          ..where((t) => t.itemType.equals(itemType))
+          ..where((t) => t.lastReviewed.isBetweenValues(BigInt.from(startMillis), BigInt.from(endMillis))))
+        .get();
+  }
+}
+
+@DriftAccessor(tables: [StudyRecords])
+class StudyRecordDao extends DatabaseAccessor<NemoDatabase> with _$StudyRecordDaoMixin {
+  StudyRecordDao(super.db);
+
+  Stream<StudyRecordEntry?> watchRecordByDate(int date) {
+    return (select(studyRecords)..where((t) => t.date.equals(date))).watchSingleOrNull();
+  }
+
+  Future<StudyRecordEntry?> getRecordByDate(int date) {
+    return (select(studyRecords)..where((t) => t.date.equals(date))).getSingleOrNull();
+  }
+
+  Stream<List<StudyRecordEntry>> watchAllRecords() {
+    return (select(studyRecords)..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)])).watch();
+  }
+
+  Stream<List<StudyRecordEntry>> watchRecordsInRange(int start, int end) {
+    return (select(studyRecords)
+          ..where((t) => t.date.isBetweenValues(start, end))
+          ..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.asc)]))
+        .watch();
+  }
+
+  Future<void> upsertRecord(StudyRecordsCompanion companion) {
+    return into(studyRecords).insertOnConflictUpdate(companion);
+  }
+
+  Future<void> _ensureRecordExists(int date) async {
+    final existing = await getRecordByDate(date);
+    if (existing == null) {
+      await into(studyRecords).insert(StudyRecordsCompanion.insert(
+        date: Value(date),
+        timestamp: BigInt.from(DateTimeUtils.getCurrentCompensatedMillis()),
+      ));
+    }
+  }
+
+  Future<void> incrementLearnedWords(int date, int count) async {
+    await _ensureRecordExists(date);
+    await customStatement('UPDATE study_records SET learned_words = learned_words + ? WHERE date = ?', [count, date]);
+  }
+
+  Future<void> incrementLearnedGrammars(int date, int count) async {
+    await _ensureRecordExists(date);
+    await customStatement('UPDATE study_records SET learned_grammars = learned_grammars + ? WHERE date = ?', [count, date]);
+  }
+
+  Future<void> incrementReviewedWords(int date, int count) async {
+    await _ensureRecordExists(date);
+    await customStatement('UPDATE study_records SET reviewed_words = reviewed_words + ? WHERE date = ?', [count, date]);
+  }
+
+  Future<void> incrementReviewedGrammars(int date, int count) async {
+    await _ensureRecordExists(date);
+    await customStatement('UPDATE study_records SET reviewed_grammars = reviewed_grammars + ? WHERE date = ?', [count, date]);
+  }
+
+  Future<void> incrementSkippedWords(int date, int count) async {
+    await _ensureRecordExists(date);
+    await customStatement('UPDATE study_records SET skipped_words = skipped_words + ? WHERE date = ?', [count, date]);
+  }
+
+  Future<void> incrementSkippedGrammars(int date, int count) async {
+    await _ensureRecordExists(date);
+    await customStatement('UPDATE study_records SET skipped_grammars = skipped_grammars + ? WHERE date = ?', [count, date]);
+  }
+
+  Future<void> incrementTestCount(int date, int count) async {
+    await _ensureRecordExists(date);
+    await customStatement('UPDATE study_records SET test_count = test_count + ? WHERE date = ?', [count, date]);
+  }
+}
+
+extension StudyRecordMapper on StudyRecordEntry {
+  StudyRecord toDomain() {
+    return StudyRecord(
+      date: date,
+      learnedWords: learnedWords,
+      learnedGrammars: learnedGrammars,
+      reviewedWords: reviewedWords,
+      reviewedGrammars: reviewedGrammars,
+      skippedWords: skippedWords,
+      skippedGrammars: skippedGrammars,
+      testCount: testCount,
+      timestamp: timestamp.toInt(),
+    );
   }
 }
 

@@ -74,7 +74,7 @@ class HomeViewModel {
 
 @riverpod
 FutureOr<HomeViewModel> homeViewModel(Ref ref) async {
-  final now = DateTime.now();
+  final now = DateTime.fromMillisecondsSinceEpoch(DateTimeUtils.getCurrentCompensatedMillis());
   final mode = ref.watch(learningModeNotifierProvider);
   final selectedLevel = ref.watch(selectedLevelNotifierProvider);
   
@@ -123,7 +123,7 @@ FutureOr<HomeViewModel> homeViewModel(Ref ref) async {
     goal: goal,
     reviewed: reviewedTotal,
     reviewDue: dueCount,
-    accuracy: 0, // Accuracy logic not implemented yet
+    accuracy: goal > 0 ? ((learnedCount / goal) * 100).toInt().clamp(0, 100) : 0, 
     progress: goal > 0 ? (learnedCount / goal).clamp(0.0, 1.0) : 0.0,
     levelLabel: selectedLevel,
     // Restored original BentoColors: Primary (0xFFF97316) for words, GrammarPrimary (0xFF059669) for grammar

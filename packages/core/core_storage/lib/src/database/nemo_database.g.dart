@@ -2877,6 +2877,572 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
   }
 }
 
+class $StudyRecordsTable extends StudyRecords
+    with TableInfo<$StudyRecordsTable, StudyRecordEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StudyRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<int> date = GeneratedColumn<int>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _learnedWordsMeta = const VerificationMeta(
+    'learnedWords',
+  );
+  @override
+  late final GeneratedColumn<int> learnedWords = GeneratedColumn<int>(
+    'learned_words',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _learnedGrammarsMeta = const VerificationMeta(
+    'learnedGrammars',
+  );
+  @override
+  late final GeneratedColumn<int> learnedGrammars = GeneratedColumn<int>(
+    'learned_grammars',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _reviewedWordsMeta = const VerificationMeta(
+    'reviewedWords',
+  );
+  @override
+  late final GeneratedColumn<int> reviewedWords = GeneratedColumn<int>(
+    'reviewed_words',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _reviewedGrammarsMeta = const VerificationMeta(
+    'reviewedGrammars',
+  );
+  @override
+  late final GeneratedColumn<int> reviewedGrammars = GeneratedColumn<int>(
+    'reviewed_grammars',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _skippedWordsMeta = const VerificationMeta(
+    'skippedWords',
+  );
+  @override
+  late final GeneratedColumn<int> skippedWords = GeneratedColumn<int>(
+    'skipped_words',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _skippedGrammarsMeta = const VerificationMeta(
+    'skippedGrammars',
+  );
+  @override
+  late final GeneratedColumn<int> skippedGrammars = GeneratedColumn<int>(
+    'skipped_grammars',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _testCountMeta = const VerificationMeta(
+    'testCount',
+  );
+  @override
+  late final GeneratedColumn<int> testCount = GeneratedColumn<int>(
+    'test_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _timestampMeta = const VerificationMeta(
+    'timestamp',
+  );
+  @override
+  late final GeneratedColumn<BigInt> timestamp = GeneratedColumn<BigInt>(
+    'timestamp',
+    aliasedName,
+    false,
+    type: DriftSqlType.bigInt,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    date,
+    learnedWords,
+    learnedGrammars,
+    reviewedWords,
+    reviewedGrammars,
+    skippedWords,
+    skippedGrammars,
+    testCount,
+    timestamp,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'study_records';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StudyRecordEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    }
+    if (data.containsKey('learned_words')) {
+      context.handle(
+        _learnedWordsMeta,
+        learnedWords.isAcceptableOrUnknown(
+          data['learned_words']!,
+          _learnedWordsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('learned_grammars')) {
+      context.handle(
+        _learnedGrammarsMeta,
+        learnedGrammars.isAcceptableOrUnknown(
+          data['learned_grammars']!,
+          _learnedGrammarsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reviewed_words')) {
+      context.handle(
+        _reviewedWordsMeta,
+        reviewedWords.isAcceptableOrUnknown(
+          data['reviewed_words']!,
+          _reviewedWordsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reviewed_grammars')) {
+      context.handle(
+        _reviewedGrammarsMeta,
+        reviewedGrammars.isAcceptableOrUnknown(
+          data['reviewed_grammars']!,
+          _reviewedGrammarsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('skipped_words')) {
+      context.handle(
+        _skippedWordsMeta,
+        skippedWords.isAcceptableOrUnknown(
+          data['skipped_words']!,
+          _skippedWordsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('skipped_grammars')) {
+      context.handle(
+        _skippedGrammarsMeta,
+        skippedGrammars.isAcceptableOrUnknown(
+          data['skipped_grammars']!,
+          _skippedGrammarsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('test_count')) {
+      context.handle(
+        _testCountMeta,
+        testCount.isAcceptableOrUnknown(data['test_count']!, _testCountMeta),
+      );
+    }
+    if (data.containsKey('timestamp')) {
+      context.handle(
+        _timestampMeta,
+        timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_timestampMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {date};
+  @override
+  StudyRecordEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StudyRecordEntry(
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}date'],
+      )!,
+      learnedWords: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}learned_words'],
+      )!,
+      learnedGrammars: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}learned_grammars'],
+      )!,
+      reviewedWords: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reviewed_words'],
+      )!,
+      reviewedGrammars: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reviewed_grammars'],
+      )!,
+      skippedWords: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}skipped_words'],
+      )!,
+      skippedGrammars: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}skipped_grammars'],
+      )!,
+      testCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}test_count'],
+      )!,
+      timestamp: attachedDatabase.typeMapping.read(
+        DriftSqlType.bigInt,
+        data['${effectivePrefix}timestamp'],
+      )!,
+    );
+  }
+
+  @override
+  $StudyRecordsTable createAlias(String alias) {
+    return $StudyRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class StudyRecordEntry extends DataClass
+    implements Insertable<StudyRecordEntry> {
+  final int date;
+  final int learnedWords;
+  final int learnedGrammars;
+  final int reviewedWords;
+  final int reviewedGrammars;
+  final int skippedWords;
+  final int skippedGrammars;
+  final int testCount;
+  final BigInt timestamp;
+  const StudyRecordEntry({
+    required this.date,
+    required this.learnedWords,
+    required this.learnedGrammars,
+    required this.reviewedWords,
+    required this.reviewedGrammars,
+    required this.skippedWords,
+    required this.skippedGrammars,
+    required this.testCount,
+    required this.timestamp,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['date'] = Variable<int>(date);
+    map['learned_words'] = Variable<int>(learnedWords);
+    map['learned_grammars'] = Variable<int>(learnedGrammars);
+    map['reviewed_words'] = Variable<int>(reviewedWords);
+    map['reviewed_grammars'] = Variable<int>(reviewedGrammars);
+    map['skipped_words'] = Variable<int>(skippedWords);
+    map['skipped_grammars'] = Variable<int>(skippedGrammars);
+    map['test_count'] = Variable<int>(testCount);
+    map['timestamp'] = Variable<BigInt>(timestamp);
+    return map;
+  }
+
+  StudyRecordsCompanion toCompanion(bool nullToAbsent) {
+    return StudyRecordsCompanion(
+      date: Value(date),
+      learnedWords: Value(learnedWords),
+      learnedGrammars: Value(learnedGrammars),
+      reviewedWords: Value(reviewedWords),
+      reviewedGrammars: Value(reviewedGrammars),
+      skippedWords: Value(skippedWords),
+      skippedGrammars: Value(skippedGrammars),
+      testCount: Value(testCount),
+      timestamp: Value(timestamp),
+    );
+  }
+
+  factory StudyRecordEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StudyRecordEntry(
+      date: serializer.fromJson<int>(json['date']),
+      learnedWords: serializer.fromJson<int>(json['learnedWords']),
+      learnedGrammars: serializer.fromJson<int>(json['learnedGrammars']),
+      reviewedWords: serializer.fromJson<int>(json['reviewedWords']),
+      reviewedGrammars: serializer.fromJson<int>(json['reviewedGrammars']),
+      skippedWords: serializer.fromJson<int>(json['skippedWords']),
+      skippedGrammars: serializer.fromJson<int>(json['skippedGrammars']),
+      testCount: serializer.fromJson<int>(json['testCount']),
+      timestamp: serializer.fromJson<BigInt>(json['timestamp']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'date': serializer.toJson<int>(date),
+      'learnedWords': serializer.toJson<int>(learnedWords),
+      'learnedGrammars': serializer.toJson<int>(learnedGrammars),
+      'reviewedWords': serializer.toJson<int>(reviewedWords),
+      'reviewedGrammars': serializer.toJson<int>(reviewedGrammars),
+      'skippedWords': serializer.toJson<int>(skippedWords),
+      'skippedGrammars': serializer.toJson<int>(skippedGrammars),
+      'testCount': serializer.toJson<int>(testCount),
+      'timestamp': serializer.toJson<BigInt>(timestamp),
+    };
+  }
+
+  StudyRecordEntry copyWith({
+    int? date,
+    int? learnedWords,
+    int? learnedGrammars,
+    int? reviewedWords,
+    int? reviewedGrammars,
+    int? skippedWords,
+    int? skippedGrammars,
+    int? testCount,
+    BigInt? timestamp,
+  }) => StudyRecordEntry(
+    date: date ?? this.date,
+    learnedWords: learnedWords ?? this.learnedWords,
+    learnedGrammars: learnedGrammars ?? this.learnedGrammars,
+    reviewedWords: reviewedWords ?? this.reviewedWords,
+    reviewedGrammars: reviewedGrammars ?? this.reviewedGrammars,
+    skippedWords: skippedWords ?? this.skippedWords,
+    skippedGrammars: skippedGrammars ?? this.skippedGrammars,
+    testCount: testCount ?? this.testCount,
+    timestamp: timestamp ?? this.timestamp,
+  );
+  StudyRecordEntry copyWithCompanion(StudyRecordsCompanion data) {
+    return StudyRecordEntry(
+      date: data.date.present ? data.date.value : this.date,
+      learnedWords: data.learnedWords.present
+          ? data.learnedWords.value
+          : this.learnedWords,
+      learnedGrammars: data.learnedGrammars.present
+          ? data.learnedGrammars.value
+          : this.learnedGrammars,
+      reviewedWords: data.reviewedWords.present
+          ? data.reviewedWords.value
+          : this.reviewedWords,
+      reviewedGrammars: data.reviewedGrammars.present
+          ? data.reviewedGrammars.value
+          : this.reviewedGrammars,
+      skippedWords: data.skippedWords.present
+          ? data.skippedWords.value
+          : this.skippedWords,
+      skippedGrammars: data.skippedGrammars.present
+          ? data.skippedGrammars.value
+          : this.skippedGrammars,
+      testCount: data.testCount.present ? data.testCount.value : this.testCount,
+      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StudyRecordEntry(')
+          ..write('date: $date, ')
+          ..write('learnedWords: $learnedWords, ')
+          ..write('learnedGrammars: $learnedGrammars, ')
+          ..write('reviewedWords: $reviewedWords, ')
+          ..write('reviewedGrammars: $reviewedGrammars, ')
+          ..write('skippedWords: $skippedWords, ')
+          ..write('skippedGrammars: $skippedGrammars, ')
+          ..write('testCount: $testCount, ')
+          ..write('timestamp: $timestamp')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    date,
+    learnedWords,
+    learnedGrammars,
+    reviewedWords,
+    reviewedGrammars,
+    skippedWords,
+    skippedGrammars,
+    testCount,
+    timestamp,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StudyRecordEntry &&
+          other.date == this.date &&
+          other.learnedWords == this.learnedWords &&
+          other.learnedGrammars == this.learnedGrammars &&
+          other.reviewedWords == this.reviewedWords &&
+          other.reviewedGrammars == this.reviewedGrammars &&
+          other.skippedWords == this.skippedWords &&
+          other.skippedGrammars == this.skippedGrammars &&
+          other.testCount == this.testCount &&
+          other.timestamp == this.timestamp);
+}
+
+class StudyRecordsCompanion extends UpdateCompanion<StudyRecordEntry> {
+  final Value<int> date;
+  final Value<int> learnedWords;
+  final Value<int> learnedGrammars;
+  final Value<int> reviewedWords;
+  final Value<int> reviewedGrammars;
+  final Value<int> skippedWords;
+  final Value<int> skippedGrammars;
+  final Value<int> testCount;
+  final Value<BigInt> timestamp;
+  const StudyRecordsCompanion({
+    this.date = const Value.absent(),
+    this.learnedWords = const Value.absent(),
+    this.learnedGrammars = const Value.absent(),
+    this.reviewedWords = const Value.absent(),
+    this.reviewedGrammars = const Value.absent(),
+    this.skippedWords = const Value.absent(),
+    this.skippedGrammars = const Value.absent(),
+    this.testCount = const Value.absent(),
+    this.timestamp = const Value.absent(),
+  });
+  StudyRecordsCompanion.insert({
+    this.date = const Value.absent(),
+    this.learnedWords = const Value.absent(),
+    this.learnedGrammars = const Value.absent(),
+    this.reviewedWords = const Value.absent(),
+    this.reviewedGrammars = const Value.absent(),
+    this.skippedWords = const Value.absent(),
+    this.skippedGrammars = const Value.absent(),
+    this.testCount = const Value.absent(),
+    required BigInt timestamp,
+  }) : timestamp = Value(timestamp);
+  static Insertable<StudyRecordEntry> custom({
+    Expression<int>? date,
+    Expression<int>? learnedWords,
+    Expression<int>? learnedGrammars,
+    Expression<int>? reviewedWords,
+    Expression<int>? reviewedGrammars,
+    Expression<int>? skippedWords,
+    Expression<int>? skippedGrammars,
+    Expression<int>? testCount,
+    Expression<BigInt>? timestamp,
+  }) {
+    return RawValuesInsertable({
+      if (date != null) 'date': date,
+      if (learnedWords != null) 'learned_words': learnedWords,
+      if (learnedGrammars != null) 'learned_grammars': learnedGrammars,
+      if (reviewedWords != null) 'reviewed_words': reviewedWords,
+      if (reviewedGrammars != null) 'reviewed_grammars': reviewedGrammars,
+      if (skippedWords != null) 'skipped_words': skippedWords,
+      if (skippedGrammars != null) 'skipped_grammars': skippedGrammars,
+      if (testCount != null) 'test_count': testCount,
+      if (timestamp != null) 'timestamp': timestamp,
+    });
+  }
+
+  StudyRecordsCompanion copyWith({
+    Value<int>? date,
+    Value<int>? learnedWords,
+    Value<int>? learnedGrammars,
+    Value<int>? reviewedWords,
+    Value<int>? reviewedGrammars,
+    Value<int>? skippedWords,
+    Value<int>? skippedGrammars,
+    Value<int>? testCount,
+    Value<BigInt>? timestamp,
+  }) {
+    return StudyRecordsCompanion(
+      date: date ?? this.date,
+      learnedWords: learnedWords ?? this.learnedWords,
+      learnedGrammars: learnedGrammars ?? this.learnedGrammars,
+      reviewedWords: reviewedWords ?? this.reviewedWords,
+      reviewedGrammars: reviewedGrammars ?? this.reviewedGrammars,
+      skippedWords: skippedWords ?? this.skippedWords,
+      skippedGrammars: skippedGrammars ?? this.skippedGrammars,
+      testCount: testCount ?? this.testCount,
+      timestamp: timestamp ?? this.timestamp,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (date.present) {
+      map['date'] = Variable<int>(date.value);
+    }
+    if (learnedWords.present) {
+      map['learned_words'] = Variable<int>(learnedWords.value);
+    }
+    if (learnedGrammars.present) {
+      map['learned_grammars'] = Variable<int>(learnedGrammars.value);
+    }
+    if (reviewedWords.present) {
+      map['reviewed_words'] = Variable<int>(reviewedWords.value);
+    }
+    if (reviewedGrammars.present) {
+      map['reviewed_grammars'] = Variable<int>(reviewedGrammars.value);
+    }
+    if (skippedWords.present) {
+      map['skipped_words'] = Variable<int>(skippedWords.value);
+    }
+    if (skippedGrammars.present) {
+      map['skipped_grammars'] = Variable<int>(skippedGrammars.value);
+    }
+    if (testCount.present) {
+      map['test_count'] = Variable<int>(testCount.value);
+    }
+    if (timestamp.present) {
+      map['timestamp'] = Variable<BigInt>(timestamp.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StudyRecordsCompanion(')
+          ..write('date: $date, ')
+          ..write('learnedWords: $learnedWords, ')
+          ..write('learnedGrammars: $learnedGrammars, ')
+          ..write('reviewedWords: $reviewedWords, ')
+          ..write('reviewedGrammars: $reviewedGrammars, ')
+          ..write('skippedWords: $skippedWords, ')
+          ..write('skippedGrammars: $skippedGrammars, ')
+          ..write('testCount: $testCount, ')
+          ..write('timestamp: $timestamp')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$NemoDatabase extends GeneratedDatabase {
   _$NemoDatabase(QueryExecutor e) : super(e);
   $NemoDatabaseManager get managers => $NemoDatabaseManager(this);
@@ -2890,9 +3456,13 @@ abstract class _$NemoDatabase extends GeneratedDatabase {
   late final $LearningProgressTable learningProgress = $LearningProgressTable(
     this,
   );
+  late final $StudyRecordsTable studyRecords = $StudyRecordsTable(this);
   late final WordDao wordDao = WordDao(this as NemoDatabase);
   late final GrammarDao grammarDao = GrammarDao(this as NemoDatabase);
   late final LearningDao learningDao = LearningDao(this as NemoDatabase);
+  late final StudyRecordDao studyRecordDao = StudyRecordDao(
+    this as NemoDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2904,6 +3474,7 @@ abstract class _$NemoDatabase extends GeneratedDatabase {
     grammarUsages,
     grammarExamples,
     learningProgress,
+    studyRecords,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -5089,6 +5660,292 @@ typedef $$LearningProgressTableProcessedTableManager =
       LearningProgressData,
       PrefetchHooks Function()
     >;
+typedef $$StudyRecordsTableCreateCompanionBuilder =
+    StudyRecordsCompanion Function({
+      Value<int> date,
+      Value<int> learnedWords,
+      Value<int> learnedGrammars,
+      Value<int> reviewedWords,
+      Value<int> reviewedGrammars,
+      Value<int> skippedWords,
+      Value<int> skippedGrammars,
+      Value<int> testCount,
+      required BigInt timestamp,
+    });
+typedef $$StudyRecordsTableUpdateCompanionBuilder =
+    StudyRecordsCompanion Function({
+      Value<int> date,
+      Value<int> learnedWords,
+      Value<int> learnedGrammars,
+      Value<int> reviewedWords,
+      Value<int> reviewedGrammars,
+      Value<int> skippedWords,
+      Value<int> skippedGrammars,
+      Value<int> testCount,
+      Value<BigInt> timestamp,
+    });
+
+class $$StudyRecordsTableFilterComposer
+    extends Composer<_$NemoDatabase, $StudyRecordsTable> {
+  $$StudyRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get learnedWords => $composableBuilder(
+    column: $table.learnedWords,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get learnedGrammars => $composableBuilder(
+    column: $table.learnedGrammars,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reviewedWords => $composableBuilder(
+    column: $table.reviewedWords,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reviewedGrammars => $composableBuilder(
+    column: $table.reviewedGrammars,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get skippedWords => $composableBuilder(
+    column: $table.skippedWords,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get skippedGrammars => $composableBuilder(
+    column: $table.skippedGrammars,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get testCount => $composableBuilder(
+    column: $table.testCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<BigInt> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$StudyRecordsTableOrderingComposer
+    extends Composer<_$NemoDatabase, $StudyRecordsTable> {
+  $$StudyRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get learnedWords => $composableBuilder(
+    column: $table.learnedWords,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get learnedGrammars => $composableBuilder(
+    column: $table.learnedGrammars,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get reviewedWords => $composableBuilder(
+    column: $table.reviewedWords,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get reviewedGrammars => $composableBuilder(
+    column: $table.reviewedGrammars,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get skippedWords => $composableBuilder(
+    column: $table.skippedWords,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get skippedGrammars => $composableBuilder(
+    column: $table.skippedGrammars,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get testCount => $composableBuilder(
+    column: $table.testCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<BigInt> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$StudyRecordsTableAnnotationComposer
+    extends Composer<_$NemoDatabase, $StudyRecordsTable> {
+  $$StudyRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<int> get learnedWords => $composableBuilder(
+    column: $table.learnedWords,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get learnedGrammars => $composableBuilder(
+    column: $table.learnedGrammars,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get reviewedWords => $composableBuilder(
+    column: $table.reviewedWords,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get reviewedGrammars => $composableBuilder(
+    column: $table.reviewedGrammars,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get skippedWords => $composableBuilder(
+    column: $table.skippedWords,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get skippedGrammars => $composableBuilder(
+    column: $table.skippedGrammars,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get testCount =>
+      $composableBuilder(column: $table.testCount, builder: (column) => column);
+
+  GeneratedColumn<BigInt> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+}
+
+class $$StudyRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$NemoDatabase,
+          $StudyRecordsTable,
+          StudyRecordEntry,
+          $$StudyRecordsTableFilterComposer,
+          $$StudyRecordsTableOrderingComposer,
+          $$StudyRecordsTableAnnotationComposer,
+          $$StudyRecordsTableCreateCompanionBuilder,
+          $$StudyRecordsTableUpdateCompanionBuilder,
+          (
+            StudyRecordEntry,
+            BaseReferences<
+              _$NemoDatabase,
+              $StudyRecordsTable,
+              StudyRecordEntry
+            >,
+          ),
+          StudyRecordEntry,
+          PrefetchHooks Function()
+        > {
+  $$StudyRecordsTableTableManager(_$NemoDatabase db, $StudyRecordsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StudyRecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StudyRecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StudyRecordsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> date = const Value.absent(),
+                Value<int> learnedWords = const Value.absent(),
+                Value<int> learnedGrammars = const Value.absent(),
+                Value<int> reviewedWords = const Value.absent(),
+                Value<int> reviewedGrammars = const Value.absent(),
+                Value<int> skippedWords = const Value.absent(),
+                Value<int> skippedGrammars = const Value.absent(),
+                Value<int> testCount = const Value.absent(),
+                Value<BigInt> timestamp = const Value.absent(),
+              }) => StudyRecordsCompanion(
+                date: date,
+                learnedWords: learnedWords,
+                learnedGrammars: learnedGrammars,
+                reviewedWords: reviewedWords,
+                reviewedGrammars: reviewedGrammars,
+                skippedWords: skippedWords,
+                skippedGrammars: skippedGrammars,
+                testCount: testCount,
+                timestamp: timestamp,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> date = const Value.absent(),
+                Value<int> learnedWords = const Value.absent(),
+                Value<int> learnedGrammars = const Value.absent(),
+                Value<int> reviewedWords = const Value.absent(),
+                Value<int> reviewedGrammars = const Value.absent(),
+                Value<int> skippedWords = const Value.absent(),
+                Value<int> skippedGrammars = const Value.absent(),
+                Value<int> testCount = const Value.absent(),
+                required BigInt timestamp,
+              }) => StudyRecordsCompanion.insert(
+                date: date,
+                learnedWords: learnedWords,
+                learnedGrammars: learnedGrammars,
+                reviewedWords: reviewedWords,
+                reviewedGrammars: reviewedGrammars,
+                skippedWords: skippedWords,
+                skippedGrammars: skippedGrammars,
+                testCount: testCount,
+                timestamp: timestamp,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$StudyRecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$NemoDatabase,
+      $StudyRecordsTable,
+      StudyRecordEntry,
+      $$StudyRecordsTableFilterComposer,
+      $$StudyRecordsTableOrderingComposer,
+      $$StudyRecordsTableAnnotationComposer,
+      $$StudyRecordsTableCreateCompanionBuilder,
+      $$StudyRecordsTableUpdateCompanionBuilder,
+      (
+        StudyRecordEntry,
+        BaseReferences<_$NemoDatabase, $StudyRecordsTable, StudyRecordEntry>,
+      ),
+      StudyRecordEntry,
+      PrefetchHooks Function()
+    >;
 
 class $NemoDatabaseManager {
   final _$NemoDatabase _db;
@@ -5105,6 +5962,8 @@ class $NemoDatabaseManager {
       $$GrammarExamplesTableTableManager(_db, _db.grammarExamples);
   $$LearningProgressTableTableManager get learningProgress =>
       $$LearningProgressTableTableManager(_db, _db.learningProgress);
+  $$StudyRecordsTableTableManager get studyRecords =>
+      $$StudyRecordsTableTableManager(_db, _db.studyRecords);
 }
 
 mixin _$WordDaoMixin on DatabaseAccessor<NemoDatabase> {
@@ -5123,6 +5982,9 @@ mixin _$GrammarDaoMixin on DatabaseAccessor<NemoDatabase> {
 mixin _$LearningDaoMixin on DatabaseAccessor<NemoDatabase> {
   $LearningProgressTable get learningProgress =>
       attachedDatabase.learningProgress;
+}
+mixin _$StudyRecordDaoMixin on DatabaseAccessor<NemoDatabase> {
+  $StudyRecordsTable get studyRecords => attachedDatabase.studyRecords;
 }
 
 // **************************************************************************

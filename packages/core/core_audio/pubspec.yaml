@@ -9,6 +9,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_tts: ^4.2.2
+  audioplayers: ^6.1.0
   hooks_riverpod: ^2.6.1
   riverpod_annotation: ^2.6.1
   core_prefs:
@@ -21,3 +22,5 @@ dev_dependencies:
   riverpod_generator: ^2.6.2
 
 flutter:
+  assets:
+    - assets/audio/

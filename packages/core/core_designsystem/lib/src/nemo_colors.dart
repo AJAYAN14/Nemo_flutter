@@ -75,6 +75,7 @@ abstract final class NemoColors {
   static const Color accentPurple = Color(0xFF8B5CF6);
   static const Color accentPink = Color(0xFFFF2D55);
   static const Color accentCyan = Color(0xFF00C7BE);
+  static const Color accentIndigo = Color(0xFF6366F1);
 
   // JLPT Level Colors (1:1 with old project)
   static const Color n5 = success;

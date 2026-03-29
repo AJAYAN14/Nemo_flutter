@@ -1,26 +1,16 @@
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:feature_learning/feature_learning.dart';
+import 'learning_calendar_providers.dart';
 
-class TodayStatisticsScreen extends StatelessWidget {
+class TodayStatisticsScreen extends ConsumerWidget {
   const TodayStatisticsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Mock data based on the old project structure
-    final words = [
-      _StatItem(id: 1, japanese: '友情', hiragana: 'ゆうじょう', chinese: '友情', level: 'N2', isLearned: true),
-      _StatItem(id: 2, japanese: '努力', hiragana: 'どりょく', chinese: '努力', level: 'N3', isLearned: false),
-      _StatItem(id: 3, japanese: '成功', hiragana: 'せいこう', chinese: '成功', level: 'N2', isLearned: true),
-      _StatItem(id: 4, japanese: '希望', hiragana: 'きぼう', chinese: '希望', level: 'N3', isLearned: true),
-      _StatItem(id: 5, japanese: '未来', hiragana: 'みらい', chinese: '未来', level: 'N2', isLearned: false),
-      _StatItem(id: 6, japanese: '勇気', hiragana: 'ゆうき', chinese: '勇气', level: 'N3', isLearned: true),
-      _StatItem(id: 7, japanese: '平和', hiragana: 'へいわ', chinese: '和平', level: 'N2', isLearned: true),
-    ];
-    final grammars = [
-      _StatItem(id: 101, japanese: '～に際して', hiragana: '', chinese: '在…之际', level: 'N2', isLearned: true),
-      _StatItem(id: 102, japanese: '～たとえ', hiragana: '', chinese: '即使…也', level: 'N3', isLearned: false),
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final todayItemsAsync = ref.watch(todayItemsProvider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -30,22 +20,37 @@ class TodayStatisticsScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _SectionTitle('单词 (${words.length})'),
-          if (words.isNotEmpty)
-            _StatisticsListCard(items: words, isWord: true)
-          else
-            const _EmptyState(message: '今日暂无学习单词'),
-          const SizedBox(height: 24),
-          _SectionTitle('语法 (${grammars.length})'),
-          if (grammars.isNotEmpty)
-            _StatisticsListCard(items: grammars, isWord: false)
-          else
-            const _EmptyState(message: '今日暂无学习语法'),
-          const SizedBox(height: 24),
-        ],
+      body: todayItemsAsync.when(
+        data: (items) {
+          final words = items
+              .where((i) => i.item is WordItem)
+              .map((i) => _StatItem.fromDomain(i.item as WordItem, i.isNew))
+              .toList();
+          final grammars = items
+              .where((i) => i.item is GrammarItem)
+              .map((i) => _StatItem.fromDomain(i.item as GrammarItem, i.isNew))
+              .toList();
+
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _SectionTitle('单词 (${words.length})'),
+              if (words.isNotEmpty)
+                _StatisticsListCard(items: words, isWord: true)
+              else
+                const _EmptyState(message: '今日暂无学习单词'),
+              const SizedBox(height: 24),
+              _SectionTitle('语法 (${grammars.length})'),
+              if (grammars.isNotEmpty)
+                _StatisticsListCard(items: grammars, isWord: false)
+              else
+                const _EmptyState(message: '今日暂无学习语法'),
+              const SizedBox(height: 24),
+            ],
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('加载失败: $e')),
       ),
     );
   }
@@ -297,7 +302,7 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _StatItem {
-  final int id;
+  final String id;
   final String japanese;
   final String hiragana;
   final String chinese;
@@ -312,4 +317,27 @@ class _StatItem {
     required this.level,
     required this.isLearned,
   });
+
+  factory _StatItem.fromDomain(LearningItem item, bool isNew) {
+    if (item is WordItem) {
+      return _StatItem(
+        id: item.word.id,
+        japanese: item.word.japanese,
+        hiragana: item.word.hiragana,
+        chinese: item.word.chinese,
+        level: item.word.level,
+        isLearned: isNew,
+      );
+    } else if (item is GrammarItem) {
+      return _StatItem(
+        id: item.grammar.id,
+        japanese: item.grammar.grammar,
+        hiragana: '',
+        chinese: item.grammar.usages.firstOrNull?.explanation ?? '',
+        level: item.grammar.grammarLevel,
+        isLearned: isNew,
+      );
+    }
+    throw UnimplementedError();
+  }
 }

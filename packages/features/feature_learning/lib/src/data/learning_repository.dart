@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/learning_item.dart';
 import '../domain/srs_scheduler.dart';
+import '../domain/fsrs_parameter_optimizer.dart';
 
 import '../domain/learning_session_policy.dart';
 
@@ -15,7 +16,8 @@ class LearningRepository {
   final WordDao _wordDao;
   final GrammarDao _grammarDao;
   final LearningDao _learningDao;
-  final SrsScheduler _scheduler = SrsScheduler();
+  final StudyRecordRepository _studyRecordRepository;
+  final SrsScheduler _scheduler;
   final LearningSessionPolicy _policy = const LearningSessionPolicy();
   
   final int _wordGoal;
@@ -33,6 +35,7 @@ class LearningRepository {
     required WordDao wordDao,
     required GrammarDao grammarDao,
     required LearningDao learningDao,
+    required StudyRecordRepository studyRecordRepository,
     required int wordGoal,
     required int grammarGoal,
     required int resetHour,
@@ -43,9 +46,12 @@ class LearningRepository {
     required String leechAction,
     required List<int> learningSteps,
     required List<int> relearningSteps,
+    List<double>? optimizedFsrsParameters,
   })  : _wordDao = wordDao,
         _grammarDao = grammarDao,
         _learningDao = learningDao,
+        _studyRecordRepository = studyRecordRepository,
+        _scheduler = SrsScheduler(optimizedParameters: optimizedFsrsParameters),
         _wordGoal = wordGoal,
         _grammarGoal = grammarGoal,
         _resetHour = resetHour,
@@ -107,8 +113,14 @@ class LearningRepository {
     return _policy.mixSessionItems(reviewItems, newItems);
   }
 
+  Future<int> getTodayCompletedCount(String mode) async {
+    final dayStartMillis = DateTimeUtils.getLearningDayStart(_resetHour);
+    final dayEndMillis = DateTimeUtils.getLearningDayEnd(_resetHour);
+    return _learningDao.getNewItemsCount(mode, dayStartMillis, dayEndMillis);
+  }
+
   Future<List<LearningItem>> getReviewQueue(String mode) async {
-    final now = DateTime.now().millisecondsSinceEpoch;
+    final now = DateTimeUtils.getCurrentCompensatedMillis();
     final List<LearningItem> items = [];
 
     // 1. Get due items (filtered by mode or all)
@@ -241,6 +253,29 @@ class LearningRepository {
     } else {
       updatedData = await _learningDao.updateProgress((result as SrsGraduate).companion);
     }
+
+    // [1:1 Logic Fix] Update StudyRecords synchronously with progress
+    // If firstLearned is today, any further ratings TODAY are excluded from "Reviewed" count
+    final today = DateTimeUtils.getLearningDay(_resetHour);
+    final firstLearnedDay = updatedData.firstLearned != null
+        ? DateTimeUtils.toLearningDay(updatedData.firstLearned!.toInt(), _resetHour)
+        : null;
+
+    if (currentProgress == null) {
+      // First time learning this item
+      if (itemType == 'word') {
+        await _studyRecordRepository.incrementLearnedWords(resetHour: _resetHour);
+      } else {
+        await _studyRecordRepository.incrementLearnedGrammars(resetHour: _resetHour);
+      }
+    } else if (firstLearnedDay != today) {
+      // It's a review of an item learned on a PREVIOUS day
+      if (itemType == 'word') {
+        await _studyRecordRepository.incrementReviewedWords(resetHour: _resetHour);
+      } else {
+        await _studyRecordRepository.incrementReviewedGrammars(resetHour: _resetHour);
+      }
+    }
     
     return SrsFinalResult(
       updatedProgress: updatedData,
@@ -270,7 +305,7 @@ class LearningRepository {
         isSuspended: const Value(true),
         isSkipped: const Value(true),
         // Set a future due time just in case, though it's skipped
-        dueTime: Value(BigInt.from(DateTime.now().millisecondsSinceEpoch + 86400000)),
+        dueTime: Value(BigInt.from(DateTimeUtils.getCurrentCompensatedMillis() + 86400000)),
       ));
     } else {
       // 1:1 Restoration: Both Suspended and Skipped flags should be set
@@ -313,12 +348,66 @@ class LearningRepository {
   }
 }
 
+/// Holds FSRS optimized parameters computed asynchronously at startup.
+/// Matches Kotlin SrsCalculatorImpl.init {} which loads in background.
+List<double>? _cachedOptimizedParams;
+bool _optimizerInitialized = false;
+
+/// Run FSRS parameter optimization asynchronously.
+/// Called once on first provider creation, result cached for the session.
+Future<List<double>?> _getOptimizedParams(LearningDao learningDao) async {
+  if (_optimizerInitialized) return _cachedOptimizedParams;
+  _optimizerInitialized = true;
+
+  try {
+    // 1:1 Parity with Kotlin: getRecentLogs(limit = 1500)
+    final allProgress = await learningDao.getAllProgress();
+    // Filter to items that have been reviewed (lastReviewed > 0)
+    final reviewed = allProgress
+        .where((p) => (p.lastReviewed?.toInt() ?? 0) > 0)
+        .toList();
+
+    // Take last 1500 records for optimization
+    final recent = reviewed.length > 1500 ? reviewed.sublist(reviewed.length - 1500) : reviewed;
+
+    // Build rating logs from lapses data (simplified: items with lapses > 0 had Again ratings)
+    final logs = recent.map((p) {
+      // Map repetitionCount and lapses to an approximate rating
+      final lapses = p.lapses;
+      if (lapses > 0) return ReviewLog(rating: 1); // Again
+      return ReviewLog(rating: 3); // Good (default for graduated items)
+    }).toList();
+
+    final result = FsrsParameterOptimizer.optimize(logs);
+    if (result != null) {
+      _cachedOptimizedParams = result.parameters;
+      print('[FSRS] personalization enabled, samples=${result.sampleSize}, '
+          'againRate=${result.againRate.toStringAsFixed(3)}, '
+          'hardRate=${result.hardRate.toStringAsFixed(3)}');
+    } else {
+      print('[FSRS] personalization skipped, insufficient logs (samples=${logs.length})');
+    }
+  } catch (e) {
+    // 1:1 Parity: Keep default parameters, don't crash the main flow.
+    print('[FSRS] personalization skipped due to initialization error: $e');
+  }
+  return _cachedOptimizedParams;
+}
+
 @riverpod
 LearningRepository learningRepository(Ref ref) {
+  final learningDao = ref.watch(learningDaoProvider);
+  final studyRecordRepo = ref.watch(studyRecordRepositoryProvider);
+
+  // Fire-and-forget async optimization (matching Kotlin's scope.launch in init)
+  // The optimizer runs in the background; until it completes, default params are used.
+  _getOptimizedParams(learningDao);
+
   return LearningRepository(
     wordDao: ref.watch(wordDaoProvider),
     grammarDao: ref.watch(grammarDaoProvider),
-    learningDao: ref.watch(learningDaoProvider),
+    learningDao: learningDao,
+    studyRecordRepository: studyRecordRepo,
     wordGoal: ref.watch(wordGoalProvider),
     grammarGoal: ref.watch(grammarGoalProvider),
     resetHour: ref.watch(resetHourProvider),
@@ -329,5 +418,6 @@ LearningRepository learningRepository(Ref ref) {
     leechAction: ref.watch(leechActionProvider),
     learningSteps: ref.watch(learningStepsProvider).split(' ').map((e) => int.tryParse(e) ?? 1).toList(),
     relearningSteps: ref.watch(relearningStepsProvider).split(' ').map((e) => int.tryParse(e) ?? 1).toList(),
+    optimizedFsrsParameters: _cachedOptimizedParams,
   );
 }
