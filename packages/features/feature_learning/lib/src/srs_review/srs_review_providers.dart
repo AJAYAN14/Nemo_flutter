@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:core_prefs/core_prefs.dart';
+import 'package:core_domain/core_domain.dart';
 import '../domain/learning_item.dart';
 import '../domain/srs_scheduler.dart';
 import '../data/learning_repository.dart';
@@ -15,18 +16,23 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
   @override
   FutureOr<SrsStudyUiModel> build(String mode) async {
     final repository = ref.watch(learningRepositoryProvider);
-
-    // TTS completion handler is set dynamically in play methods for reliable state updates
     final prefs = ref.watch(preferenceServiceProvider);
-    
-    final savedIds = prefs.getLearningSessionItems('${mode}_review');
-    final savedIndex = prefs.getLearningSessionIndex('${mode}_review');
+    final resetHour = ref.watch(resetHourProvider);
+    final today = DateTimeUtils.getLearningDay(resetHour);
+    final sessionMode = '${mode}_review';
 
-    if (savedIds.isNotEmpty) {
-      final items = await repository.getItemsByIds(savedIds);
-      if (items.isNotEmpty) {
-        final index = savedIndex.clamp(0, items.length - 1);
-        return _buildStateWithItems(items, index, 0);
+    final session = prefs.getLearningSession(sessionMode);
+    if (session != null) {
+      final savedIds = session['ids'] as List<String>;
+      final savedIndex = session['currentIndex'] as int;
+      final savedStartDate = session['startDate'] as int;
+
+      if (savedIds.isNotEmpty && savedStartDate == today) {
+        final items = await repository.getItemsByIds(savedIds);
+        if (items.isNotEmpty) {
+          final index = savedIndex.clamp(0, items.length - 1);
+          return _buildStateWithItems(items, index, 0);
+        }
       }
     }
 
@@ -256,12 +262,22 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
 
   void _saveSession(List<LearningItem> items, int currentIndex) {
     final prefs = ref.read(preferenceServiceProvider);
+    final resetHour = ref.read(resetHourProvider);
+    final today = DateTimeUtils.getLearningDay(resetHour);
+    final currentLevel = mode == 'word' ? ref.read(wordLevelProvider) : ref.read(grammarLevelProvider);
+
     final ids = items.map((item) {
       if (item is WordItem) return 'word_${item.word.id}';
       return 'grammar_${(item as GrammarItem).grammar.id}';
     }).toList();
     
-    prefs.saveLearningSession(mode: '${mode}_review', itemIds: ids, currentIndex: currentIndex);
+    prefs.saveLearningSession(
+      mode: '${mode}_review', 
+      itemIds: ids, 
+      currentIndex: currentIndex,
+      level: currentLevel,
+      startDate: today,
+    );
   }
 
   void _clearSession() {

@@ -7,6 +7,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/learning_item.dart';
 import '../domain/srs_scheduler.dart';
 
+import '../domain/learning_session_policy.dart';
+
 part 'learning_repository.g.dart';
 
 class LearningRepository {
@@ -14,6 +16,7 @@ class LearningRepository {
   final GrammarDao _grammarDao;
   final LearningDao _learningDao;
   final SrsScheduler _scheduler = SrsScheduler();
+  final LearningSessionPolicy _policy = const LearningSessionPolicy();
   
   final int _wordGoal;
   final int _grammarGoal;
@@ -58,9 +61,11 @@ class LearningRepository {
     final dayStartMillis = DateTimeUtils.getLearningDayStart(_resetHour);
     final dayEndMillis = DateTimeUtils.getLearningDayEnd(_resetHour);
 
-    final List<LearningItem> items = await getReviewQueue(mode);
+    // 1. 获取复习项
+    final List<LearningItem> reviewItems = await getReviewQueue(mode);
+    final List<LearningItem> newItems = [];
 
-    // 2. Get new items (if mode matches)
+    // 2. 获取新项
     if (mode == 'word') {
       final wordsLearnedToday = await _learningDao.getNewItemsCount('word', dayStartMillis, dayEndMillis);
       final wordsToLearn = (_wordGoal - wordsLearnedToday).clamp(0, _wordGoal);
@@ -70,11 +75,11 @@ class LearningRepository {
         int added = 0;
         for (final wordEntry in newWords) {
           if (added >= wordsToLearn) break;
-          // Progress is likely null for new items, but could exist if buried/skipped
+          // 新词可能已由于搁置/跳过而有进度记录
           final progress = await _learningDao.getProgress('word_${wordEntry.id}');
           final wordWithEx = await _wordDao.getWordWithExamples(wordEntry.id);
           if (wordWithEx != null) {
-            items.add(WordItem(wordWithEx.toDomain(), progress: progress));
+            newItems.add(WordItem(wordWithEx.toDomain(), progress: progress));
             added++;
           }
         }
@@ -91,14 +96,15 @@ class LearningRepository {
           final progress = await _learningDao.getProgress('grammar_${grammarEntry.id}');
           final grammarWithDetails = await _grammarDao.getGrammarWithDetails(grammarEntry.id);
           if (grammarWithDetails != null) {
-            items.add(GrammarItem(grammarWithDetails.toDomain(), progress: progress));
+            newItems.add(GrammarItem(grammarWithDetails.toDomain(), progress: progress));
             added++;
           }
         }
       }
     }
 
-    return items;
+    // 3. 应用混合策略：[高危复习] -> [新词穿插在普通复习中]
+    return _policy.mixSessionItems(reviewItems, newItems);
   }
 
   Future<List<LearningItem>> getReviewQueue(String mode) async {

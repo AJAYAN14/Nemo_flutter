@@ -164,7 +164,7 @@ final resetHourProvider = AutoDisposeNotifierProvider<ResetHour, int>.internal(
 );
 
 typedef _$ResetHour = AutoDisposeNotifier<int>;
-String _$randomContentHash() => r'0a31960d56f93221895a8fa39aba431db1a6311e';
+String _$randomContentHash() => r'2e9b95c778acea16ea554b1996e69edf76546283';
 
 /// See also [RandomContent].
 @ProviderFor(RandomContent)

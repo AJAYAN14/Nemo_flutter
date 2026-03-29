@@ -48,24 +48,38 @@ class PreferenceService {
   static const _keyWordSessionLevel = 'word_session_level';
   static const _keyWordSessionSteps = 'word_session_steps';
   static const _keyWordSessionWaitingUntil = 'word_session_waiting_until';
+  static const _keyWordSessionStartDate = 'word_session_start_date';
 
   static const _keyGrammarSessionIds = 'grammar_session_ids';
   static const _keyGrammarSessionIndex = 'grammar_session_index';
   static const _keyGrammarSessionLevel = 'grammar_session_level';
   static const _keyGrammarSessionSteps = 'grammar_session_steps';
   static const _keyGrammarSessionWaitingUntil = 'grammar_session_waiting_until';
+  static const _keyGrammarSessionStartDate = 'grammar_session_start_date';
 
   int get wordGoal => _prefs.getInt(_keyWordGoal) ?? 20;
-  Future<void> setWordGoal(int value) => _prefs.setInt(_keyWordGoal, value);
+  Future<void> setWordGoal(int value) async {
+    await _prefs.setInt(_keyWordGoal, value);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+  }
 
-  int get grammarGoal => _prefs.getInt(_keyGrammarGoal) ?? 5;
-  Future<void> setGrammarGoal(int value) => _prefs.setInt(_keyGrammarGoal, value);
+  int get grammarGoal => _prefs.getInt(_keyGrammarGoal) ?? 10;
+  Future<void> setGrammarGoal(int value) async {
+    await _prefs.setInt(_keyGrammarGoal, value);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+  }
 
   String get wordLevel => _prefs.getString(_keyWordLevel) ?? 'N5';
-  Future<void> setWordLevel(String value) => _prefs.setString(_keyWordLevel, value);
+  Future<void> setWordLevel(String value) async {
+    await _prefs.setString(_keyWordLevel, value);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+  }
 
   String get grammarLevel => _prefs.getString(_keyGrammarLevel) ?? 'N5';
-  Future<void> setGrammarLevel(String value) => _prefs.setString(_keyGrammarLevel, value);
+  Future<void> setGrammarLevel(String value) async {
+    await _prefs.setString(_keyGrammarLevel, value);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+  }
 
   int get darkMode => _prefs.getInt(_keyDarkMode) ?? 2; // 0=Light, 1=Dark, 2=System
   Future<void> setDarkMode(int value) => _prefs.setInt(_keyDarkMode, value);
@@ -74,7 +88,10 @@ class PreferenceService {
   Future<void> setAutoSync(bool value) => _prefs.setBool(_keyAutoSync, value);
 
   int get resetHour => _prefs.getInt(_keyResetHour) ?? 4;
-  Future<void> setResetHour(int value) => _prefs.setInt(_keyResetHour, value);
+  Future<void> setResetHour(int value) async {
+    await _prefs.setInt(_keyResetHour, value);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+  }
 
   bool get randomContent => _prefs.getBool(_keyRandomContent) ?? true;
   Future<void> setRandomContent(bool value) => _prefs.setBool(_keyRandomContent, value);
@@ -83,7 +100,10 @@ class PreferenceService {
   Future<void> setLastLearningMode(String value) => _prefs.setString(_keyLastLearningMode, value);
 
   int get learnAheadLimit => _prefs.getInt(_keyLearnAheadLimit) ?? 20;
-  Future<void> setLearnAheadLimit(int value) => _prefs.setInt(_keyLearnAheadLimit, value);
+  Future<void> setLearnAheadLimit(int value) async {
+    await _prefs.setInt(_keyLearnAheadLimit, value);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+  }
 
   bool get autoSpeak => _prefs.getBool(_keyAutoSpeak) ?? true;
   Future<void> setAutoSpeak(bool value) => _prefs.setBool(_keyAutoSpeak, value);
@@ -110,24 +130,37 @@ class PreferenceService {
   }
 
   int get leechThreshold => _prefs.getInt(_keyLeechThreshold) ?? 5;
-  Future<void> setLeechThreshold(int value) => _prefs.setInt(_keyLeechThreshold, value);
+  Future<void> setLeechThreshold(int value) async {
+    await _prefs.setInt(_keyLeechThreshold, value);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+  }
 
   String get leechAction => _prefs.getString(_keyLeechAction) ?? 'skip'; // 'skip' or 'bury'
-  Future<void> setLeechAction(String value) => _prefs.setString(_keyLeechAction, value);
+  Future<void> setLeechAction(String value) async {
+    await _prefs.setString(_keyLeechAction, value);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+  }
 
   String get learningSteps => _prefs.getString(_keyLearningSteps) ?? '1 10';
-  Future<void> setLearningSteps(String value) => _prefs.setString(_keyLearningSteps, value);
+  Future<void> setLearningSteps(String value) async {
+    await _prefs.setString(_keyLearningSteps, value);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+  }
 
   String get relearningSteps => _prefs.getString(_keyRelearningSteps) ?? '1 10';
-  Future<void> setRelearningSteps(String value) => _prefs.setString(_keyRelearningSteps, value);
+  Future<void> setRelearningSteps(String value) async {
+    await _prefs.setString(_keyRelearningSteps, value);
+    await _prefs.setInt(keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
+  }
 
   // Word Session
-  Future<void> saveWordSession(List<String> ids, int index, String level, String stepsJson, int waitingUntil) async {
+  Future<void> saveWordSession(List<String> ids, int index, String level, String stepsJson, int waitingUntil, int startDate) async {
     await _prefs.setStringList(_keyWordSessionIds, ids);
     await _prefs.setInt(_keyWordSessionIndex, index);
     await _prefs.setString(_keyWordSessionLevel, level);
     await _prefs.setString(_keyWordSessionSteps, stepsJson);
     await _prefs.setInt(_keyWordSessionWaitingUntil, waitingUntil);
+    await _prefs.setInt(_keyWordSessionStartDate, startDate);
   }
 
   Map<String, dynamic>? getWordSession() {
@@ -139,6 +172,7 @@ class PreferenceService {
       'level': _prefs.getString(_keyWordSessionLevel) ?? '',
       'steps': _prefs.getString(_keyWordSessionSteps) ?? '{}',
       'waitingUntil': _prefs.getInt(_keyWordSessionWaitingUntil) ?? 0,
+      'startDate': _prefs.getInt(_keyWordSessionStartDate) ?? 0,
     };
   }
 
@@ -148,15 +182,17 @@ class PreferenceService {
     await _prefs.remove(_keyWordSessionLevel);
     await _prefs.remove(_keyWordSessionSteps);
     await _prefs.remove(_keyWordSessionWaitingUntil);
+    await _prefs.remove(_keyWordSessionStartDate);
   }
 
   // Grammar Session
-  Future<void> saveGrammarSession(List<String> ids, int index, String level, String stepsJson, int waitingUntil) async {
+  Future<void> saveGrammarSession(List<String> ids, int index, String level, String stepsJson, int waitingUntil, int startDate) async {
     await _prefs.setStringList(_keyGrammarSessionIds, ids);
     await _prefs.setInt(_keyGrammarSessionIndex, index);
     await _prefs.setString(_keyGrammarSessionLevel, level);
     await _prefs.setString(_keyGrammarSessionSteps, stepsJson);
     await _prefs.setInt(_keyGrammarSessionWaitingUntil, waitingUntil);
+    await _prefs.setInt(_keyGrammarSessionStartDate, startDate);
   }
 
   Map<String, dynamic>? getGrammarSession() {
@@ -165,9 +201,10 @@ class PreferenceService {
     return {
       'ids': ids,
       'currentIndex': _prefs.getInt(_keyGrammarSessionIndex) ?? 0,
-      'level': _prefs.getString(_keyGrammarLevel) ?? '',
+      'level': _prefs.getString(_keyGrammarSessionLevel) ?? '',
       'steps': _prefs.getString(_keyGrammarSessionSteps) ?? '{}',
       'waitingUntil': _prefs.getInt(_keyGrammarSessionWaitingUntil) ?? 0,
+      'startDate': _prefs.getInt(_keyGrammarSessionStartDate) ?? 0,
     };
   }
 
@@ -177,6 +214,7 @@ class PreferenceService {
     await _prefs.remove(_keyGrammarSessionLevel);
     await _prefs.remove(_keyGrammarSessionSteps);
     await _prefs.remove(_keyGrammarSessionWaitingUntil);
+    await _prefs.remove(_keyGrammarSessionStartDate);
   }
 
   // Unified Session API
@@ -194,14 +232,18 @@ class PreferenceService {
     required String mode,
     required List<String> itemIds,
     required int currentIndex,
+    required String level,
+    required int startDate,
   }) async {
     if (mode == 'word') {
-      await _prefs.setStringList(_keyWordSessionIds, itemIds);
-      await _prefs.setInt(_keyWordSessionIndex, currentIndex);
+      await saveWordSession(itemIds, currentIndex, level, '{}', 0, startDate);
     } else {
-      await _prefs.setStringList(_keyGrammarSessionIds, itemIds);
-      await _prefs.setInt(_keyGrammarSessionIndex, currentIndex);
+      await saveGrammarSession(itemIds, currentIndex, level, '{}', 0, startDate);
     }
+  }
+
+  Map<String, dynamic>? getLearningSession(String mode) {
+    return mode == 'word' ? getWordSession() : getGrammarSession();
   }
 
   Future<void> clearLearningSession(String mode) async {
