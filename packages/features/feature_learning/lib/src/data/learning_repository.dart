@@ -65,21 +65,17 @@ class LearningRepository {
       final wordsLearnedToday = await _learningDao.getNewItemsCount('word', dayStartMillis, dayEndMillis);
       final wordsToLearn = (_wordGoal - wordsLearnedToday).clamp(0, _wordGoal);
       
-      int newWordsAdded = 0;
-      final allWords = await _wordDao.getWordsByLevel(_wordLevel);
-      final List<WordEntry> filteredWords = List.from(allWords);
-      if (_randomContent) {
-        filteredWords.shuffle();
-      }
-      
-      for (final wordEntry in filteredWords) {
-        if (newWordsAdded >= wordsToLearn) break;
-        final progress = await _learningDao.getProgress('word_${wordEntry.id}');
-        if (progress == null) {
+      if (wordsToLearn > 0) {
+        final newWords = await _wordDao.getNewWords(_wordLevel, isRandom: _randomContent);
+        int added = 0;
+        for (final wordEntry in newWords) {
+          if (added >= wordsToLearn) break;
+          // Progress is likely null for new items, but could exist if buried/skipped
+          final progress = await _learningDao.getProgress('word_${wordEntry.id}');
           final wordWithEx = await _wordDao.getWordWithExamples(wordEntry.id);
           if (wordWithEx != null) {
-            items.add(WordItem(wordWithEx.toDomain(), progress: null));
-            newWordsAdded++;
+            items.add(WordItem(wordWithEx.toDomain(), progress: progress));
+            added++;
           }
         }
       }
@@ -87,21 +83,16 @@ class LearningRepository {
       final grammarsLearnedToday = await _learningDao.getNewItemsCount('grammar', dayStartMillis, dayEndMillis);
       final grammarsToLearn = (_grammarGoal - grammarsLearnedToday).clamp(0, _grammarGoal);
       
-      int newGrammarsAdded = 0;
-      final allGrammars = await _grammarDao.getGrammarsByLevel(_grammarLevel);
-      final List<GrammarEntry> filteredGrammars = List.from(allGrammars);
-      if (_randomContent) {
-        filteredGrammars.shuffle();
-      }
-
-      for (final grammarEntry in filteredGrammars) {
-        if (newGrammarsAdded >= grammarsToLearn) break;
-        final progress = await _learningDao.getProgress('grammar_${grammarEntry.id}');
-        if (progress == null) {
+      if (grammarsToLearn > 0) {
+        final newGrammars = await _grammarDao.getNewGrammars(_grammarLevel, isRandom: _randomContent);
+        int added = 0;
+        for (final grammarEntry in newGrammars) {
+          if (added >= grammarsToLearn) break;
+          final progress = await _learningDao.getProgress('grammar_${grammarEntry.id}');
           final grammarWithDetails = await _grammarDao.getGrammarWithDetails(grammarEntry.id);
           if (grammarWithDetails != null) {
-            items.add(GrammarItem(grammarWithDetails.toDomain(), progress: null));
-            newGrammarsAdded++;
+            items.add(GrammarItem(grammarWithDetails.toDomain(), progress: progress));
+            added++;
           }
         }
       }

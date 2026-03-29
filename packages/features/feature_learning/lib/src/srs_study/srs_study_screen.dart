@@ -11,6 +11,7 @@ import '../learning/components/cards/srs_learning_card.dart';
 import '../learning/components/cards/srs_grammar_card.dart';
 import '../learning/components/srs_action_area.dart';
 import '../learning/components/common/nemo_learn_header.dart';
+import '../learning/components/common/nemo_waiting_view.dart';
 import '../learning/components/common/nemo_completion_view.dart';
 import '../learning/components/common/audio_wave_indicator.dart';
 import '../domain/learning_session_state.dart';
@@ -52,9 +53,9 @@ class SrsStudyScreen extends HookConsumerWidget {
               onClose: () => Navigator.of(context).pop(),
               showMoreMenu: false,
             ),
-            body: _WaitingView(
+            body: NemoWaitingView(
               until: state.waitingUntil,
-              onStudyNow: () {
+              onContinue: () {
                 ref.invalidate(srsStudyNotifierProvider(mode));
               },
             ),
@@ -243,44 +244,3 @@ class SrsStudyScreen extends HookConsumerWidget {
   }
 }
 
-class _WaitingView extends StatelessWidget {
-  const _WaitingView({required this.until, required this.onStudyNow});
-  final DateTime until;
-  final VoidCallback onStudyNow;
-
-  @override
-  Widget build(BuildContext context) {
-    final diff = until.difference(DateTime.now());
-    final minutes = diff.inMinutes;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons. coffee_rounded, size: 80, color: NemoColors.brandBlue),
-          const SizedBox(height: 24),
-          const Text(
-            '休息一下吧',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: NemoColors.textMain),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '下一项将在 $minutes 分钟后开始',
-            style: const TextStyle(fontSize: 16, color: NemoColors.textMuted),
-          ),
-          const SizedBox(height: 40),
-          ElevatedButton(
-            onPressed: onStudyNow,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: NemoColors.brandBlue,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('提前开始学习', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
-}

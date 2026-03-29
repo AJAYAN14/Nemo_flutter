@@ -27,6 +27,7 @@ class PreferenceService {
   static const _keyAutoSync = 'auto_sync';
   static const _keyResetHour = 'reset_hour';
   static const _keyRandomContent = 'random_content';
+  static const keyLastSettingsModifiedTime = 'last_settings_modified_time';
   static const _keyLastLearningMode = 'last_learning_mode';
   static const _keyLearnAheadLimit = 'learn_ahead_limit';
   static const _keyAutoSpeak = 'learning_auto_speak';
@@ -75,7 +76,7 @@ class PreferenceService {
   int get resetHour => _prefs.getInt(_keyResetHour) ?? 4;
   Future<void> setResetHour(int value) => _prefs.setInt(_keyResetHour, value);
 
-  bool get randomContent => _prefs.getBool(_keyRandomContent) ?? false;
+  bool get randomContent => _prefs.getBool(_keyRandomContent) ?? true;
   Future<void> setRandomContent(bool value) => _prefs.setBool(_keyRandomContent, value);
 
   String get lastLearningMode => _prefs.getString(_keyLastLearningMode) ?? 'words';
@@ -343,6 +344,8 @@ class RandomContent extends _$RandomContent {
   Future<void> toggle(bool value) async {
     final service = ref.read(preferenceServiceProvider);
     await service.setRandomContent(value);
+    // 1:1 Parity: Update last modified time
+    await service._prefs.setInt(PreferenceService.keyLastSettingsModifiedTime, DateTime.now().millisecondsSinceEpoch);
     ref.invalidateSelf();
   }
 }

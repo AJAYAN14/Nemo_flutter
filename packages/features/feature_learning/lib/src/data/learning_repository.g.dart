@@ -7,7 +7,7 @@ part of 'learning_repository.dart';
 // **************************************************************************
 
 String _$learningRepositoryHash() =>
-    r'4cd8abe49d6079dab4902c046b145103ae807282';
+    r'9415a7b96d65ef225ca2f1b437c1602199092ed5';
 
 /// See also [learningRepository].
 @ProviderFor(learningRepository)

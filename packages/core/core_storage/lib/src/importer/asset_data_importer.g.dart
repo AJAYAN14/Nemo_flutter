@@ -6,7 +6,7 @@ part of 'asset_data_importer.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$assetDataImporterHash() => r'dc6072ea83e3ec4faf7bb2afbcff76bfda587835';
+String _$assetDataImporterHash() => r'317678199c0a8cc7217a6fe2320f6d081800fa0b';
 
 /// See also [AssetDataImporter].
 @ProviderFor(AssetDataImporter)

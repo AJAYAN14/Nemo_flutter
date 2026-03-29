@@ -5110,11 +5110,15 @@ class $NemoDatabaseManager {
 mixin _$WordDaoMixin on DatabaseAccessor<NemoDatabase> {
   $WordsTable get words => attachedDatabase.words;
   $WordExamplesTable get wordExamples => attachedDatabase.wordExamples;
+  $LearningProgressTable get learningProgress =>
+      attachedDatabase.learningProgress;
 }
 mixin _$GrammarDaoMixin on DatabaseAccessor<NemoDatabase> {
   $GrammarsTable get grammars => attachedDatabase.grammars;
   $GrammarUsagesTable get grammarUsages => attachedDatabase.grammarUsages;
   $GrammarExamplesTable get grammarExamples => attachedDatabase.grammarExamples;
+  $LearningProgressTable get learningProgress =>
+      attachedDatabase.learningProgress;
 }
 mixin _$LearningDaoMixin on DatabaseAccessor<NemoDatabase> {
   $LearningProgressTable get learningProgress =>

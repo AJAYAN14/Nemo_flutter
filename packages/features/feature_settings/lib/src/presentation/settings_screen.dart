@@ -138,13 +138,20 @@ class SettingsScreen extends HookConsumerWidget {
                     iconColor: const Color(0xFF0E68FF), // NemoPrimary
                     title: '新内容乱序抽取',
                     subtitle: isRandom ? '随机抽取新内容' : '按顺序抽取新内容',
-                    onClick: () => ref.read(randomContentProvider.notifier).toggle(!isRandom),
+                    onClick: () {
+                      final newVal = !isRandom;
+                      ref.read(randomContentProvider.notifier).toggle(newVal);
+                      _showRandomContentSnackbar(context, newVal);
+                    },
                     trailing: Transform.scale(
                       scale: 0.8,
                       child: Switch(
                         value: isRandom,
                         activeTrackColor: const Color(0xFF0E68FF), // NemoPrimary
-                        onChanged: (val) => ref.read(randomContentProvider.notifier).toggle(val),
+                        onChanged: (val) {
+                          ref.read(randomContentProvider.notifier).toggle(val);
+                          _showRandomContentSnackbar(context, val);
+                        },
                       ),
                     ),
                   ),
@@ -243,6 +250,19 @@ class SettingsScreen extends HookConsumerWidget {
         ),
     );
   }
+}
+
+void _showRandomContentSnackbar(BuildContext context, bool enabled) {
+  final message = enabled ? '下次开始学习时，新单词将随机出现' : '下次开始学习时，新单词将按顺序出现';
+  ScaffoldMessenger.of(context).clearSnackBars();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      duration: const Duration(seconds: 5),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+  );
 }
 
 class ImmersiveSettingsHeader extends StatelessWidget {

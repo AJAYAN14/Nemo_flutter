@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_prefs/core_prefs.dart';
+import './scale_on_press.dart';
 
 class LearnActionSheet extends ConsumerWidget {
   const LearnActionSheet({
@@ -128,7 +129,7 @@ class LearnActionSheet extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _ActionSquare(
-                  icon: Icons.pause_circle_outline_rounded,
+                  icon: Icons.pause_rounded,
                   label: '暂停卡片',
                   onTap: () {
                     onSuspend?.call();
@@ -192,7 +193,7 @@ class LearnActionSheet extends ConsumerWidget {
               ],
               _Divider(isDark: isDark),
               _ClickRow(
-                icon: Icons.help_outline_rounded,
+                icon: Icons.check_circle_rounded,
                 title: '评分准则说明',
                 onTap: () {
                   Navigator.pop(context);
@@ -246,29 +247,32 @@ class _ActionSquare extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: color,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: enabled ? onTap : null,
+    return ScaleOnPress(
+      onTap: enabled ? onTap : null,
+      child: Material(
+        color: color,
         borderRadius: BorderRadius.circular(20),
-        child: Opacity(
-          opacity: enabled ? 1.0 : 0.4,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Column(
-              children: [
-                Icon(icon, color: NemoColors.brandBlue, size: 28),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(20),
+          child: Opacity(
+            opacity: enabled ? 1.0 : 0.4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Column(
+                children: [
+                  Icon(icon, color: NemoColors.brandBlue, size: 28),
+                  const SizedBox(height: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

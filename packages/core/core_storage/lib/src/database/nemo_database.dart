@@ -158,7 +158,7 @@ LazyDatabase _openConnection() {
   });
 }
 
-@DriftAccessor(tables: [Words, WordExamples])
+@DriftAccessor(tables: [Words, WordExamples, LearningProgress])
 class WordDao extends DatabaseAccessor<NemoDatabase> with _$WordDaoMixin {
   WordDao(super.db);
 
@@ -167,7 +167,10 @@ class WordDao extends DatabaseAccessor<NemoDatabase> with _$WordDaoMixin {
   Future<List<WordEntry>> getAllWords() => select(words).get();
   
   Future<List<WordEntry>> getWordsByLevel(String level) {
-    return (select(words)..where((t) => t.level.equals(level))).get();
+    return (select(words)
+          ..where((t) => t.level.equals(level))
+          ..orderBy([(t) => OrderingTerm(expression: t.id)]))
+        .get();
   }
   
   Stream<List<WordEntry>> watchWordsByCategory(String category) {
@@ -222,9 +225,48 @@ class WordDao extends DatabaseAccessor<NemoDatabase> with _$WordDaoMixin {
   Future<void> updateFavorite(String id, bool isFavorite) {
     return (update(words)..where((t) => t.id.equals(id))).write(WordsCompanion(isFavorite: Value(isFavorite)));
   }
+
+  // 1:1 Restoration: Fetch new words using SQL join and proper filters
+  Future<List<WordEntry>> getNewWords(String level, {bool isRandom = false}) {
+    final query = select(words).join([
+      leftOuterJoin(
+        learningProgress,
+        learningProgress.id.equalsExp(
+          Constant('word_') + words.id,
+        ),
+      ),
+    ])
+      ..where(words.level.equals(level))
+      ..where(
+        learningProgress.repetitionCount.isNull() |
+        learningProgress.repetitionCount.equals(0),
+      )
+      ..where(
+        learningProgress.isSkipped.isNull() |
+        learningProgress.isSkipped.equals(false),
+      )
+      ..where(
+        learningProgress.isSuspended.isNull() |
+        learningProgress.isSuspended.equals(false),
+      )
+      ..where(
+        learningProgress.dueTime.isNull() |
+        learningProgress.dueTime.isSmallerOrEqualValue(
+          BigInt.from(DateTime.now().millisecondsSinceEpoch),
+        ),
+      );
+
+    if (isRandom) {
+      query.orderBy([OrderingTerm.random()]);
+    } else {
+      query.orderBy([OrderingTerm(expression: words.id, mode: OrderingMode.asc)]);
+    }
+
+    return query.map((row) => row.readTable(words)).get();
+  }
 }
 
-@DriftAccessor(tables: [Grammars, GrammarUsages, GrammarExamples])
+@DriftAccessor(tables: [Grammars, GrammarUsages, GrammarExamples, LearningProgress])
 class GrammarDao extends DatabaseAccessor<NemoDatabase> with _$GrammarDaoMixin {
   GrammarDao(super.db);
 
@@ -251,7 +293,10 @@ class GrammarDao extends DatabaseAccessor<NemoDatabase> with _$GrammarDaoMixin {
   Future<List<GrammarEntry>> getAllGrammars() => select(grammars).get();
 
   Future<List<GrammarEntry>> getGrammarsByLevel(String level) {
-    return (select(grammars)..where((t) => t.grammarLevel.equals(level))).get();
+    return (select(grammars)
+          ..where((t) => t.grammarLevel.equals(level))
+          ..orderBy([(t) => OrderingTerm(expression: t.id)]))
+        .get();
   }
 
   Future<GrammarWithDetails?> getGrammarWithDetails(String id) async {
@@ -266,6 +311,45 @@ class GrammarDao extends DatabaseAccessor<NemoDatabase> with _$GrammarDaoMixin {
     }
     
     return GrammarWithDetails(grammar, usageWithExamples);
+  }
+
+  // 1:1 Restoration: Fetch new grammars using SQL join and proper filters
+  Future<List<GrammarEntry>> getNewGrammars(String level, {bool isRandom = false}) {
+    final query = select(grammars).join([
+      leftOuterJoin(
+        learningProgress,
+        learningProgress.id.equalsExp(
+          Constant('grammar_') + grammars.id,
+        ),
+      ),
+    ])
+      ..where(grammars.grammarLevel.equals(level))
+      ..where(
+        learningProgress.repetitionCount.isNull() |
+        learningProgress.repetitionCount.equals(0),
+      )
+      ..where(
+        learningProgress.isSkipped.isNull() |
+        learningProgress.isSkipped.equals(false),
+      )
+      ..where(
+        learningProgress.isSuspended.isNull() |
+        learningProgress.isSuspended.equals(false),
+      )
+      ..where(
+        learningProgress.dueTime.isNull() |
+        learningProgress.dueTime.isSmallerOrEqualValue(
+          BigInt.from(DateTime.now().millisecondsSinceEpoch),
+        ),
+      );
+
+    if (isRandom) {
+      query.orderBy([OrderingTerm.random()]);
+    } else {
+      query.orderBy([OrderingTerm(expression: grammars.id, mode: OrderingMode.asc)]);
+    }
+
+    return query.map((row) => row.readTable(grammars)).get();
   }
 }
 

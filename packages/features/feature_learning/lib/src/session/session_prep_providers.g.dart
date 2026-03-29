@@ -6,7 +6,7 @@ part of 'session_prep_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$sessionPrepWordsHash() => r'df474b7324dfc1fbc31ff27062173ba8e10c71ec';
+String _$sessionPrepWordsHash() => r'9f6f1202349a02140efc1fec5eaf4fa1f370ddd7';
 
 /// See also [sessionPrepWords].
 @ProviderFor(sessionPrepWords)
@@ -26,7 +26,7 @@ final sessionPrepWordsProvider =
 typedef SessionPrepWordsRef =
     AutoDisposeFutureProviderRef<List<SessionPrepWordItem>>;
 String _$sessionPrepViewModelHash() =>
-    r'0467bd1a84c6f4395fe1c3a126a1464e29ee81c3';
+    r'21c4eff7e8e12bcd06325399fef6a3047a28394c';
 
 /// See also [sessionPrepViewModel].
 @ProviderFor(sessionPrepViewModel)

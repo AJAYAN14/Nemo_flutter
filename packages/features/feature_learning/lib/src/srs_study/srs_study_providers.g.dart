@@ -6,7 +6,7 @@ part of 'srs_study_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$srsStudyNotifierHash() => r'c87aca3d0e33bd92e9f33e68f56bb281bb98e068';
+String _$srsStudyNotifierHash() => r'488533f76f3018f1ff0b1fc747789bb9b8560aeb';
 
 /// Copied from Dart SDK
 class _SystemHash {

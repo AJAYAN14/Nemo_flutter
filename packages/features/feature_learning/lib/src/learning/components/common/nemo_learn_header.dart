@@ -74,7 +74,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Row(
                 children: [
-                  // Left: Back button (48x48) + Title
+                   // Left: Back button (48x48) + Title
                   SizedBox(
                     width: 48,
                     height: 48,
@@ -142,7 +142,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                                 ),
                               ),
                               // Next Button (40x40)
-                              SizedBox(
+                               SizedBox(
                                 width: 40,
                                 height: 40,
                                 child: IconButton(

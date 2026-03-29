@@ -50,7 +50,7 @@ class NemoWaitingView extends HookWidget {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: NemoColors.brandBlue.withOpacity(0.1),
+              color: NemoColors.brandBlue.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Center(
