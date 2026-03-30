@@ -83,31 +83,38 @@ class _CapsuleNavigationBar extends StatelessWidget {
               color: glassColor,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _NavItem(
-                    icon: Icons.menu_book_rounded,
-                    label: '学习',
-                    isSelected: currentIndex == 0,
-                    onTap: () => onDestinationSelected(0),
+                  Expanded(
+                    child: _NavItem(
+                      icon: Icons.menu_book_rounded,
+                      label: '学习',
+                      isSelected: currentIndex == 0,
+                      onTap: () => onDestinationSelected(0),
+                    ),
                   ),
-                  _NavItem(
-                    icon: Icons.bar_chart_rounded,
-                    label: '进度',
-                    isSelected: currentIndex == 1,
-                    onTap: () => onDestinationSelected(1),
+                  Expanded(
+                    child: _NavItem(
+                      icon: Icons.bar_chart_rounded,
+                      label: '进度',
+                      isSelected: currentIndex == 1,
+                      onTap: () => onDestinationSelected(1),
+                    ),
                   ),
-                  _NavItem(
-                    icon: Icons.interests_rounded,
-                    label: '测试',
-                    isSelected: currentIndex == 2,
-                    onTap: () => onDestinationSelected(2),
+                  Expanded(
+                    child: _NavItem(
+                      icon: Icons.interests_rounded,
+                      label: '测试',
+                      isSelected: currentIndex == 2,
+                      onTap: () => onDestinationSelected(2),
+                    ),
                   ),
-                  _NavItem(
-                    icon: Icons.account_circle_rounded,
-                    label: '个人',
-                    isSelected: currentIndex == 3,
-                    onTap: () => onDestinationSelected(3),
+                  Expanded(
+                    child: _NavItem(
+                      icon: Icons.account_circle_rounded,
+                      label: '个人',
+                      isSelected: currentIndex == 3,
+                      onTap: () => onDestinationSelected(3),
+                    ),
                   ),
                 ],
               ),
@@ -144,43 +151,45 @@ class _NavItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: const Cubic(0.34, 1.56, 0.64, 1), // Apple-like spring 原型曲线
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? activeBgColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(100),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 24,
-              color: isSelected ? activeContentColor : inactiveIconColor,
-            ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: const Cubic(0.34, 1.56, 0.64, 1),
-              child: isSelected
-                  ? Padding(
-                      padding: const EdgeInsets.only(left: 6),
-                      child: Text(
-                        label,
-                        style: TextStyle(
-                          color: activeContentColor,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          height: 1.2,
+      child: Center(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: const Cubic(0.34, 1.56, 0.64, 1), // Apple-like spring 原型曲线
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? activeBgColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(100),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 24,
+                color: isSelected ? activeContentColor : inactiveIconColor,
+              ),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: const Cubic(0.34, 1.56, 0.64, 1),
+                child: isSelected
+                    ? Padding(
+                        padding: const EdgeInsets.only(left: 6),
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            color: activeContentColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            height: 1.2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.visible,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.visible,
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ],
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
         ),
       ),
     );
