@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// 1:1 Parity with Kotlin LearnHeader composable.
+/// 学习界面顶部导航栏
 ///
-/// Uses PopupMenuButton (anchored dropdown) matching Kotlin's NemoDropdownMenu,
-/// NOT a BottomSheet. The menu contains: Undo, Rating Guide, Suspend, Bury,
-/// Auto-Read toggle, Show-Answer-Wait toggle, and Wait Duration cycle.
+/// 包含：标题、进度、剩余数导航、操作菜单（撤销、评分说明、暂停、暂缓等）。
 class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
   const NemoLearnHeader({
     super.key,
@@ -58,10 +56,8 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     
-    // MD3: TopAppBar content color — matches Kotlin's MaterialTheme.colorScheme.onSurface
     final contentColor = isDark ? Colors.white : Colors.black87;
     
-    // MD3: Navigation group background — matches Kotlin's navGroupBg logic
     final navGroupBg = isDark ? Colors.white.withValues(alpha: 0.15) : Colors.white;
 
     final progressBackground = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
@@ -72,14 +68,14 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Top Row (56dp height content area) — matches Kotlin Row height=56.dp
+          // 顶部内容区域
           SizedBox(
             height: 56,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Row(
                 children: [
-                   // Left: Back button (48x48) + Title — matches Kotlin IconButton size(48.dp)
+                   // 左侧：返回按钮与标题
                   SizedBox(
                     width: 48,
                     height: 48,
@@ -100,7 +96,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                   
                   const Spacer(),
   
-                  // Right: Navigation Group + Menu — matches Kotlin Row spacedBy(8.dp)
+                  // 右侧：进度导航与更多菜单
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -114,13 +110,12 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Prev Button (40x40) — matches Kotlin IconButton size(40.dp)
+                              // 上一个按钮
                               SizedBox(
                                 width: 40,
                                 height: 40,
                                 child: IconButton(
                                   onPressed: canGoPrev ? () {
-                                    // 1:1 Haptic: matches Kotlin performHapticFeedback()
                                     HapticFeedback.selectionClick();
                                     onPrev?.call();
                                   } : null,
@@ -161,7 +156,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
   
                       const SizedBox(width: 8),
   
-                      // More Menu — 1:1 Parity: PopupMenuButton matching Kotlin NemoDropdownMenu
+                      // 更多菜单
                       if (showMoreMenu)
                         _buildDropdownMenu(context, contentColor, navGroupBg, isDark),
                       const SizedBox(width: 4),
@@ -172,7 +167,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
   
-          // Progress Bar Area — matches Kotlin Box height(4.dp) with RoundedCornerShape
+          // 进度条
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: SizedBox(
@@ -218,7 +213,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
       itemBuilder: (context) {
         final items = <PopupMenuEntry<String>>[];
 
-        // 1. Undo (conditional) — matches Kotlin: canUndo check
+        // 1. 撤销
         if (onUndo != null) {
           items.add(PopupMenuItem<String>(
             value: 'undo',
@@ -230,7 +225,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
           items.add(const PopupMenuDivider());
         }
 
-        // 2. Rating Guide — matches Kotlin: 评分说明（新学/复习）
+        // 2. 评分说明
         if (onShowRatingGuide != null) {
           items.add(PopupMenuItem<String>(
             value: 'rating_guide',
@@ -242,7 +237,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
           items.add(const PopupMenuDivider());
         }
 
-        // 3. Suspend — matches Kotlin: 暂停此卡片 (Suspend)
+        // 3. 暂停此卡片 (Suspend)
         items.add(PopupMenuItem<String>(
           value: 'suspend',
           child: _MenuRow(
@@ -251,7 +246,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
           ),
         ));
 
-        // 4. Bury — matches Kotlin: 今日暂缓此项 (Bury)
+        // 4. 今日暂缓此项 (Bury)
         items.add(PopupMenuItem<String>(
           value: 'bury',
           child: _MenuRow(
@@ -262,7 +257,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
 
         items.add(const PopupMenuDivider());
 
-        // 5. Auto-read Switch — matches Kotlin DropdownMenuItem with Switch
+        // 5. 翻面自动朗读开关
         if (onToggleAutoRead != null) {
           items.add(_SwitchMenuItem(
             icon: Icons.volume_up_rounded,
@@ -287,7 +282,7 @@ class NemoLearnHeader extends StatelessWidget implements PreferredSizeWidget {
             },
           ));
 
-          // 7. Wait Duration (conditional) — matches Kotlin: 等待时长: $label
+          // 7. 等待时长
           if (showAnswerWaitEnabled && onCycleAnswerWaitDuration != null) {
             items.add(PopupMenuItem<String>(
               value: 'cycle_duration',

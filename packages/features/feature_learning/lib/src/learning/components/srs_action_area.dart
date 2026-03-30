@@ -27,7 +27,7 @@ class SRSActionArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
-    
+
     return Container(
       padding: EdgeInsets.fromLTRB(16, 12, 16, bottomPadding + 16),
       child: AnimatedSwitcher(
@@ -41,7 +41,7 @@ class SRSActionArea extends StatelessWidget {
             : Row(
                 key: const ValueKey('rating_buttons'),
                 children: [
-                  // 1:1 Parity: Again → SoundEffectPlayer.playOtherSound
+                  // 重来
                   SRSRatingButton(
                     type: SRSRatingType.again,
                     label: '重来',
@@ -52,7 +52,7 @@ class SRSActionArea extends StatelessWidget {
                     },
                   ),
                   const SizedBox(width: 8),
-                  // 1:1 Parity: Hard → SoundEffectPlayer.playOtherSound
+                  // 困难
                   SRSRatingButton(
                     type: SRSRatingType.hard,
                     label: '困难',
@@ -63,7 +63,7 @@ class SRSActionArea extends StatelessWidget {
                     },
                   ),
                   const SizedBox(width: 8),
-                  // 1:1 Parity: Good → SoundEffectPlayer.playGoodSound
+                  // 良好
                   SRSRatingButton(
                     type: SRSRatingType.good,
                     label: '良好',
@@ -74,7 +74,7 @@ class SRSActionArea extends StatelessWidget {
                     },
                   ),
                   const SizedBox(width: 8),
-                  // 1:1 Parity: Easy → SoundEffectPlayer.playGoodSound
+                  // 简单
                   SRSRatingButton(
                     type: SRSRatingType.easy,
                     label: '简单',
@@ -97,7 +97,7 @@ class _ShowAnswerButton extends StatefulWidget {
     this.revealAt,
     this.delayEnabled = false,
   });
-  
+
   final VoidCallback onPressed;
   final int? revealAt;
   final bool delayEnabled;
@@ -106,7 +106,8 @@ class _ShowAnswerButton extends StatefulWidget {
   State<_ShowAnswerButton> createState() => _ShowAnswerButtonState();
 }
 
-class _ShowAnswerButtonState extends State<_ShowAnswerButton> with SingleTickerProviderStateMixin {
+class _ShowAnswerButtonState extends State<_ShowAnswerButton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   Timer? _timer;
@@ -170,7 +171,7 @@ class _ShowAnswerButtonState extends State<_ShowAnswerButton> with SingleTickerP
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isBlocked = _remainingSec > 0;
-    
+
     return ScaleTransition(
       scale: _scaleAnimation,
       child: GestureDetector(
@@ -186,7 +187,9 @@ class _ShowAnswerButtonState extends State<_ShowAnswerButton> with SingleTickerP
                 duration: const Duration(milliseconds: 1500),
                 behavior: SnackBarBehavior.floating,
                 width: 240,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             );
           } else {
@@ -200,7 +203,7 @@ class _ShowAnswerButtonState extends State<_ShowAnswerButton> with SingleTickerP
           height: 60,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isBlocked 
+            color: isBlocked
                 ? (isDark ? Colors.grey.shade800 : Colors.grey.shade400)
                 : const Color(0xFF111827),
             borderRadius: BorderRadius.circular(24),
@@ -216,8 +219,8 @@ class _ShowAnswerButtonState extends State<_ShowAnswerButton> with SingleTickerP
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                isBlocked ? Icons.access_time_rounded : Icons.auto_awesome, 
-                color: isBlocked ? Colors.white70 : const Color(0xFFFACC15), 
+                isBlocked ? Icons.access_time_rounded : Icons.auto_awesome,
+                color: isBlocked ? Colors.white70 : const Color(0xFFFACC15),
                 size: 20,
               ),
               const SizedBox(width: 12),

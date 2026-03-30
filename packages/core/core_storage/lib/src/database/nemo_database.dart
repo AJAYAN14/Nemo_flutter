@@ -7,18 +7,27 @@ import 'package:path/path.dart' as p;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'tables.dart';
+import 'legacy_migrator.dart';
 
 part 'nemo_database.g.dart';
 
 @DriftDatabase(
-  tables: [Words, WordExamples, Grammars, GrammarUsages, GrammarExamples, LearningProgress, StudyRecords],
+  tables: [
+    Words,
+    WordExamples,
+    Grammars,
+    GrammarUsages,
+    GrammarExamples,
+    LearningProgress,
+    StudyRecords,
+  ],
   daos: [WordDao, GrammarDao, LearningDao, StudyRecordDao],
 )
 class NemoDatabase extends _$NemoDatabase {
   NemoDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -48,7 +57,10 @@ class NemoDatabase extends _$NemoDatabase {
       if (from < 8) {
         await m.createTable(studyRecords);
       }
-      
+      if (from < 9) {
+        await m.addColumn(learningProgress, learningProgress.buriedUntilDay);
+      }
+
       // Ensure clean state for other tables if from old version
       if (from < 3) {
         await m.drop(grammarExamples);
@@ -61,6 +73,7 @@ class NemoDatabase extends _$NemoDatabase {
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
+      await LegacyMigrator.performMigrationIfNeeded(this);
     },
   );
 }
@@ -145,11 +158,7 @@ extension WordMapper on WordWithExamples {
 
 extension WordExampleMapper on WordExampleData {
   WordExample toDomain() {
-    return WordExample(
-      japanese: japanese,
-      chinese: chinese,
-      audioId: audioId,
-    );
+    return WordExample(japanese: japanese, chinese: chinese, audioId: audioId);
   }
 }
 
@@ -166,16 +175,16 @@ class WordDao extends DatabaseAccessor<NemoDatabase> with _$WordDaoMixin {
   WordDao(super.db);
 
   Stream<List<WordEntry>> watchAllWords() => select(words).watch();
-  
+
   Future<List<WordEntry>> getAllWords() => select(words).get();
-  
+
   Future<List<WordEntry>> getWordsByLevel(String level) {
     return (select(words)
           ..where((t) => t.level.equals(level))
           ..orderBy([(t) => OrderingTerm(expression: t.id)]))
         .get();
   }
-  
+
   Stream<List<WordEntry>> watchWordsByCategory(String category) {
     return _queryWordsByCategory(category).watch();
   }
@@ -187,17 +196,25 @@ class WordDao extends DatabaseAccessor<NemoDatabase> with _$WordDaoMixin {
   Selectable<WordEntry> _queryWordsByCategory(String category) {
     switch (category) {
       case 'verb':
-        return select(words)..where((t) => t.pos.like('他動%') | t.pos.like('自動%') | t.pos.like('自他動%'));
+        return select(words)..where(
+          (t) => t.pos.like('他動%') | t.pos.like('自動%') | t.pos.like('自他動%'),
+        );
       case 'noun':
         return select(words)..where((t) => t.pos.like('名%') | t.pos.like('代%'));
       case 'adj':
-        return select(words)..where((t) => t.pos.like('イ形%') | t.pos.like('ナ形%'));
+        return select(words)
+          ..where((t) => t.pos.like('イ形%') | t.pos.like('ナ形%'));
       case 'adv':
         return select(words)..where((t) => t.pos.like('副%'));
       case 'particle':
         return select(words)..where((t) => t.pos.like('助%'));
       case 'conj':
-        return select(words)..where((t) => t.pos.like('接%') & t.pos.like('接尾%').not() & t.pos.like('接頭%').not());
+        return select(words)..where(
+          (t) =>
+              t.pos.like('接%') &
+              t.pos.like('接尾%').not() &
+              t.pos.like('接頭%').not(),
+        );
       case 'rentai':
         return select(words)..where((t) => t.pos.equals('連体'));
       case 'prefix':
@@ -209,67 +226,78 @@ class WordDao extends DatabaseAccessor<NemoDatabase> with _$WordDaoMixin {
       case 'expression':
         return select(words)..where((t) => t.pos.like('連語%'));
       case 'kata':
-        // For 'kata', we might need to fetch all and filter in Dart if complex, 
+        // For 'kata', we might need to fetch all and filter in Dart if complex,
         // but let's try a simple heuristic or just return empty for now if not easily queryable.
         // The old project does a complex filter in memory.
-        return select(words); 
+        return select(words);
       default:
         return select(words)..where((t) => t.pos.equals(category));
     }
   }
 
   Future<WordWithExamples?> getWordWithExamples(String id) async {
-    final word = await (select(words)..where((t) => t.id.equals(id))).getSingleOrNull();
+    final word = await (select(
+      words,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
     if (word == null) return null;
-    final examplesList = await (select(wordExamples)..where((t) => t.wordId.equals(id))).get();
+    final examplesList = await (select(
+      wordExamples,
+    )..where((t) => t.wordId.equals(id))).get();
     return WordWithExamples(word, examplesList);
   }
 
   Future<void> updateFavorite(String id, bool isFavorite) {
-    return (update(words)..where((t) => t.id.equals(id))).write(WordsCompanion(isFavorite: Value(isFavorite)));
+    return (update(words)..where((t) => t.id.equals(id))).write(
+      WordsCompanion(isFavorite: Value(isFavorite)),
+    );
   }
 
-  // 1:1 Restoration: Fetch new words using SQL join and proper filters
-  Future<List<WordEntry>> getNewWords(String level, {bool isRandom = false}) {
-    final query = select(words).join([
-      leftOuterJoin(
-        learningProgress,
-        learningProgress.id.equalsExp(
-          Constant('word_') + words.id,
-        ),
-      ),
-    ])
-      ..where(words.level.equals(level))
-      ..where(
-        learningProgress.repetitionCount.isNull() |
-        learningProgress.repetitionCount.equals(0),
-      )
-      ..where(
-        learningProgress.isSkipped.isNull() |
-        learningProgress.isSkipped.equals(false),
-      )
-      ..where(
-        learningProgress.isSuspended.isNull() |
-        learningProgress.isSuspended.equals(false),
-      )
-      ..where(
-        learningProgress.dueTime.isNull() |
-        learningProgress.dueTime.isSmallerOrEqualValue(
-          BigInt.from(DateTimeUtils.getCurrentCompensatedMillis()),
-        ),
-      );
+  // 筛选新词
+  Future<List<WordEntry>> getNewWords(
+    String level,
+    int today, {
+    bool isRandom = false,
+  }) {
+    final query =
+        select(words).join([
+            leftOuterJoin(
+              learningProgress,
+              learningProgress.id.equalsExp(Constant('word_') + words.id),
+            ),
+          ])
+          ..where(words.level.equals(level))
+          ..where(
+            learningProgress.repetitionCount.isNull() |
+                learningProgress.repetitionCount.equals(0),
+          )
+          ..where(
+            learningProgress.isSkipped.isNull() |
+                learningProgress.isSkipped.equals(false),
+          )
+          ..where(
+            learningProgress.isSuspended.isNull() |
+                learningProgress.isSuspended.equals(false),
+          )
+          ..where(
+            learningProgress.buriedUntilDay.isNull() |
+                learningProgress.buriedUntilDay.isNotValue(today),
+          );
 
     if (isRandom) {
       query.orderBy([OrderingTerm.random()]);
     } else {
-      query.orderBy([OrderingTerm(expression: words.id, mode: OrderingMode.asc)]);
+      query.orderBy([
+        OrderingTerm(expression: words.id, mode: OrderingMode.asc),
+      ]);
     }
 
     return query.map((row) => row.readTable(words)).get();
   }
 }
 
-@DriftAccessor(tables: [Grammars, GrammarUsages, GrammarExamples, LearningProgress])
+@DriftAccessor(
+  tables: [Grammars, GrammarUsages, GrammarExamples, LearningProgress],
+)
 class GrammarDao extends DatabaseAccessor<NemoDatabase> with _$GrammarDaoMixin {
   GrammarDao(super.db);
 
@@ -277,14 +305,18 @@ class GrammarDao extends DatabaseAccessor<NemoDatabase> with _$GrammarDaoMixin {
 
   Stream<List<GrammarWithDetails>> watchAllGrammarsWithDetails() {
     final grammarStream = select(grammars).watch();
-    
+
     return grammarStream.asyncMap((list) async {
       final List<GrammarWithDetails> results = [];
       for (var grammar in list) {
-        final usages = await (select(grammarUsages)..where((t) => t.grammarId.equals(grammar.id))).get();
+        final usages = await (select(
+          grammarUsages,
+        )..where((t) => t.grammarId.equals(grammar.id))).get();
         final List<GrammarUsageWithExamples> usageWithExamples = [];
         for (var usage in usages) {
-          final examples = await (select(grammarExamples)..where((t) => t.usageId.equals(usage.id))).get();
+          final examples = await (select(
+            grammarExamples,
+          )..where((t) => t.usageId.equals(usage.id))).get();
           usageWithExamples.add(GrammarUsageWithExamples(usage, examples));
         }
         results.add(GrammarWithDetails(grammar, usageWithExamples));
@@ -303,53 +335,62 @@ class GrammarDao extends DatabaseAccessor<NemoDatabase> with _$GrammarDaoMixin {
   }
 
   Future<GrammarWithDetails?> getGrammarWithDetails(String id) async {
-    final grammar = await (select(grammars)..where((t) => t.id.equals(id))).getSingleOrNull();
+    final grammar = await (select(
+      grammars,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
     if (grammar == null) return null;
-    final usagesList = await (select(grammarUsages)..where((t) => t.grammarId.equals(id))).get();
+    final usagesList = await (select(
+      grammarUsages,
+    )..where((t) => t.grammarId.equals(id))).get();
     final List<GrammarUsageWithExamples> usageWithExamples = [];
-    
+
     for (var usage in usagesList) {
-      final examplesList = await (select(grammarExamples)..where((t) => t.usageId.equals(usage.id))).get();
+      final examplesList = await (select(
+        grammarExamples,
+      )..where((t) => t.usageId.equals(usage.id))).get();
       usageWithExamples.add(GrammarUsageWithExamples(usage, examplesList));
     }
-    
+
     return GrammarWithDetails(grammar, usageWithExamples);
   }
 
-  // 1:1 Restoration: Fetch new grammars using SQL join and proper filters
-  Future<List<GrammarEntry>> getNewGrammars(String level, {bool isRandom = false}) {
-    final query = select(grammars).join([
-      leftOuterJoin(
-        learningProgress,
-        learningProgress.id.equalsExp(
-          Constant('grammar_') + grammars.id,
-        ),
-      ),
-    ])
-      ..where(grammars.grammarLevel.equals(level))
-      ..where(
-        learningProgress.repetitionCount.isNull() |
-        learningProgress.repetitionCount.equals(0),
-      )
-      ..where(
-        learningProgress.isSkipped.isNull() |
-        learningProgress.isSkipped.equals(false),
-      )
-      ..where(
-        learningProgress.isSuspended.isNull() |
-        learningProgress.isSuspended.equals(false),
-      )
-      ..where(
-        learningProgress.dueTime.isNull() |
-        learningProgress.dueTime.isSmallerOrEqualValue(
-          BigInt.from(DateTimeUtils.getCurrentCompensatedMillis()),
-        ),
-      );
+  // 筛选新语法
+  Future<List<GrammarEntry>> getNewGrammars(
+    String level,
+    int today, {
+    bool isRandom = false,
+  }) {
+    final query =
+        select(grammars).join([
+            leftOuterJoin(
+              learningProgress,
+              learningProgress.id.equalsExp(Constant('grammar_') + grammars.id),
+            ),
+          ])
+          ..where(grammars.grammarLevel.equals(level))
+          ..where(
+            learningProgress.repetitionCount.isNull() |
+                learningProgress.repetitionCount.equals(0),
+          )
+          ..where(
+            learningProgress.isSkipped.isNull() |
+                learningProgress.isSkipped.equals(false),
+          )
+          ..where(
+            learningProgress.isSuspended.isNull() |
+                learningProgress.isSuspended.equals(false),
+          )
+          ..where(
+            learningProgress.buriedUntilDay.isNull() |
+                learningProgress.buriedUntilDay.isNotValue(today),
+          );
 
     if (isRandom) {
       query.orderBy([OrderingTerm.random()]);
     } else {
-      query.orderBy([OrderingTerm(expression: grammars.id, mode: OrderingMode.asc)]);
+      query.orderBy([
+        OrderingTerm(expression: grammars.id, mode: OrderingMode.asc),
+      ]);
     }
 
     return query.map((row) => row.readTable(grammars)).get();
@@ -357,75 +398,126 @@ class GrammarDao extends DatabaseAccessor<NemoDatabase> with _$GrammarDaoMixin {
 }
 
 @DriftAccessor(tables: [LearningProgress])
-class LearningDao extends DatabaseAccessor<NemoDatabase> with _$LearningDaoMixin {
+class LearningDao extends DatabaseAccessor<NemoDatabase>
+    with _$LearningDaoMixin {
   LearningDao(super.db);
 
   Future<LearningProgressData?> getProgress(String id) {
-    return (select(learningProgress)..where((t) => t.id.equals(id))).getSingleOrNull();
+    return (select(
+      learningProgress,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
-  Future<LearningProgressData> updateProgress(LearningProgressCompanion companion) async {
+  Future<LearningProgressData> updateProgress(
+    LearningProgressCompanion companion,
+  ) async {
     await into(learningProgress).insertOnConflictUpdate(companion);
-    return (select(learningProgress)..where((t) => t.id.equals(companion.id.value))).getSingle();
+    return (select(
+      learningProgress,
+    )..where((t) => t.id.equals(companion.id.value))).getSingle();
   }
 
-  Future<List<LearningProgressData>> getAllProgress() => select(learningProgress).get();
+  Future<List<LearningProgressData>> getAllProgress() =>
+      select(learningProgress).get();
 
-  Stream<List<LearningProgressData>> watchAllProgress() => select(learningProgress).watch();
+  Stream<List<LearningProgressData>> watchAllProgress() =>
+      select(learningProgress).watch();
 
-  Future<List<LearningProgressData>> getDueItems(int now, {String? itemType}) {
+  Future<List<LearningProgressData>> getDueItems(
+    int now,
+    int today, {
+    String? itemType,
+  }) {
     final query = select(learningProgress)
       ..where((t) => t.dueTime.isSmallerOrEqualValue(BigInt.from(now)))
       ..where((t) => t.isSuspended.equals(false))
       ..where((t) => t.isSkipped.equals(false))
-      ..orderBy([(t) => OrderingTerm(expression: t.dueTime, mode: OrderingMode.asc)]);
-    
+      ..where(
+        (t) => t.buriedUntilDay.isNull() | t.buriedUntilDay.isNotValue(today),
+      )
+      ..orderBy([
+        (t) => OrderingTerm(expression: t.dueTime, mode: OrderingMode.asc),
+      ]);
+
     if (itemType != null) {
       query.where((t) => t.itemType.equals(itemType));
     }
-    
+
     return query.get();
   }
 
-  Future<List<LearningProgressData>> getUpcomingItems(int now, int withinMillis, {String? itemType}) {
+  Future<List<LearningProgressData>> getUpcomingItems(
+    int now,
+    int withinMillis, {
+    String? itemType,
+  }) {
     final query = select(learningProgress)
       ..where((t) => t.dueTime.isBiggerThanValue(BigInt.from(now)))
-      ..where((t) => t.dueTime.isSmallerOrEqualValue(BigInt.from(now + withinMillis)))
+      ..where(
+        (t) => t.dueTime.isSmallerOrEqualValue(BigInt.from(now + withinMillis)),
+      )
       ..where((t) => t.isSuspended.equals(false))
       ..where((t) => t.isSkipped.equals(false))
-      ..orderBy([(t) => OrderingTerm(expression: t.dueTime, mode: OrderingMode.asc)]);
-    
+      ..orderBy([
+        (t) => OrderingTerm(expression: t.dueTime, mode: OrderingMode.asc),
+      ]);
+
     if (itemType != null) {
       query.where((t) => t.itemType.equals(itemType));
     }
-    
+
     return query.get();
   }
 
   Future<void> setSuspended(String id, bool isSuspended) {
-    return (update(learningProgress)..where((t) => t.id.equals(id)))
-        .write(LearningProgressCompanion(isSuspended: Value(isSuspended)));
+    return (update(learningProgress)..where((t) => t.id.equals(id))).write(
+      LearningProgressCompanion(isSuspended: Value(isSuspended)),
+    );
   }
 
-  Future<void> updateDueTime(String id, int dueTime) {
-    return (update(learningProgress)..where((t) => t.id.equals(id)))
-        .write(LearningProgressCompanion(dueTime: Value(BigInt.from(dueTime))));
+  Future<void> updateDueTime(String id, int dueTime, {int? buriedUntilDay}) {
+    return (update(learningProgress)..where((t) => t.id.equals(id))).write(
+      LearningProgressCompanion(
+        dueTime: Value(BigInt.from(dueTime)),
+        buriedUntilDay: buriedUntilDay != null
+            ? Value(buriedUntilDay)
+            : const Value.absent(),
+      ),
+    );
   }
 
-  Future<int> getNewItemsCount(String itemType, int startMillis, int endMillis) async {
+  Future<int> getNewItemsCount(
+    String itemType,
+    int startMillis,
+    int endMillis,
+  ) async {
     final query = select(learningProgress)
       ..where((t) => t.itemType.equals(itemType))
-      ..where((t) => t.firstLearned.isBetweenValues(BigInt.from(startMillis), BigInt.from(endMillis)));
-    
+      ..where(
+        (t) => t.firstLearned.isBetweenValues(
+          BigInt.from(startMillis),
+          BigInt.from(endMillis),
+        ),
+      );
+
     final result = await query.get();
     return result.length;
   }
 
-  Future<int> getReviewedItemsCount(String itemType, int startMillis, int endMillis) async {
+  Future<int> getReviewedItemsCount(
+    String itemType,
+    int startMillis,
+    int endMillis,
+  ) async {
     final query = select(learningProgress)
       ..where((t) => t.itemType.equals(itemType))
-      ..where((t) => t.lastReviewed.isBetweenValues(BigInt.from(startMillis), BigInt.from(endMillis)));
-    
+      ..where(
+        (t) => t.lastReviewed.isBetweenValues(
+          BigInt.from(startMillis),
+          BigInt.from(endMillis),
+        ),
+      );
+
     final result = await query.get();
     return result.length;
   }
@@ -434,22 +526,40 @@ class LearningDao extends DatabaseAccessor<NemoDatabase> with _$LearningDaoMixin
     final query = select(learningProgress)
       ..where((t) => t.itemType.equals(itemType))
       ..where((t) => t.dueTime.isSmallerOrEqualValue(BigInt.from(now)));
-    
+
     final result = await query.get();
     return result.length;
   }
 
-  Stream<int> watchNewItemsCount(String itemType, int startMillis, int endMillis) {
+  Stream<int> watchNewItemsCount(
+    String itemType,
+    int startMillis,
+    int endMillis,
+  ) {
     final query = select(learningProgress)
       ..where((t) => t.itemType.equals(itemType))
-      ..where((t) => t.firstLearned.isBetweenValues(BigInt.from(startMillis), BigInt.from(endMillis)));
+      ..where(
+        (t) => t.firstLearned.isBetweenValues(
+          BigInt.from(startMillis),
+          BigInt.from(endMillis),
+        ),
+      );
     return query.watch().map((list) => list.length);
   }
 
-  Stream<int> watchReviewedItemsCount(String itemType, int startMillis, int endMillis) {
+  Stream<int> watchReviewedItemsCount(
+    String itemType,
+    int startMillis,
+    int endMillis,
+  ) {
     final query = select(learningProgress)
       ..where((t) => t.itemType.equals(itemType))
-      ..where((t) => t.lastReviewed.isBetweenValues(BigInt.from(startMillis), BigInt.from(endMillis)));
+      ..where(
+        (t) => t.lastReviewed.isBetweenValues(
+          BigInt.from(startMillis),
+          BigInt.from(endMillis),
+        ),
+      );
     return query.watch().map((list) => list.length);
   }
 
@@ -461,61 +571,94 @@ class LearningDao extends DatabaseAccessor<NemoDatabase> with _$LearningDaoMixin
   }
 
   Stream<List<LearningProgressData>> watchAllProgressByType(String itemType) {
-    return (select(learningProgress)..where((t) => t.itemType.equals(itemType))).watch();
+    return (select(
+      learningProgress,
+    )..where((t) => t.itemType.equals(itemType))).watch();
   }
 
   Future<List<LearningProgressData>> getSkippedItems({String? itemType}) {
     final query = select(learningProgress)
       ..where((t) => t.isSkipped.equals(true))
-      ..orderBy([(t) => OrderingTerm(expression: t.id, mode: OrderingMode.asc)]);
-    
+      ..orderBy([
+        (t) => OrderingTerm(expression: t.id, mode: OrderingMode.asc),
+      ]);
+
     if (itemType != null) {
       query.where((t) => t.itemType.equals(itemType));
     }
-    
+
     return query.get();
   }
 
   Future<void> setSkipped(String id, bool isSkipped) {
-    return (update(learningProgress)..where((t) => t.id.equals(id)))
-        .write(LearningProgressCompanion(isSkipped: Value(isSkipped)));
+    return (update(learningProgress)..where((t) => t.id.equals(id))).write(
+      LearningProgressCompanion(isSkipped: Value(isSkipped)),
+    );
   }
 
-  Future<List<LearningProgressData>> getNewItems(String itemType, int startMillis, int endMillis) {
+  Future<List<LearningProgressData>> getNewItems(
+    String itemType,
+    int startMillis,
+    int endMillis,
+  ) {
     return (select(learningProgress)
           ..where((t) => t.itemType.equals(itemType))
-          ..where((t) => t.firstLearned.isBetweenValues(BigInt.from(startMillis), BigInt.from(endMillis))))
+          ..where(
+            (t) => t.firstLearned.isBetweenValues(
+              BigInt.from(startMillis),
+              BigInt.from(endMillis),
+            ),
+          ))
         .get();
   }
 
-  Future<List<LearningProgressData>> getReviewedItems(String itemType, int startMillis, int endMillis) {
+  Future<List<LearningProgressData>> getReviewedItems(
+    String itemType,
+    int startMillis,
+    int endMillis,
+  ) {
     return (select(learningProgress)
           ..where((t) => t.itemType.equals(itemType))
-          ..where((t) => t.lastReviewed.isBetweenValues(BigInt.from(startMillis), BigInt.from(endMillis))))
+          ..where(
+            (t) => t.lastReviewed.isBetweenValues(
+              BigInt.from(startMillis),
+              BigInt.from(endMillis),
+            ),
+          ))
         .get();
   }
 }
 
 @DriftAccessor(tables: [StudyRecords])
-class StudyRecordDao extends DatabaseAccessor<NemoDatabase> with _$StudyRecordDaoMixin {
+class StudyRecordDao extends DatabaseAccessor<NemoDatabase>
+    with _$StudyRecordDaoMixin {
   StudyRecordDao(super.db);
 
   Stream<StudyRecordEntry?> watchRecordByDate(int date) {
-    return (select(studyRecords)..where((t) => t.date.equals(date))).watchSingleOrNull();
+    return (select(
+      studyRecords,
+    )..where((t) => t.date.equals(date))).watchSingleOrNull();
   }
 
   Future<StudyRecordEntry?> getRecordByDate(int date) {
-    return (select(studyRecords)..where((t) => t.date.equals(date))).getSingleOrNull();
+    return (select(
+      studyRecords,
+    )..where((t) => t.date.equals(date))).getSingleOrNull();
   }
 
   Stream<List<StudyRecordEntry>> watchAllRecords() {
-    return (select(studyRecords)..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc)])).watch();
+    return (select(studyRecords)..orderBy([
+          (t) => OrderingTerm(expression: t.date, mode: OrderingMode.desc),
+        ]))
+        .watch();
   }
 
   Stream<List<StudyRecordEntry>> watchRecordsInRange(int start, int end) {
     return (select(studyRecords)
           ..where((t) => t.date.isBetweenValues(start, end))
-          ..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.asc)]))
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.date, mode: OrderingMode.asc),
+          ]))
         .watch();
   }
 
@@ -526,10 +669,12 @@ class StudyRecordDao extends DatabaseAccessor<NemoDatabase> with _$StudyRecordDa
   Future<void> _ensureRecordExists(int date) async {
     final existing = await getRecordByDate(date);
     if (existing == null) {
-      await into(studyRecords).insert(StudyRecordsCompanion.insert(
-        date: Value(date),
-        timestamp: BigInt.from(DateTimeUtils.getCurrentCompensatedMillis()),
-      ));
+      await into(studyRecords).insert(
+        StudyRecordsCompanion.insert(
+          date: Value(date),
+          timestamp: BigInt.from(DateTimeUtils.getCurrentCompensatedMillis()),
+        ),
+      );
     }
   }
 
@@ -624,10 +769,12 @@ NemoDatabase nemoDatabase(NemoDatabaseRef ref) {
 WordDao wordDao(WordDaoRef ref) => ref.watch(nemoDatabaseProvider).wordDao;
 
 @riverpod
-GrammarDao grammarDao(GrammarDaoRef ref) => ref.watch(nemoDatabaseProvider).grammarDao;
+GrammarDao grammarDao(GrammarDaoRef ref) =>
+    ref.watch(nemoDatabaseProvider).grammarDao;
 
 @riverpod
-LearningDao learningDao(LearningDaoRef ref) => ref.watch(nemoDatabaseProvider).learningDao;
+LearningDao learningDao(LearningDaoRef ref) =>
+    ref.watch(nemoDatabaseProvider).learningDao;
 
 @riverpod
 Stream<List<WordEntry>> allWords(AllWordsRef ref) {
@@ -641,13 +788,17 @@ Stream<List<GrammarEntry>> allGrammars(AllGrammarsRef ref) {
 
 @riverpod
 Stream<List<Grammar>> allGrammarsWithDetails(AllGrammarsWithDetailsRef ref) {
-  return ref.watch(grammarDaoProvider).watchAllGrammarsWithDetails().map(
-    (list) => list.map((g) => g.toDomain()).toList(),
-  );
+  return ref
+      .watch(grammarDaoProvider)
+      .watchAllGrammarsWithDetails()
+      .map((list) => list.map((g) => g.toDomain()).toList());
 }
 
 @riverpod
-Stream<List<WordEntry>> wordsByCategory(WordsByCategoryRef ref, String category) {
+Stream<List<WordEntry>> wordsByCategory(
+  WordsByCategoryRef ref,
+  String category,
+) {
   return ref.watch(wordDaoProvider).watchWordsByCategory(category);
 }
 
@@ -655,6 +806,7 @@ Stream<List<WordEntry>> wordsByCategory(WordsByCategoryRef ref, String category)
 Future<WordWithExamples?> wordWithExamples(WordWithExamplesRef ref, String id) {
   return ref.watch(wordDaoProvider).getWordWithExamples(id);
 }
+
 extension LearningProgressDataX on LearningProgressData {
   StudyProgress toDomain() {
     return StudyProgress(
@@ -670,6 +822,7 @@ extension LearningProgressDataX on LearningProgressData {
       isSuspended: isSuspended,
       lapses: lapses,
       isSkipped: isSkipped,
+      buriedUntilDay: buriedUntilDay,
       lastModifiedTime: 0, // Placeholder
     );
   }

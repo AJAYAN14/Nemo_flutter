@@ -4,7 +4,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_domain/core_domain.dart';
 
-/// 阈值等待界面 (1:1 还原 Kotlin WaitingContent)
+/// 阈值等待界面
 /// 
 /// 当没有到期卡片且下一张卡片在提前复习阈值之外时显示。
 class NemoWaitingView extends HookWidget {

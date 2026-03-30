@@ -18,7 +18,7 @@ class LearningRepository {
   final StudyRecordRepository _studyRecordRepository;
   final SrsScheduler _scheduler;
   final LearningSessionPolicy _policy = const LearningSessionPolicy();
-  
+
   final int _wordGoal;
   final int _grammarGoal;
   final int _resetHour;
@@ -46,21 +46,21 @@ class LearningRepository {
     required List<int> learningSteps,
     required List<int> relearningSteps,
     List<double>? optimizedFsrsParameters,
-  })  : _wordDao = wordDao,
-        _grammarDao = grammarDao,
-        _learningDao = learningDao,
-        _studyRecordRepository = studyRecordRepository,
-        _scheduler = SrsScheduler(optimizedParameters: optimizedFsrsParameters),
-        _wordGoal = wordGoal,
-        _grammarGoal = grammarGoal,
-        _resetHour = resetHour,
-        _wordLevel = wordLevel,
-        _grammarLevel = grammarLevel,
-        _randomContent = randomContent,
-        _leechThreshold = leechThreshold,
-        _leechAction = leechAction,
-        _learningSteps = learningSteps,
-        _relearningSteps = relearningSteps;
+  }) : _wordDao = wordDao,
+       _grammarDao = grammarDao,
+       _learningDao = learningDao,
+       _studyRecordRepository = studyRecordRepository,
+       _scheduler = SrsScheduler(optimizedParameters: optimizedFsrsParameters),
+       _wordGoal = wordGoal,
+       _grammarGoal = grammarGoal,
+       _resetHour = resetHour,
+       _wordLevel = wordLevel,
+       _grammarLevel = grammarLevel,
+       _randomContent = randomContent,
+       _leechThreshold = leechThreshold,
+       _leechAction = leechAction,
+       _learningSteps = learningSteps,
+       _relearningSteps = relearningSteps;
 
   Future<List<LearningItem>> getLearningQueue(String mode) async {
     final dayStartMillis = DateTimeUtils.getLearningDayStart(_resetHour);
@@ -71,37 +71,82 @@ class LearningRepository {
     final List<LearningItem> newItems = [];
 
     // 2. 获取新项
+    final today = DateTimeUtils.getLearningDay(_resetHour);
     if (mode == 'word') {
-      final wordsLearnedToday = await _learningDao.getNewItemsCount('word', dayStartMillis, dayEndMillis);
-      final wordsToLearn = (_wordGoal - wordsLearnedToday).clamp(0, _wordGoal);
-      
+      final wordsLearnedToday = await _learningDao.getNewItemsCount(
+        'word',
+        dayStartMillis,
+        dayEndMillis,
+      );
+      // Kotlin uses .coerceAtLeast(0), which doesn't have an upper bound of _wordGoal
+      final rawRemainingQuota = (this._wordGoal - wordsLearnedToday).clamp(
+        0,
+        999999,
+      );
+      // 计算调整后的配额
+      final wordsToLearn = _policy.calculateAdjustedNewQuota(
+        rawRemainingQuota,
+        reviewItems.length,
+      );
+
       if (wordsToLearn > 0) {
-        final newWords = await _wordDao.getNewWords(_wordLevel, isRandom: _randomContent);
+        final newWords = await _wordDao.getNewWords(
+          _wordLevel,
+          today,
+          isRandom: _randomContent,
+        );
         int added = 0;
         for (final wordEntry in newWords) {
           if (added >= wordsToLearn) break;
-          // 新词可能已由于搁置/跳过而有进度记录
-          final progress = await _learningDao.getProgress('word_${wordEntry.id}');
+          final progress = await _learningDao.getProgress(
+            'word_${wordEntry.id}',
+          );
           final wordWithEx = await _wordDao.getWordWithExamples(wordEntry.id);
           if (wordWithEx != null) {
-            newItems.add(WordItem(wordWithEx.toDomain(), progress: progress?.toDomain()));
+            newItems.add(
+              WordItem(wordWithEx.toDomain(), progress: progress?.toDomain()),
+            );
             added++;
           }
         }
       }
     } else if (mode == 'grammar') {
-      final grammarsLearnedToday = await _learningDao.getNewItemsCount('grammar', dayStartMillis, dayEndMillis);
-      final grammarsToLearn = (_grammarGoal - grammarsLearnedToday).clamp(0, _grammarGoal);
-      
+      final grammarsLearnedToday = await _learningDao.getNewItemsCount(
+        'grammar',
+        dayStartMillis,
+        dayEndMillis,
+      );
+      // Kotlin uses .coerceAtLeast(0), which doesn't have an upper bound of _grammarGoal
+      final rawRemainingQuota = (this._grammarGoal - grammarsLearnedToday)
+          .clamp(0, 999999);
+      // 使用 Policy 计算调整后的配额
+      final grammarsToLearn = _policy.calculateAdjustedNewQuota(
+        rawRemainingQuota,
+        reviewItems.length,
+      );
+
       if (grammarsToLearn > 0) {
-        final newGrammars = await _grammarDao.getNewGrammars(_grammarLevel, isRandom: _randomContent);
+        final newGrammars = await _grammarDao.getNewGrammars(
+          _grammarLevel,
+          today,
+          isRandom: _randomContent,
+        );
         int added = 0;
         for (final grammarEntry in newGrammars) {
           if (added >= grammarsToLearn) break;
-          final progress = await _learningDao.getProgress('grammar_${grammarEntry.id}');
-          final grammarWithDetails = await _grammarDao.getGrammarWithDetails(grammarEntry.id);
+          final progress = await _learningDao.getProgress(
+            'grammar_${grammarEntry.id}',
+          );
+          final grammarWithDetails = await _grammarDao.getGrammarWithDetails(
+            grammarEntry.id,
+          );
           if (grammarWithDetails != null) {
-            newItems.add(GrammarItem(grammarWithDetails.toDomain(), progress: progress?.toDomain()));
+            newItems.add(
+              GrammarItem(
+                grammarWithDetails.toDomain(),
+                progress: progress?.toDomain(),
+              ),
+            );
             added++;
           }
         }
@@ -123,37 +168,48 @@ class LearningRepository {
     final List<LearningItem> items = [];
 
     // 1. Get due items (filtered by mode or all)
+    final today = DateTimeUtils.getLearningDay(_resetHour);
     final dueProgress = await _learningDao.getDueItems(
-      now, 
+      now,
+      today,
       itemType: mode == 'all' ? null : mode,
     );
-    
+
     for (final progress in dueProgress) {
       if (progress.itemType == 'word') {
         final idStr = progress.id.replaceFirst('word_', '');
         final word = await _wordDao.getWordWithExamples(idStr);
-        if (word != null) {
+        // 增加等级过滤
+        if (word != null && (mode == 'all' || word.word.level == _wordLevel)) {
           items.add(WordItem(word.toDomain(), progress: progress.toDomain()));
         }
       } else {
         final idStr = progress.id.replaceFirst('grammar_', '');
         final grammar = await _grammarDao.getGrammarWithDetails(idStr);
-        if (grammar != null) {
-          items.add(GrammarItem(grammar.toDomain(), progress: progress.toDomain()));
+        // 增加等级过滤
+        if (grammar != null &&
+            (mode == 'all' || grammar.grammar.grammarLevel == _grammarLevel)) {
+          items.add(
+            GrammarItem(grammar.toDomain(), progress: progress.toDomain()),
+          );
         }
       }
     }
     return items;
   }
 
-  Future<List<LearningItem>> getUpcomingItems(int now, int withinMillis, {String? itemType}) async {
+  Future<List<LearningItem>> getUpcomingItems(
+    int now,
+    int withinMillis, {
+    String? itemType,
+  }) async {
     final List<LearningItem> items = [];
     final upcomingProgress = await _learningDao.getUpcomingItems(
-      now, 
+      now,
       withinMillis,
       itemType: itemType == 'all' ? null : itemType,
     );
-    
+
     for (final progress in upcomingProgress) {
       if (progress.itemType == 'word') {
         final idStr = progress.id.replaceFirst('word_', '');
@@ -165,7 +221,9 @@ class LearningRepository {
         final idStr = progress.id.replaceFirst('grammar_', '');
         final grammar = await _grammarDao.getGrammarWithDetails(idStr);
         if (grammar != null) {
-          items.add(GrammarItem(grammar.toDomain(), progress: progress.toDomain()));
+          items.add(
+            GrammarItem(grammar.toDomain(), progress: progress.toDomain()),
+          );
         }
       }
     }
@@ -177,7 +235,7 @@ class LearningRepository {
     final skippedProgress = await _learningDao.getSkippedItems(
       itemType: mode == 'all' ? null : mode,
     );
-    
+
     for (final progress in skippedProgress) {
       if (progress.itemType == 'word') {
         final idStr = progress.id.replaceFirst('word_', '');
@@ -189,7 +247,9 @@ class LearningRepository {
         final idStr = progress.id.replaceFirst('grammar_', '');
         final grammar = await _grammarDao.getGrammarWithDetails(idStr);
         if (grammar != null) {
-          items.add(GrammarItem(grammar.toDomain(), progress: progress.toDomain()));
+          items.add(
+            GrammarItem(grammar.toDomain(), progress: progress.toDomain()),
+          );
         }
       }
     }
@@ -211,17 +271,23 @@ class LearningRepository {
         final grammar = await _grammarDao.getGrammarWithDetails(idStr);
         final progress = await _learningDao.getProgress(id);
         if (grammar != null) {
-          items.add(GrammarItem(grammar.toDomain(), progress: progress?.toDomain()));
+          items.add(
+            GrammarItem(grammar.toDomain(), progress: progress?.toDomain()),
+          );
         }
       }
     }
     return items;
   }
 
-  Future<SrsFinalResult> updateProgress(String id, String itemType, SrsRating rating) async {
+  Future<SrsFinalResult> updateProgress(
+    String id,
+    String itemType,
+    SrsRating rating,
+  ) async {
     final fullId = '${itemType}_$id';
     final currentProgress = await _learningDao.getProgress(fullId);
-    
+
     final result = _scheduler.schedule(
       id: fullId,
       itemType: itemType,
@@ -238,8 +304,10 @@ class LearningRepository {
     } else if (result is SrsLeech) {
       if (_leechAction == 'bury') {
         final nextDayStart = DateTimeUtils.getLearningDayEnd(_resetHour) + 1;
+        final today = DateTimeUtils.getLearningDay(_resetHour);
         final companion = result.companion.copyWith(
           dueTime: Value(BigInt.from(nextDayStart)),
+          buriedUntilDay: Value(today),
         );
         updatedData = await _learningDao.updateProgress(companion);
       } else {
@@ -250,32 +318,45 @@ class LearningRepository {
         updatedData = await _learningDao.updateProgress(companion);
       }
     } else {
-      updatedData = await _learningDao.updateProgress((result as SrsGraduate).companion);
+      updatedData = await _learningDao.updateProgress(
+        (result as SrsGraduate).companion,
+      );
     }
 
-    // [1:1 Logic Fix] Update StudyRecords synchronously with progress
-    // If firstLearned is today, any further ratings TODAY are excluded from "Reviewed" count
+    // 同步更新学习记录
+    // 如果今日首次学习，则不计入“已复习”统计
     final today = DateTimeUtils.getLearningDay(_resetHour);
     final firstLearnedDay = updatedData.firstLearned != null
-        ? DateTimeUtils.toLearningDay(updatedData.firstLearned!.toInt(), _resetHour)
+        ? DateTimeUtils.toLearningDay(
+            updatedData.firstLearned!.toInt(),
+            _resetHour,
+          )
         : null;
 
     if (currentProgress == null) {
       // First time learning this item
       if (itemType == 'word') {
-        await _studyRecordRepository.incrementLearnedWords(resetHour: _resetHour);
+        await _studyRecordRepository.incrementLearnedWords(
+          resetHour: _resetHour,
+        );
       } else {
-        await _studyRecordRepository.incrementLearnedGrammars(resetHour: _resetHour);
+        await _studyRecordRepository.incrementLearnedGrammars(
+          resetHour: _resetHour,
+        );
       }
     } else if (firstLearnedDay != today) {
       // It's a review of an item learned on a PREVIOUS day
       if (itemType == 'word') {
-        await _studyRecordRepository.incrementReviewedWords(resetHour: _resetHour);
+        await _studyRecordRepository.incrementReviewedWords(
+          resetHour: _resetHour,
+        );
       } else {
-        await _studyRecordRepository.incrementReviewedGrammars(resetHour: _resetHour);
+        await _studyRecordRepository.incrementReviewedGrammars(
+          resetHour: _resetHour,
+        );
       }
     }
-    
+
     return SrsFinalResult(
       updatedProgress: updatedData,
       isRequeue: result is SrsRequeue,
@@ -283,10 +364,14 @@ class LearningRepository {
     );
   }
 
-  Future<void> undoUpdateProgress(String id, String itemType, StudyProgress? oldData) async {
+  Future<void> undoUpdateProgress(
+    String id,
+    String itemType,
+    StudyProgress? oldData,
+  ) async {
     if (oldData == null) {
       // If there was no progress before, we might want to delete it or just skip
-      return; 
+      return;
     }
     // Convert StudyProgress back to Companion using the dictionary-based toCompanion()
     // or we can implement a more type-safe mapper in core_storage.
@@ -294,7 +379,7 @@ class LearningRepository {
     // I'll update toCompanion() to return the actual Drift companion in core_storage.
     // Wait, core_domain cannot depend on core_storage.
     // So the conversion MUST happen here in the repository.
-    
+
     final companion = LearningProgressCompanion(
       id: Value(oldData.id),
       itemType: Value(oldData.itemType),
@@ -302,8 +387,16 @@ class LearningRepository {
       interval: Value(oldData.interval),
       difficulty: Value(oldData.easeFactor),
       dueTime: Value(BigInt.from(oldData.dueTime)),
-      lastReviewed: Value(oldData.lastReviewed != null ? BigInt.from(oldData.lastReviewed!) : null),
-      firstLearned: Value(oldData.firstLearned != null ? BigInt.from(oldData.firstLearned!) : null),
+      lastReviewed: Value(
+        oldData.lastReviewed != null
+            ? BigInt.from(oldData.lastReviewed!)
+            : null,
+      ),
+      firstLearned: Value(
+        oldData.firstLearned != null
+            ? BigInt.from(oldData.firstLearned!)
+            : null,
+      ),
       step: Value(oldData.step),
       isSuspended: Value(oldData.isSuspended),
       lapses: Value(oldData.lapses),
@@ -315,22 +408,25 @@ class LearningRepository {
 
   Future<void> suspend(String id, String itemType) async {
     final fullId = '${itemType}_$id';
-    
+
     // Ensure progress record exists
     final progress = await _learningDao.getProgress(fullId);
     if (progress == null) {
-      // Create initial progress for new item
-      await _learningDao.updateProgress(LearningProgressCompanion.insert(
-        id: fullId,
-        itemType: itemType,
-        isSuspended: const Value(true),
-        isSkipped: const Value(true),
-        // Set a future due time just in case, though it's skipped
-        dueTime: Value(BigInt.from(DateTimeUtils.getCurrentCompensatedMillis() + 86400000)),
-      ));
+      // 针对新项创建初始进度
+      await _learningDao.updateProgress(
+        LearningProgressCompanion.insert(
+          id: fullId,
+          itemType: itemType,
+          isSuspended: const Value(true),
+          isSkipped: const Value(true),
+          // Set a future due time just in case, though it's skipped
+          dueTime: Value(
+            BigInt.from(DateTimeUtils.getCurrentCompensatedMillis() + 86400000),
+          ),
+        ),
+      );
     } else {
-      // 1:1 Restoration: Both Suspended and Skipped flags should be set
-      // In the old project, Manual Suspend also moved the item to Leech Management (Skipped)
+      // 手动暂停时同时标记为跳过
       await _learningDao.setSuspended(fullId, true);
       await _learningDao.setSkipped(fullId, true);
     }
@@ -340,22 +436,30 @@ class LearningRepository {
     final fullId = '${itemType}_$id';
     // Move dueTime to the start of the next learning day
     final nextDayStart = DateTimeUtils.getLearningDayEnd(resetHour) + 1;
-    
+    final today = DateTimeUtils.getLearningDay(resetHour);
+
     final progress = await _learningDao.getProgress(fullId);
     if (progress == null) {
-      await _learningDao.updateProgress(LearningProgressCompanion.insert(
-        id: fullId,
-        itemType: itemType,
-        dueTime: Value(BigInt.from(nextDayStart)),
-      ));
+      await _learningDao.updateProgress(
+        LearningProgressCompanion.insert(
+          id: fullId,
+          itemType: itemType,
+          dueTime: Value(BigInt.from(nextDayStart)),
+          buriedUntilDay: Value(today),
+        ),
+      );
     } else {
-      await _learningDao.updateDueTime(fullId, nextDayStart);
+      await _learningDao.updateDueTime(
+        fullId,
+        nextDayStart,
+        buriedUntilDay: today,
+      );
     }
   }
 
   Future<void> recoverLeech(String id, String itemType) async {
     final fullId = '${itemType}_$id';
-    // Ensure both flags are cleared for 1:1 parity
+    // 同时清除跳过和暂停标记
     await _learningDao.setSkipped(fullId, false);
     await _learningDao.setSuspended(fullId, false);
   }
@@ -363,21 +467,28 @@ class LearningRepository {
   Map<SrsRating, String> getIntervalPreviews(StudyProgress? progress) {
     // Convert back to LearningProgressData for the scheduler which is still using Drift types
     // or update the scheduler too. For now, let's keep consistency.
-    final data = progress == null ? null : LearningProgressData(
-      id: progress.id,
-      itemType: progress.itemType,
-      repetitionCount: progress.repetitionCount,
-      interval: progress.interval,
-      difficulty: progress.easeFactor,
-      stability: 0, // Placeholder
-      dueTime: BigInt.from(progress.dueTime),
-      lastReviewed: progress.lastReviewed != null ? BigInt.from(progress.lastReviewed!) : null,
-      firstLearned: progress.firstLearned != null ? BigInt.from(progress.firstLearned!) : null,
-      step: progress.step,
-      lapses: progress.lapses,
-      isSuspended: progress.isSuspended,
-      isSkipped: progress.isSkipped,
-    );
+    final data = progress == null
+        ? null
+        : LearningProgressData(
+            id: progress.id,
+            itemType: progress.itemType,
+            repetitionCount: progress.repetitionCount,
+            interval: progress.interval,
+            difficulty: progress.easeFactor,
+            stability: 0, // Placeholder
+            dueTime: BigInt.from(progress.dueTime),
+            lastReviewed: progress.lastReviewed != null
+                ? BigInt.from(progress.lastReviewed!)
+                : null,
+            firstLearned: progress.firstLearned != null
+                ? BigInt.from(progress.firstLearned!)
+                : null,
+            step: progress.step,
+            lapses: progress.lapses,
+            isSuspended: progress.isSuspended,
+            isSkipped: progress.isSkipped,
+            buriedUntilDay: progress.buriedUntilDay,
+          );
 
     return _scheduler.getIntervalPreviews(
       currentProgress: data,
@@ -387,8 +498,7 @@ class LearningRepository {
   }
 }
 
-/// Holds FSRS optimized parameters computed asynchronously at startup.
-/// Matches Kotlin SrsCalculatorImpl.init {} which loads in background.
+/// FSRS 优化参数缓存（对应 Kotlin 的后台加载逻辑）
 List<double>? _cachedOptimizedParams;
 bool _optimizerInitialized = false;
 
@@ -399,7 +509,7 @@ Future<List<double>?> _getOptimizedParams(LearningDao learningDao) async {
   _optimizerInitialized = true;
 
   try {
-    // 1:1 Parity with Kotlin: getRecentLogs(limit = 1500)
+    // 获取最近的 1500 条记录进行优化
     final allProgress = await learningDao.getAllProgress();
     // Filter to items that have been reviewed (lastReviewed > 0)
     final reviewed = allProgress
@@ -407,7 +517,9 @@ Future<List<double>?> _getOptimizedParams(LearningDao learningDao) async {
         .toList();
 
     // Take last 1500 records for optimization
-    final recent = reviewed.length > 1500 ? reviewed.sublist(reviewed.length - 1500) : reviewed;
+    final recent = reviewed.length > 1500
+        ? reviewed.sublist(reviewed.length - 1500)
+        : reviewed;
 
     // Build rating logs from lapses data (simplified: items with lapses > 0 had Again ratings)
     final logs = recent.map((p) {
@@ -420,14 +532,18 @@ Future<List<double>?> _getOptimizedParams(LearningDao learningDao) async {
     final result = FsrsParameterOptimizer.optimize(logs);
     if (result != null) {
       _cachedOptimizedParams = result.parameters;
-      print('[FSRS] personalization enabled, samples=${result.sampleSize}, '
-          'againRate=${result.againRate.toStringAsFixed(3)}, '
-          'hardRate=${result.hardRate.toStringAsFixed(3)}');
+      print(
+        '[FSRS] personalization enabled, samples=${result.sampleSize}, '
+        'againRate=${result.againRate.toStringAsFixed(3)}, '
+        'hardRate=${result.hardRate.toStringAsFixed(3)}',
+      );
     } else {
-      print('[FSRS] personalization skipped, insufficient logs (samples=${logs.length})');
+      print(
+        '[FSRS] personalization skipped, insufficient logs (samples=${logs.length})',
+      );
     }
   } catch (e) {
-    // 1:1 Parity: Keep default parameters, don't crash the main flow.
+    // 发生错误时保留默认参数，不中断主流程
     print('[FSRS] personalization skipped due to initialization error: $e');
   }
   return _cachedOptimizedParams;
@@ -438,8 +554,7 @@ LearningRepository learningRepository(Ref ref) {
   final learningDao = ref.watch(learningDaoProvider);
   final studyRecordRepo = ref.watch(studyRecordRepositoryProvider);
 
-  // Fire-and-forget async optimization (matching Kotlin's scope.launch in init)
-  // The optimizer runs in the background; until it completes, default params are used.
+  // 异步执行优化（非阻塞）
   _getOptimizedParams(learningDao);
 
   return LearningRepository(
@@ -455,8 +570,16 @@ LearningRepository learningRepository(Ref ref) {
     randomContent: ref.watch(randomContentProvider),
     leechThreshold: ref.watch(leechThresholdProvider),
     leechAction: ref.watch(leechActionProvider),
-    learningSteps: ref.watch(learningStepsProvider).split(' ').map((e) => int.tryParse(e) ?? 1).toList(),
-    relearningSteps: ref.watch(relearningStepsProvider).split(' ').map((e) => int.tryParse(e) ?? 1).toList(),
+    learningSteps: ref
+        .watch(learningStepsProvider)
+        .split(' ')
+        .map((e) => int.tryParse(e) ?? 1)
+        .toList(),
+    relearningSteps: ref
+        .watch(relearningStepsProvider)
+        .split(' ')
+        .map((e) => int.tryParse(e) ?? 1)
+        .toList(),
     optimizedFsrsParameters: _cachedOptimizedParams,
   );
 }

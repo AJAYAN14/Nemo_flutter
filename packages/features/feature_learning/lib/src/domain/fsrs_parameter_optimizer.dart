@@ -28,7 +28,10 @@ class FsrsParameterOptimizer {
   ///
   /// Accepts `logs` as a list of either ints (rating), Maps with `rating`, or
   /// `ReviewLog` instances.
-  static OptimizationResult? optimize(List<dynamic> logs, [List<double>? base]) {
+  static OptimizationResult? optimize(
+    List<dynamic> logs, [
+    List<double>? base,
+  ]) {
     if (logs.length < minLogsForTuning) return null;
 
     final tuned = List<double>.from(base ?? FsrsAlgorithm.defaultParameters);
@@ -38,7 +41,8 @@ class FsrsParameterOptimizer {
       if (item is int) return item;
       if (item is double) return item.toInt();
       if (item is ReviewLog) return item.rating;
-      if (item is Map && item['rating'] != null) return (item['rating'] as num).toInt();
+      if (item is Map && item['rating'] != null)
+        return (item['rating'] as num).toInt();
       return 0;
     }
 
@@ -70,5 +74,6 @@ class FsrsParameterOptimizer {
     );
   }
 
-  static double _clamp(double value, double min, double max) => value.clamp(min, max) as double;
+  static double _clamp(double value, double min, double max) =>
+      value.clamp(min, max) as double;
 }

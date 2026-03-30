@@ -20,6 +20,7 @@ class StudyProgress with _$StudyProgress {
     @Default(false) bool isSuspended,
     @Default(0) int lapses,
     @Default(false) bool isSkipped,
+    @Default(0) int buriedUntilDay,
     @Default(0) int lastModifiedTime,
   }) = _StudyProgress;
 
@@ -44,15 +45,12 @@ extension StudyProgressX on StudyProgress {
       'isSuspended': isSuspended,
       'lapses': lapses,
       'isSkipped': isSkipped,
+      'buriedUntilDay': buriedUntilDay,
     };
   }
 }
 
-enum CardBadge {
-  fresh,
-  review,
-  relearn;
-}
+enum CardBadge { fresh, review, relearn }
 
 abstract class LearningItem {
   String get id;
@@ -61,15 +59,15 @@ abstract class LearningItem {
   CardBadge get badge {
     final prog = progress;
     if (prog == null) return CardBadge.fresh;
-    
+
     if (prog.repetitionCount == 0 && prog.step == 0) {
       return CardBadge.fresh;
     }
-    
+
     if (prog.interval == 0) {
       return CardBadge.relearn;
     }
-    
+
     return CardBadge.review;
   }
 }
@@ -83,7 +81,8 @@ class WordItem extends LearningItem {
   @override
   final StudyProgress? progress;
 
-  WordItem copyWith({StudyProgress? progress}) => WordItem(word, progress: progress ?? this.progress);
+  WordItem copyWith({StudyProgress? progress}) =>
+      WordItem(word, progress: progress ?? this.progress);
 }
 
 class GrammarItem extends LearningItem {
@@ -95,5 +94,6 @@ class GrammarItem extends LearningItem {
   @override
   final StudyProgress? progress;
 
-  GrammarItem copyWith({StudyProgress? progress}) => GrammarItem(grammar, progress: progress ?? this.progress);
+  GrammarItem copyWith({StudyProgress? progress}) =>
+      GrammarItem(grammar, progress: progress ?? this.progress);
 }

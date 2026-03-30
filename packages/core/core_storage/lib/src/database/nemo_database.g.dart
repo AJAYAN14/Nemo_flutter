@@ -2274,6 +2274,18 @@ class $LearningProgressTable extends LearningProgress
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _buriedUntilDayMeta = const VerificationMeta(
+    'buriedUntilDay',
+  );
+  @override
+  late final GeneratedColumn<int> buriedUntilDay = GeneratedColumn<int>(
+    'buried_until_day',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2289,6 +2301,7 @@ class $LearningProgressTable extends LearningProgress
     lapses,
     isSuspended,
     isSkipped,
+    buriedUntilDay,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2393,6 +2406,15 @@ class $LearningProgressTable extends LearningProgress
         isSkipped.isAcceptableOrUnknown(data['is_skipped']!, _isSkippedMeta),
       );
     }
+    if (data.containsKey('buried_until_day')) {
+      context.handle(
+        _buriedUntilDayMeta,
+        buriedUntilDay.isAcceptableOrUnknown(
+          data['buried_until_day']!,
+          _buriedUntilDayMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2454,6 +2476,10 @@ class $LearningProgressTable extends LearningProgress
         DriftSqlType.bool,
         data['${effectivePrefix}is_skipped'],
       )!,
+      buriedUntilDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}buried_until_day'],
+      )!,
     );
   }
 
@@ -2478,6 +2504,7 @@ class LearningProgressData extends DataClass
   final int lapses;
   final bool isSuspended;
   final bool isSkipped;
+  final int buriedUntilDay;
   const LearningProgressData({
     required this.id,
     required this.itemType,
@@ -2492,6 +2519,7 @@ class LearningProgressData extends DataClass
     required this.lapses,
     required this.isSuspended,
     required this.isSkipped,
+    required this.buriedUntilDay,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2513,6 +2541,7 @@ class LearningProgressData extends DataClass
     map['lapses'] = Variable<int>(lapses);
     map['is_suspended'] = Variable<bool>(isSuspended);
     map['is_skipped'] = Variable<bool>(isSkipped);
+    map['buried_until_day'] = Variable<int>(buriedUntilDay);
     return map;
   }
 
@@ -2535,6 +2564,7 @@ class LearningProgressData extends DataClass
       lapses: Value(lapses),
       isSuspended: Value(isSuspended),
       isSkipped: Value(isSkipped),
+      buriedUntilDay: Value(buriedUntilDay),
     );
   }
 
@@ -2557,6 +2587,7 @@ class LearningProgressData extends DataClass
       lapses: serializer.fromJson<int>(json['lapses']),
       isSuspended: serializer.fromJson<bool>(json['isSuspended']),
       isSkipped: serializer.fromJson<bool>(json['isSkipped']),
+      buriedUntilDay: serializer.fromJson<int>(json['buriedUntilDay']),
     );
   }
   @override
@@ -2576,6 +2607,7 @@ class LearningProgressData extends DataClass
       'lapses': serializer.toJson<int>(lapses),
       'isSuspended': serializer.toJson<bool>(isSuspended),
       'isSkipped': serializer.toJson<bool>(isSkipped),
+      'buriedUntilDay': serializer.toJson<int>(buriedUntilDay),
     };
   }
 
@@ -2593,6 +2625,7 @@ class LearningProgressData extends DataClass
     int? lapses,
     bool? isSuspended,
     bool? isSkipped,
+    int? buriedUntilDay,
   }) => LearningProgressData(
     id: id ?? this.id,
     itemType: itemType ?? this.itemType,
@@ -2607,6 +2640,7 @@ class LearningProgressData extends DataClass
     lapses: lapses ?? this.lapses,
     isSuspended: isSuspended ?? this.isSuspended,
     isSkipped: isSkipped ?? this.isSkipped,
+    buriedUntilDay: buriedUntilDay ?? this.buriedUntilDay,
   );
   LearningProgressData copyWithCompanion(LearningProgressCompanion data) {
     return LearningProgressData(
@@ -2633,6 +2667,9 @@ class LearningProgressData extends DataClass
           ? data.isSuspended.value
           : this.isSuspended,
       isSkipped: data.isSkipped.present ? data.isSkipped.value : this.isSkipped,
+      buriedUntilDay: data.buriedUntilDay.present
+          ? data.buriedUntilDay.value
+          : this.buriedUntilDay,
     );
   }
 
@@ -2651,7 +2688,8 @@ class LearningProgressData extends DataClass
           ..write('step: $step, ')
           ..write('lapses: $lapses, ')
           ..write('isSuspended: $isSuspended, ')
-          ..write('isSkipped: $isSkipped')
+          ..write('isSkipped: $isSkipped, ')
+          ..write('buriedUntilDay: $buriedUntilDay')
           ..write(')'))
         .toString();
   }
@@ -2671,6 +2709,7 @@ class LearningProgressData extends DataClass
     lapses,
     isSuspended,
     isSkipped,
+    buriedUntilDay,
   );
   @override
   bool operator ==(Object other) =>
@@ -2688,7 +2727,8 @@ class LearningProgressData extends DataClass
           other.step == this.step &&
           other.lapses == this.lapses &&
           other.isSuspended == this.isSuspended &&
-          other.isSkipped == this.isSkipped);
+          other.isSkipped == this.isSkipped &&
+          other.buriedUntilDay == this.buriedUntilDay);
 }
 
 class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
@@ -2705,6 +2745,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
   final Value<int> lapses;
   final Value<bool> isSuspended;
   final Value<bool> isSkipped;
+  final Value<int> buriedUntilDay;
   final Value<int> rowid;
   const LearningProgressCompanion({
     this.id = const Value.absent(),
@@ -2720,6 +2761,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
     this.lapses = const Value.absent(),
     this.isSuspended = const Value.absent(),
     this.isSkipped = const Value.absent(),
+    this.buriedUntilDay = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LearningProgressCompanion.insert({
@@ -2736,6 +2778,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
     this.lapses = const Value.absent(),
     this.isSuspended = const Value.absent(),
     this.isSkipped = const Value.absent(),
+    this.buriedUntilDay = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        itemType = Value(itemType);
@@ -2753,6 +2796,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
     Expression<int>? lapses,
     Expression<bool>? isSuspended,
     Expression<bool>? isSkipped,
+    Expression<int>? buriedUntilDay,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2769,6 +2813,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
       if (lapses != null) 'lapses': lapses,
       if (isSuspended != null) 'is_suspended': isSuspended,
       if (isSkipped != null) 'is_skipped': isSkipped,
+      if (buriedUntilDay != null) 'buried_until_day': buriedUntilDay,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2787,6 +2832,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
     Value<int>? lapses,
     Value<bool>? isSuspended,
     Value<bool>? isSkipped,
+    Value<int>? buriedUntilDay,
     Value<int>? rowid,
   }) {
     return LearningProgressCompanion(
@@ -2803,6 +2849,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
       lapses: lapses ?? this.lapses,
       isSuspended: isSuspended ?? this.isSuspended,
       isSkipped: isSkipped ?? this.isSkipped,
+      buriedUntilDay: buriedUntilDay ?? this.buriedUntilDay,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2849,6 +2896,9 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
     if (isSkipped.present) {
       map['is_skipped'] = Variable<bool>(isSkipped.value);
     }
+    if (buriedUntilDay.present) {
+      map['buried_until_day'] = Variable<int>(buriedUntilDay.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2871,6 +2921,7 @@ class LearningProgressCompanion extends UpdateCompanion<LearningProgressData> {
           ..write('lapses: $lapses, ')
           ..write('isSuspended: $isSuspended, ')
           ..write('isSkipped: $isSkipped, ')
+          ..write('buriedUntilDay: $buriedUntilDay, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5303,6 +5354,7 @@ typedef $$LearningProgressTableCreateCompanionBuilder =
       Value<int> lapses,
       Value<bool> isSuspended,
       Value<bool> isSkipped,
+      Value<int> buriedUntilDay,
       Value<int> rowid,
     });
 typedef $$LearningProgressTableUpdateCompanionBuilder =
@@ -5320,6 +5372,7 @@ typedef $$LearningProgressTableUpdateCompanionBuilder =
       Value<int> lapses,
       Value<bool> isSuspended,
       Value<bool> isSkipped,
+      Value<int> buriedUntilDay,
       Value<int> rowid,
     });
 
@@ -5394,6 +5447,11 @@ class $$LearningProgressTableFilterComposer
 
   ColumnFilters<bool> get isSkipped => $composableBuilder(
     column: $table.isSkipped,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get buriedUntilDay => $composableBuilder(
+    column: $table.buriedUntilDay,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5471,6 +5529,11 @@ class $$LearningProgressTableOrderingComposer
     column: $table.isSkipped,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get buriedUntilDay => $composableBuilder(
+    column: $table.buriedUntilDay,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LearningProgressTableAnnotationComposer
@@ -5530,6 +5593,11 @@ class $$LearningProgressTableAnnotationComposer
 
   GeneratedColumn<bool> get isSkipped =>
       $composableBuilder(column: $table.isSkipped, builder: (column) => column);
+
+  GeneratedColumn<int> get buriedUntilDay => $composableBuilder(
+    column: $table.buriedUntilDay,
+    builder: (column) => column,
+  );
 }
 
 class $$LearningProgressTableTableManager
@@ -5582,6 +5650,7 @@ class $$LearningProgressTableTableManager
                 Value<int> lapses = const Value.absent(),
                 Value<bool> isSuspended = const Value.absent(),
                 Value<bool> isSkipped = const Value.absent(),
+                Value<int> buriedUntilDay = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningProgressCompanion(
                 id: id,
@@ -5597,6 +5666,7 @@ class $$LearningProgressTableTableManager
                 lapses: lapses,
                 isSuspended: isSuspended,
                 isSkipped: isSkipped,
+                buriedUntilDay: buriedUntilDay,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5614,6 +5684,7 @@ class $$LearningProgressTableTableManager
                 Value<int> lapses = const Value.absent(),
                 Value<bool> isSuspended = const Value.absent(),
                 Value<bool> isSkipped = const Value.absent(),
+                Value<int> buriedUntilDay = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningProgressCompanion.insert(
                 id: id,
@@ -5629,6 +5700,7 @@ class $$LearningProgressTableTableManager
                 lapses: lapses,
                 isSuspended: isSuspended,
                 isSkipped: isSkipped,
+                buriedUntilDay: buriedUntilDay,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

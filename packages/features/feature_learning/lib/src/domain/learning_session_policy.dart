@@ -54,7 +54,11 @@ class LearningSessionPolicy {
     if (newCount > 0) {
       final step = (reviewCount + 1) / newCount;
       for (int i = 0; i < newCount; i++) {
-        insertPositions.add(((i + 1) * step).toInt().clamp(1, reviewCount));
+        // Kotlin uses coerceAtMost(reviewCount), removing the lower clamp to 1
+        // because Kotlin checks (index + 1) in insertPositions, where index starts at 0.
+        // Positions smaller than 1 will naturally be ignored during the interleaving loop.
+        final pos = ((i + 1) * step).toInt();
+        insertPositions.add(pos > reviewCount ? reviewCount : pos);
       }
     }
 

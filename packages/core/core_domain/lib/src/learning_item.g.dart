@@ -20,6 +20,7 @@ _$StudyProgressImpl _$$StudyProgressImplFromJson(Map<String, dynamic> json) =>
       isSuspended: json['isSuspended'] as bool? ?? false,
       lapses: (json['lapses'] as num?)?.toInt() ?? 0,
       isSkipped: json['isSkipped'] as bool? ?? false,
+      buriedUntilDay: (json['buriedUntilDay'] as num?)?.toInt() ?? 0,
       lastModifiedTime: (json['lastModifiedTime'] as num?)?.toInt() ?? 0,
     );
 
@@ -37,5 +38,6 @@ Map<String, dynamic> _$$StudyProgressImplToJson(_$StudyProgressImpl instance) =>
       'isSuspended': instance.isSuspended,
       'lapses': instance.lapses,
       'isSkipped': instance.isSkipped,
+      'buriedUntilDay': instance.buriedUntilDay,
       'lastModifiedTime': instance.lastModifiedTime,
     };

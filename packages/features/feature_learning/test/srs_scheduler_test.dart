@@ -79,6 +79,7 @@ void main() {
       lapses: 4,
       isSuspended: false,
       isSkipped: false,
+      buriedUntilDay: 0,
     );
 
     final res = scheduler.schedule(
@@ -113,17 +114,31 @@ void main() {
       lapses: 0,
       isSuspended: false,
       isSkipped: false,
+      buriedUntilDay: 0,
     );
 
     // compute expected via FsrsAlgorithm to mirror scheduler's logic
     final alg = FsrsAlgorithm();
-    final currentState = MemoryState(stability: progress.stability, difficulty: progress.difficulty);
-    final elapsedDays = (now - progress.lastReviewed!.toInt()) / (24 * 60 * 60 * 1000);
+    final currentState = MemoryState(
+      stability: progress.stability,
+      difficulty: progress.difficulty,
+    );
+    final elapsedDays =
+        (now - progress.lastReviewed!.toInt()) / (24 * 60 * 60 * 1000);
     final fsrsRating = SrsRating.good.toFsrs();
     final newState = alg.step(currentState, fsrsRating, elapsedDays);
-    final seed = 'word_5'.hashCode ^ now ^ SrsRating.good.index ^ progress.repetitionCount;
-    final expectedInterval = alg.nextIntervalDaysWithFuzz(newState.stability, seed);
-    final expectedDue = BigInt.from(now + expectedInterval * 24 * 60 * 60 * 1000);
+    final seed =
+        'word_5'.hashCode ^
+        now ^
+        SrsRating.good.index ^
+        progress.repetitionCount;
+    final expectedInterval = alg.nextIntervalDaysWithFuzz(
+      newState.stability,
+      seed,
+    );
+    final expectedDue = BigInt.from(
+      now + expectedInterval * 24 * 60 * 60 * 1000,
+    );
 
     final res = scheduler.schedule(
       id: 'word_5',
@@ -141,18 +156,21 @@ void main() {
     expect(g.companion.dueTime.value, expectedDue);
   });
 
-  test('getIntervalPreviews returns expected strings for learning/new items', () {
-    final previews = scheduler.getIntervalPreviews(
-      currentProgress: null,
-      learningSteps: [1, 10, 60],
-      relearningSteps: [5, 15],
-      nowMillis: now,
-    );
+  test(
+    'getIntervalPreviews returns expected strings for learning/new items',
+    () {
+      final previews = scheduler.getIntervalPreviews(
+        currentProgress: null,
+        learningSteps: [1, 10, 60],
+        relearningSteps: [5, 15],
+        nowMillis: now,
+      );
 
-    expect(previews[SrsRating.again], '5m');
-    expect(previews[SrsRating.hard], '1m');
-    expect(previews[SrsRating.good], '10m');
-    // easy preview for new item should be days string
-    expect(previews[SrsRating.easy]!.endsWith('d'), true);
-  });
+      expect(previews[SrsRating.again], '5m');
+      expect(previews[SrsRating.hard], '1m');
+      expect(previews[SrsRating.good], '10m');
+      // easy preview for new item should be days string
+      expect(previews[SrsRating.easy]!.endsWith('d'), true);
+    },
+  );
 }

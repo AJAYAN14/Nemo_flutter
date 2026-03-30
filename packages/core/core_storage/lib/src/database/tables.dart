@@ -73,6 +73,7 @@ class LearningProgress extends Table {
   IntColumn get lapses => integer().withDefault(const Constant(0))();
   BoolColumn get isSuspended => boolean().withDefault(const Constant(false))();
   BoolColumn get isSkipped => boolean().withDefault(const Constant(false))();
+  IntColumn get buriedUntilDay => integer().withDefault(const Constant(0))();
 
   @override
   Set<Column>? get primaryKey => {id};

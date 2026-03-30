@@ -194,11 +194,9 @@ class _WeekViewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1:1 Parity check: Use current time to generate the 7-day window
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
-    // Generate 7 days starting from today (Fixed to today in Kotlin)
+    // 生成从今日开始的 7 天窗口
     final days = List.generate(7, (i) => today.add(Duration(days: i)));
     final weekDayLabels = ['一', '二', '三', '四', '五', '六', '日'];
 
@@ -337,7 +335,6 @@ class _DayDetailPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1:1 Restoration: Determine date state
     final selectedEpochDay = DateTimeUtils.dateToEpochDay(selectedDate);
     
     if (selectedEpochDay < todayEpochDay) {

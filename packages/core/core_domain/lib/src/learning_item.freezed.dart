@@ -33,6 +33,7 @@ mixin _$StudyProgress {
   bool get isSuspended => throw _privateConstructorUsedError;
   int get lapses => throw _privateConstructorUsedError;
   bool get isSkipped => throw _privateConstructorUsedError;
+  int get buriedUntilDay => throw _privateConstructorUsedError;
   int get lastModifiedTime => throw _privateConstructorUsedError;
 
   /// Serializes this StudyProgress to a JSON map.
@@ -65,6 +66,7 @@ abstract class $StudyProgressCopyWith<$Res> {
     bool isSuspended,
     int lapses,
     bool isSkipped,
+    int buriedUntilDay,
     int lastModifiedTime,
   });
 }
@@ -96,6 +98,7 @@ class _$StudyProgressCopyWithImpl<$Res, $Val extends StudyProgress>
     Object? isSuspended = null,
     Object? lapses = null,
     Object? isSkipped = null,
+    Object? buriedUntilDay = null,
     Object? lastModifiedTime = null,
   }) {
     return _then(
@@ -148,6 +151,10 @@ class _$StudyProgressCopyWithImpl<$Res, $Val extends StudyProgress>
                 ? _value.isSkipped
                 : isSkipped // ignore: cast_nullable_to_non_nullable
                       as bool,
+            buriedUntilDay: null == buriedUntilDay
+                ? _value.buriedUntilDay
+                : buriedUntilDay // ignore: cast_nullable_to_non_nullable
+                      as int,
             lastModifiedTime: null == lastModifiedTime
                 ? _value.lastModifiedTime
                 : lastModifiedTime // ignore: cast_nullable_to_non_nullable
@@ -180,6 +187,7 @@ abstract class _$$StudyProgressImplCopyWith<$Res>
     bool isSuspended,
     int lapses,
     bool isSkipped,
+    int buriedUntilDay,
     int lastModifiedTime,
   });
 }
@@ -210,6 +218,7 @@ class __$$StudyProgressImplCopyWithImpl<$Res>
     Object? isSuspended = null,
     Object? lapses = null,
     Object? isSkipped = null,
+    Object? buriedUntilDay = null,
     Object? lastModifiedTime = null,
   }) {
     return _then(
@@ -262,6 +271,10 @@ class __$$StudyProgressImplCopyWithImpl<$Res>
             ? _value.isSkipped
             : isSkipped // ignore: cast_nullable_to_non_nullable
                   as bool,
+        buriedUntilDay: null == buriedUntilDay
+            ? _value.buriedUntilDay
+            : buriedUntilDay // ignore: cast_nullable_to_non_nullable
+                  as int,
         lastModifiedTime: null == lastModifiedTime
             ? _value.lastModifiedTime
             : lastModifiedTime // ignore: cast_nullable_to_non_nullable
@@ -287,6 +300,7 @@ class _$StudyProgressImpl implements _StudyProgress {
     this.isSuspended = false,
     this.lapses = 0,
     this.isSkipped = false,
+    this.buriedUntilDay = 0,
     this.lastModifiedTime = 0,
   });
 
@@ -327,11 +341,14 @@ class _$StudyProgressImpl implements _StudyProgress {
   final bool isSkipped;
   @override
   @JsonKey()
+  final int buriedUntilDay;
+  @override
+  @JsonKey()
   final int lastModifiedTime;
 
   @override
   String toString() {
-    return 'StudyProgress(id: $id, itemType: $itemType, repetitionCount: $repetitionCount, interval: $interval, easeFactor: $easeFactor, dueTime: $dueTime, lastReviewed: $lastReviewed, firstLearned: $firstLearned, step: $step, isSuspended: $isSuspended, lapses: $lapses, isSkipped: $isSkipped, lastModifiedTime: $lastModifiedTime)';
+    return 'StudyProgress(id: $id, itemType: $itemType, repetitionCount: $repetitionCount, interval: $interval, easeFactor: $easeFactor, dueTime: $dueTime, lastReviewed: $lastReviewed, firstLearned: $firstLearned, step: $step, isSuspended: $isSuspended, lapses: $lapses, isSkipped: $isSkipped, buriedUntilDay: $buriedUntilDay, lastModifiedTime: $lastModifiedTime)';
   }
 
   @override
@@ -359,6 +376,8 @@ class _$StudyProgressImpl implements _StudyProgress {
             (identical(other.lapses, lapses) || other.lapses == lapses) &&
             (identical(other.isSkipped, isSkipped) ||
                 other.isSkipped == isSkipped) &&
+            (identical(other.buriedUntilDay, buriedUntilDay) ||
+                other.buriedUntilDay == buriedUntilDay) &&
             (identical(other.lastModifiedTime, lastModifiedTime) ||
                 other.lastModifiedTime == lastModifiedTime));
   }
@@ -379,6 +398,7 @@ class _$StudyProgressImpl implements _StudyProgress {
     isSuspended,
     lapses,
     isSkipped,
+    buriedUntilDay,
     lastModifiedTime,
   );
 
@@ -410,6 +430,7 @@ abstract class _StudyProgress implements StudyProgress {
     final bool isSuspended,
     final int lapses,
     final bool isSkipped,
+    final int buriedUntilDay,
     final int lastModifiedTime,
   }) = _$StudyProgressImpl;
 
@@ -440,6 +461,8 @@ abstract class _StudyProgress implements StudyProgress {
   int get lapses;
   @override
   bool get isSkipped;
+  @override
+  int get buriedUntilDay;
   @override
   int get lastModifiedTime;
 

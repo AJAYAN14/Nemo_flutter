@@ -53,7 +53,7 @@ class SimpleProgressIndicator extends StatelessWidget {
                 value: value,
                 backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
-                minHeight: 8, // Set explicit minHeight for 1:1 restoration
+                minHeight: 8,
               ),
             );
           },

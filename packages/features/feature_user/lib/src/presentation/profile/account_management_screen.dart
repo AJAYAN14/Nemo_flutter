@@ -6,7 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'account_components.dart';
 import 'account_dialogs.dart';
 
-// --- Mock Providers for Account UI 1:1 Demo ---
+// --- UI 演示使用的模拟 Provider ---
 class AccountUiState {
   AccountUiState({
     this.username = 'Nemo User',

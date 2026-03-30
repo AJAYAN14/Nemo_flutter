@@ -14,7 +14,7 @@ enum NemoSnackbarType {
   error
 }
 
-/// Nemo 自定义顶部 Snackbar (1:1 还原 Kotlin 版)
+/// Nemo 自定义顶部 Snackbar
 ///
 /// 用于提供统一的项目 UI 风格，支持顶部弹出及其特有的渐变色背景。
 class NemoSnackbar extends StatefulWidget {
