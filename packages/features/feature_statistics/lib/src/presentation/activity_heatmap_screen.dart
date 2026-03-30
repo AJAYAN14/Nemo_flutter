@@ -3,15 +3,18 @@ import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:core_domain/core_domain.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ActivityHeatmapScreen extends StatefulWidget {
+import 'heatmap_providers.dart';
+
+class ActivityHeatmapScreen extends ConsumerStatefulWidget {
   const ActivityHeatmapScreen({super.key});
 
   @override
-  State<ActivityHeatmapScreen> createState() => _ActivityHeatmapScreenState();
+  ConsumerState<ActivityHeatmapScreen> createState() => _ActivityHeatmapScreenState();
 }
 
-class _ActivityHeatmapScreenState extends State<ActivityHeatmapScreen> with SingleTickerProviderStateMixin {
+class _ActivityHeatmapScreenState extends ConsumerState<ActivityHeatmapScreen> with SingleTickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   DateTime? _selectedDate;
@@ -36,6 +39,8 @@ class _ActivityHeatmapScreenState extends State<ActivityHeatmapScreen> with Sing
 
   @override
   Widget build(BuildContext context) {
+    final heatmapAsync = ref.watch(heatmapUiStateProvider);
+
     return Scaffold(
       backgroundColor: NemoColors.bgBase,
       appBar: AppBar(
@@ -48,66 +53,71 @@ class _ActivityHeatmapScreenState extends State<ActivityHeatmapScreen> with Sing
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-          children: [
-            // 1. 年度回顾 (Heatmap Centerpiece)
-            const _SectionTitle('年度回顾'),
-            _LearningHeatmapCard(
-              onDaySelected: (date, count) {
-                setState(() {
-                  _selectedDate = date;
-                  _selectedCount = count;
-                });
-                HapticFeedback.lightImpact();
-              },
-            ),
+      body: heatmapAsync.when(
+        data: (state) => FadeTransition(
+          opacity: _fadeAnimation,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+            children: [
+              // 1. 年度回顾 (Heatmap Centerpiece)
+              const _SectionTitle('年度回顾'),
+              _LearningHeatmapCard(
+                data: state.heatmapData,
+                onDaySelected: (date, count) {
+                  setState(() {
+                    _selectedDate = date;
+                    _selectedCount = count;
+                  });
+                  HapticFeedback.lightImpact();
+                },
+              ),
 
-            // Selection Tooltip
-            if (_selectedDate != null) ...[
-              const SizedBox(height: 12),
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.inverseSurface,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${_selectedDate!.month}/${_selectedDate!.day}: $_selectedCount 次学习',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onInverseSurface,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+              // Selection Tooltip
+              if (_selectedDate != null) ...[
+                const SizedBox(height: 12),
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.inverseSurface,
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                    child: Text(
+                      '${_selectedDate!.month}/${_selectedDate!.day}: $_selectedCount 次学习',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onInverseSurface,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 24),
+
+              // 2. 数据高光 (Rich Stats Grid)
+              const _SectionTitle('数据高光'),
+              _RichStatsGrid(state: state),
+
+              const SizedBox(height: 32),
+
+              // 3. Motivational Footer
+              Center(
+                child: Text(
+                  state.currentStreak > 0 ? '已经坚持 ${state.currentStreak} 天了，继续加油！' : '每一天都在进步，保持连胜！',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ],
-
-            const SizedBox(height: 24),
-
-            // 2. 数据高光 (Rich Stats Grid)
-            const _SectionTitle('数据高光'),
-            const _RichStatsGrid(),
-
-            const SizedBox(height: 32),
-
-            // 3. Motivational Footer
-            Center(
-              child: Text(
-                '每一天都在进步，保持连胜！',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('加载失败: $err')),
       ),
     );
   }
@@ -133,7 +143,8 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _LearningHeatmapCard extends StatelessWidget {
-  const _LearningHeatmapCard({required this.onDaySelected});
+  const _LearningHeatmapCard({required this.data, required this.onDaySelected});
+  final List<HeatmapDay> data;
   final void Function(DateTime date, int count) onDaySelected;
 
   @override
@@ -163,23 +174,21 @@ class _LearningHeatmapCard extends StatelessWidget {
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: List.generate(7, (dayIndex) {
-                    // Mock logic for level
-                    final count = (weekIndex * dayIndex) % 15;
-                    int level = 0;
-                    if (count > 10) {
-                      level = 4;
-                    } else if (count > 6) {
-                      level = 3;
-                    } else if (count > 3) {
-                      level = 2;
-                    } else if (count > 0) {
-                      level = 1;
+                    // dataIndex 0 is oldest, data.length-1 is today.
+                    // weekIndex 0 is rightmost column (since reverse: true).
+                    final dataIndex = (data.length - 1) - (weekIndex * 7 + (6 - dayIndex));
+                    
+                    if (dataIndex < 0 || dataIndex >= data.length) {
+                      return const SizedBox(width: 14, height: 14);
                     }
+                    
+                    final item = data[dataIndex];
+                    final level = item.level;
 
                     return GestureDetector(
                       onTap: () {
-                        final date = DateTime.fromMillisecondsSinceEpoch(DateTimeUtils.getCurrentCompensatedMillis()).subtract(Duration(days: weekIndex * 7 + dayIndex));
-                        onDaySelected(date, count);
+                         final date = DateTime.fromMillisecondsSinceEpoch(item.date * 86400000, isUtc: true).toLocal();
+                         onDaySelected(date, item.count);
                       },
                       child: Container(
                         width: 14,
@@ -219,7 +228,8 @@ class _LearningHeatmapCard extends StatelessWidget {
 }
 
 class _RichStatsGrid extends StatelessWidget {
-  const _RichStatsGrid();
+  const _RichStatsGrid({required this.state});
+  final HeatmapUiState state;
 
   @override
   Widget build(BuildContext context) {
@@ -230,8 +240,8 @@ class _RichStatsGrid extends StatelessWidget {
             Expanded(
               child: _RichStatItem(
                 label: '当前坚持',
-                value: '15 天',
-                subLabel: '最长 42 天',
+                value: '${state.currentStreak} 天',
+                subLabel: '最长 ${state.longestStreak} 天',
                 icon: Icons.emoji_events_rounded,
                 color: NemoColors.accentOrange,
               ),
@@ -240,7 +250,7 @@ class _RichStatsGrid extends StatelessWidget {
             Expanded(
               child: _RichStatItem(
                 label: '累计活跃',
-                value: '128 天',
+                value: '${state.totalActiveDays} 天',
                 subLabel: '持续进步',
                 icon: Icons.history_rounded,
                 color: NemoColors.brandBlue,
@@ -254,8 +264,10 @@ class _RichStatsGrid extends StatelessWidget {
             Expanded(
               child: _RichStatItem(
                 label: '单日最佳',
-                value: '156 项',
-                subLabel: '08/15',
+                value: '${state.bestDayCount} 项',
+                subLabel: state.bestDayDate > 0 
+                  ? DateTimeUtils.formatEpochDay(state.bestDayDate).substring(5).replaceAll('-', '/') 
+                  : '-',
                 icon: Icons.edit_note_rounded,
                 color: NemoColors.accentPurple,
               ),
@@ -263,7 +275,7 @@ class _RichStatsGrid extends StatelessWidget {
             Expanded(
               child: _RichStatItem(
                 label: '日均学习',
-                value: '42 词',
+                value: '${state.dailyAverage} 词',
                 subLabel: '状态极佳',
                 icon: Icons.auto_stories_rounded,
                 color: const Color(0xFF6366F1), // Indigo

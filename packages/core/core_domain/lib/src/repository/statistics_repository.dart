@@ -39,7 +39,7 @@ abstract class StatisticsRepository {
 
   /// Get review forecast for coming days
   Stream<List<ReviewForecast>> getReviewForecast(int startDay, int endDay);
-  
+
   /// Get heatmap data (Summary/Level included)
-  Stream<List<HeatmapDay>> getHeatmapData();
+  Stream<List<HeatmapDay>> getHeatmapData(int resetHour);
 }

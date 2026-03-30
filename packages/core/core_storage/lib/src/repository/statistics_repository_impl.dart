@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:rxdart/rxdart.dart';
 import 'package:core_domain/core_domain.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../database/nemo_database.dart';
@@ -131,63 +132,47 @@ class StatisticsRepositoryImpl implements StatisticsRepository {
 
   @override
   Stream<LearningStats> getLearningStats(int resetHour) {
-    // This is a complex stream that combines several counts
-    // For 1:1, we'll implement the logic to fetch due items, mastered items etc.
-    return Stream.fromFuture(_fetchStats(resetHour));
-    // Ideally this should be a continuous stream monitoring changes, but for Phase 1 we'll use Future.
-  }
-
-  Future<LearningStats> _fetchStats(int resetHour) async {
     final now = DateTimeUtils.getCurrentCompensatedMillis();
     final today = DateTimeUtils.getLearningDay(resetHour);
-
-    final dueWords = await _db.learningDao.getDueItemsCount('word', now);
-    final dueGrammars = await _db.learningDao.getDueItemsCount('grammar', now);
-
     final dayStart = DateTimeUtils.getLearningDayStart(resetHour);
     final dayEnd = DateTimeUtils.getLearningDayEnd(resetHour);
 
-    // Fallback counts from learning_progress table
-    final learnedWordsCount = await _db.learningDao.getNewItemsCount('word', dayStart, dayEnd);
-    final learnedGrammarsCount = await _db.learningDao.getNewItemsCount('grammar', dayStart, dayEnd);
-    final reviewedWordsCount = await _db.learningDao.getReviewedItemsCount('word', dayStart, dayEnd);
-    final reviewedGrammarsCount = await _db.learningDao.getReviewedItemsCount('grammar', dayStart, dayEnd);
+    return CombineLatestStream.combine9(
+      _db.learningDao.watchDueItemsCount('word', now),
+      _db.learningDao.watchDueItemsCount('grammar', now),
+      _db.learningDao.watchNewItemsCount('word', dayStart, dayEnd),
+      _db.learningDao.watchNewItemsCount('grammar', dayStart, dayEnd),
+      _db.learningDao.watchReviewedItemsCount('word', dayStart, dayEnd),
+      _db.learningDao.watchReviewedItemsCount('grammar', dayStart, dayEnd),
+      _db.studyRecordDao.watchRecordByDate(today),
+      _db.learningDao.watchAllProgress(),
+      _db.studyRecordDao.watchAllRecords(),
+      (dueW, dueG, newW, newG, revW, revG, recordToday, allProg, allRecords) {
+        final masteredWords = allProg
+            .where((e) => e.itemType == 'word' && e.stability > 10)
+            .length;
+        final masteredGrammars = allProg
+            .where((e) => e.itemType == 'grammar' && e.stability > 10)
+            .length;
 
-    // Prefer study_records table for finalized daily stats
-    final todayRecord = await _db.studyRecordDao.getRecordByDate(today);
-    
-    // Mastered items (stability > 10.0 as per Kotlin implementation)
-    final allProgress = await _db.learningDao.getAllProgress();
-    final masteredWords = allProgress
-        .where((e) => e.itemType == 'word' && e.stability > 10)
-        .length;
-    final masteredGrammars = allProgress
-        .where((e) => e.itemType == 'grammar' && e.stability > 10)
-        .length;
+        final dateSet = allRecords.map((e) => e.date).toSet();
+        final streak = _calculateCurrentStreak(dateSet, today);
+        final weekStudyDays = _calculateWeekStudyDays(dateSet, today);
 
-    // Streak and Total Days logic
-    final allRecordsEntries = await _db.studyRecordDao.watchAllRecords().first;
-    final allRecords = allRecordsEntries.map((e) => e.toDomain()).toList();
-    final totalStudyDays = allRecords.length;
-    
-    final dateSet = allRecords.map((e) => e.date).toSet();
-    final streak = _calculateCurrentStreak(dateSet, today);
-
-    // Week study days (Monday start as per Kotlin WeekFields.of(Locale.CHINA))
-    final weekStudyDays = _calculateWeekStudyDays(dateSet, today);
-
-    return LearningStats(
-      dailyStreak: streak,
-      totalStudyDays: totalStudyDays,
-      todayLearnedWords: todayRecord?.learnedWords ?? learnedWordsCount,
-      todayLearnedGrammars: todayRecord?.learnedGrammars ?? learnedGrammarsCount,
-      todayReviewedWords: todayRecord?.reviewedWords ?? reviewedWordsCount,
-      todayReviewedGrammars: todayRecord?.reviewedGrammars ?? reviewedGrammarsCount,
-      masteredWords: masteredWords,
-      masteredGrammars: masteredGrammars,
-      dueWords: dueWords,
-      dueGrammars: dueGrammars,
-      weekStudyDays: weekStudyDays,
+        return LearningStats(
+          dailyStreak: streak,
+          totalStudyDays: allRecords.length,
+          todayLearnedWords: recordToday?.learnedWords ?? newW,
+          todayLearnedGrammars: recordToday?.learnedGrammars ?? newG,
+          todayReviewedWords: recordToday?.reviewedWords ?? revW,
+          todayReviewedGrammars: recordToday?.reviewedGrammars ?? revG,
+          masteredWords: masteredWords,
+          masteredGrammars: masteredGrammars,
+          dueWords: dueW,
+          dueGrammars: dueG,
+          weekStudyDays: weekStudyDays,
+        );
+      },
     );
   }
 
@@ -255,9 +240,32 @@ class StatisticsRepositoryImpl implements StatisticsRepository {
   }
 
   @override
-  Stream<List<HeatmapDay>> getHeatmapData() {
-    // Implementation for heatmap
-    return Stream.value([]);
+  Stream<List<HeatmapDay>> getHeatmapData(int resetHour) {
+    final endDay = DateTimeUtils.getLearningDay(resetHour);
+    final startDay = endDay - 364;
+
+    return _db.studyRecordDao.watchRecordsInRange(startDay, endDay).map((list) {
+      final map = {for (var e in list) e.date: e.toDomain().totalActivity};
+      final result = <HeatmapDay>[];
+
+      for (int d = startDay; d <= endDay; d++) {
+        final count = map[d] ?? 0;
+        result.add(HeatmapDay(
+          date: d,
+          count: count,
+          level: _calculateHeatmapLevel(count),
+        ));
+      }
+      return result;
+    });
+  }
+
+  int _calculateHeatmapLevel(int count) {
+    if (count == 0) return 0;
+    if (count <= 10) return 1;
+    if (count <= 30) return 2;
+    if (count <= 60) return 3;
+    return 4;
   }
 }
 
