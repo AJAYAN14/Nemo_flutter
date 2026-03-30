@@ -81,7 +81,7 @@ class _CapsuleNavigationBar extends StatelessWidget {
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(
               color: glassColor,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(
                 children: [
                   Expanded(
@@ -155,7 +155,7 @@ class _NavItem extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: const Cubic(0.34, 1.56, 0.64, 1), // Apple-like spring 原型曲线
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: isSelected ? activeBgColor : Colors.transparent,
             borderRadius: BorderRadius.circular(100),
@@ -168,25 +168,27 @@ class _NavItem extends StatelessWidget {
                 size: 24,
                 color: isSelected ? activeContentColor : inactiveIconColor,
               ),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: const Cubic(0.34, 1.56, 0.64, 1),
-                child: isSelected
-                    ? Padding(
-                        padding: const EdgeInsets.only(left: 6),
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            color: activeContentColor,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            height: 1.2,
+              Flexible(
+                child: AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: const Cubic(0.34, 1.56, 0.64, 1),
+                  child: isSelected
+                      ? Padding(
+                          padding: const EdgeInsets.only(left: 6),
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              color: activeContentColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              height: 1.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.clip,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.visible,
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ),
             ],
           ),
