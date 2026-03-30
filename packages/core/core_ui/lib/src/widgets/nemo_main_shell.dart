@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class NemoMainShell extends StatelessWidget {
   const NemoMainShell({
@@ -149,7 +150,10 @@ class _NavItem extends StatelessWidget {
     final inactiveIconColor = const Color(0xFF9CA3AF);
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
       behavior: HitTestBehavior.opaque,
       child: Center(
         child: AnimatedContainer(
