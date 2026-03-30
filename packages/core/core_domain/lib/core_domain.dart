@@ -1,5 +1,6 @@
 library;
 
+export 'src/learning_item.dart';
 export 'src/grammar.dart';
 export 'src/mock_data.dart';
 export 'src/test_models.dart';

@@ -2,6 +2,7 @@ library;
 
 export 'src/widgets/nemo_main_shell.dart';
 export 'src/widgets/nemo_splash_screen.dart';
+export 'src/extensions/card_badge_ext.dart';
 export 'src/widgets/nemo_widgets.dart';
 export 'src/widgets/nemo_furigana_text.dart';
 export 'src/widgets/nemo_speaker_button.dart';

@@ -460,6 +460,10 @@ class LearningDao extends DatabaseAccessor<NemoDatabase> with _$LearningDaoMixin
     return query.watch().map((list) => list.length);
   }
 
+  Stream<List<LearningProgressData>> watchAllProgressByType(String itemType) {
+    return (select(learningProgress)..where((t) => t.itemType.equals(itemType))).watch();
+  }
+
   Future<List<LearningProgressData>> getSkippedItems({String? itemType}) {
     final query = select(learningProgress)
       ..where((t) => t.isSkipped.equals(true))
@@ -650,4 +654,23 @@ Stream<List<WordEntry>> wordsByCategory(WordsByCategoryRef ref, String category)
 @riverpod
 Future<WordWithExamples?> wordWithExamples(WordWithExamplesRef ref, String id) {
   return ref.watch(wordDaoProvider).getWordWithExamples(id);
+}
+extension LearningProgressDataX on LearningProgressData {
+  StudyProgress toDomain() {
+    return StudyProgress(
+      id: id,
+      itemType: itemType,
+      repetitionCount: repetitionCount,
+      interval: interval,
+      easeFactor: difficulty, // Stability and Difficulty are part of FSRS
+      dueTime: dueTime.toInt(),
+      lastReviewed: lastReviewed?.toInt(),
+      firstLearned: firstLearned?.toInt(),
+      step: step,
+      isSuspended: isSuspended,
+      lapses: lapses,
+      isSkipped: isSkipped,
+      lastModifiedTime: 0, // Placeholder
+    );
+  }
 }

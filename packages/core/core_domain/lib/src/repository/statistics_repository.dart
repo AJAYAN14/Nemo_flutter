@@ -1,4 +1,5 @@
 import '../statistics_models.dart';
+import '../learning_item.dart';
 
 abstract class StudyRecordRepository {
   /// Get record for a specific epoch day
@@ -42,4 +43,10 @@ abstract class StatisticsRepository {
 
   /// Get heatmap data (Summary/Level included)
   Stream<List<HeatmapDay>> getHeatmapData(int resetHour);
+
+  /// Get all learned words
+  Stream<List<LearningItem>> getAllLearnedWords();
+
+  /// Get all learned grammars
+  Stream<List<LearningItem>> getAllLearnedGrammars();
 }

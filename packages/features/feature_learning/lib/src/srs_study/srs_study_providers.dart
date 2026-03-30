@@ -3,7 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:core_prefs/core_prefs.dart';
 import 'package:core_domain/core_domain.dart';
 import '../data/learning_repository.dart';
-import '../domain/learning_item.dart';
+import 'package:core_storage/core_storage.dart';
 import '../domain/srs_scheduler.dart';
 import '../domain/learning_session_state.dart';
 import 'package:core_audio/core_audio.dart';
@@ -300,8 +300,8 @@ class SrsStudyNotifier extends _$SrsStudyNotifier {
 
     if (result.isRequeue) {
       final reItem = item is WordItem 
-          ? item.copyWith(progress: result.updatedProgress)
-          : (item as GrammarItem).copyWith(progress: result.updatedProgress);
+          ? item.copyWith(progress: result.updatedProgress?.toDomain())
+          : (item as GrammarItem).copyWith(progress: result.updatedProgress?.toDomain());
       nextItems.add(reItem);
     }
 

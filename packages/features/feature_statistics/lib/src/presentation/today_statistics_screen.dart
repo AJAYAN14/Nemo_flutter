@@ -2,7 +2,7 @@ import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_ui/core_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:feature_learning/feature_learning.dart';
+import 'package:core_domain/core_domain.dart';
 import 'learning_calendar_providers.dart';
 
 class TodayStatisticsScreen extends ConsumerWidget {
@@ -15,7 +15,10 @@ class TodayStatisticsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: const Text('今日学习记录', style: TextStyle(fontWeight: FontWeight.w900)),
+        title: const Text(
+          '今日统计',
+          style: TextStyle(fontWeight: FontWeight.w900),
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -38,13 +41,13 @@ class TodayStatisticsScreen extends ConsumerWidget {
               if (words.isNotEmpty)
                 _StatisticsListCard(items: words, isWord: true)
               else
-                const _EmptyState(message: '今日暂无学习单词'),
+                const _EmptyState(message: '该日期没有学习任何单词'),
               const SizedBox(height: 24),
               _SectionTitle('语法 (${grammars.length})'),
               if (grammars.isNotEmpty)
                 _StatisticsListCard(items: grammars, isWord: false)
               else
-                const _EmptyState(message: '今日暂无学习语法'),
+                const _EmptyState(message: '该日期没有学习任何语法'),
               const SizedBox(height: 24),
             ],
           );
@@ -63,7 +66,7 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Text(
         text,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -97,7 +100,6 @@ class _StatisticsListCardState extends State<_StatisticsListCard> {
     final remainingCount = widget.items.length - _threshold;
 
     return PremiumCard(
-      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         children: [
           ...showItems.asMap().entries.map((entry) {
@@ -106,14 +108,20 @@ class _StatisticsListCardState extends State<_StatisticsListCard> {
             return _StatisticsItemRow(
               item: item,
               index: index,
-              showDivider: index < showItems.length - 1 || shouldCollapse,
+              showDivider: index < showItems.length - 1,
             );
           }),
-          if (shouldCollapse)
+          if (shouldCollapse) ...[
+            const SizedBox(height: 8),
+            Divider(
+              height: 0.5,
+              thickness: 0.5,
+              color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1),
+            ),
             InkWell(
               onTap: () => setState(() => _isExpanded = !_isExpanded),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.only(top: 12, bottom: 4),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -126,7 +134,9 @@ class _StatisticsListCardState extends State<_StatisticsListCard> {
                     ),
                     const SizedBox(width: 4),
                     Icon(
-                      _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      _isExpanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
                       size: 18,
                       color: Theme.of(context).colorScheme.primary,
                     ),
@@ -134,6 +144,7 @@ class _StatisticsListCardState extends State<_StatisticsListCard> {
                 ),
               ),
             ),
+          ],
         ],
       ),
     );
@@ -201,18 +212,27 @@ class _StatisticsItemRow extends StatelessWidget {
                       children: [
                         // New/Review Badge
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: item.isLearned
-                                ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                                : const Color(0xFF10B981).withValues(alpha: 0.15),
+                                ? theme.colorScheme.primary.withValues(
+                                    alpha: 0.12,
+                                  )
+                                : const Color(
+                                    0xFF10B981,
+                                  ).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             item.isLearned ? '新学' : '复习',
                             style: theme.textTheme.labelSmall?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: item.isLearned ? theme.colorScheme.primary : const Color(0xFF10B981),
+                              color: item.isLearned
+                                  ? theme.colorScheme.primary
+                                  : const Color(0xFF10B981),
                             ),
                           ),
                         ),
@@ -226,9 +246,13 @@ class _StatisticsItemRow extends StatelessWidget {
                         if (item.level.isNotEmpty) ...[
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                              color: theme.colorScheme.surfaceContainerHighest
+                                  .withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -246,7 +270,9 @@ class _StatisticsItemRow extends StatelessWidget {
                     Text(
                       '${item.hiragana}${item.hiragana.isNotEmpty ? ' · ' : ''}${item.chinese}',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.8,
+                        ),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -259,7 +285,7 @@ class _StatisticsItemRow extends StatelessWidget {
         ),
         if (showDivider)
           Padding(
-            padding: const EdgeInsets.only(left: 80),
+            padding: const EdgeInsets.only(left: 64),
             child: Divider(
               height: 0.5,
               thickness: 0.5,
@@ -291,7 +317,9 @@ class _EmptyState extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 message,
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -325,16 +353,16 @@ class _StatItem {
         japanese: item.word.japanese,
         hiragana: item.word.hiragana,
         chinese: item.word.chinese,
-        level: item.word.level,
+        level: item.word.level.toUpperCase(),
         isLearned: isNew,
       );
     } else if (item is GrammarItem) {
       return _StatItem(
         id: item.grammar.id,
         japanese: item.grammar.grammar,
-        hiragana: '',
+        hiragana: item.grammar.usages.firstOrNull?.connection ?? '',
         chinese: item.grammar.usages.firstOrNull?.explanation ?? '',
-        level: item.grammar.grammarLevel,
+        level: item.grammar.grammarLevel.toUpperCase(),
         isLearned: isNew,
       );
     }

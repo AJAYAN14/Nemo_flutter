@@ -6,7 +6,7 @@ part of 'home_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$homeViewModelHash() => r'a1614202217e6833184d456eb2c3a17cc5031254';
+String _$homeViewModelHash() => r'64fb81cb8e225964dd28340d1654284d53285c28';
 
 /// See also [homeViewModel].
 @ProviderFor(homeViewModel)
@@ -23,6 +23,23 @@ final homeViewModelProvider = AutoDisposeFutureProvider<HomeViewModel>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef HomeViewModelRef = AutoDisposeFutureProviderRef<HomeViewModel>;
+String _$todayStatsHash() => r'0551a3392ab8d1de517f6cd929bdcffe3bbecf3b';
+
+/// See also [todayStats].
+@ProviderFor(todayStats)
+final todayStatsProvider = AutoDisposeStreamProvider<LearningStats>.internal(
+  todayStats,
+  name: r'todayStatsProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$todayStatsHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef TodayStatsRef = AutoDisposeStreamProviderRef<LearningStats>;
 String _$learningModeNotifierHash() =>
     r'e61d9a464b7aff7a0851c648b535343c89659f8c';
 

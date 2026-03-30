@@ -77,23 +77,17 @@ FutureOr<HomeViewModel> homeViewModel(Ref ref) async {
   final now = DateTime.fromMillisecondsSinceEpoch(DateTimeUtils.getCurrentCompensatedMillis());
   final mode = ref.watch(learningModeNotifierProvider);
   final selectedLevel = ref.watch(selectedLevelNotifierProvider);
-  
-  final learningDao = ref.watch(learningDaoProvider);
   final wordGoal = ref.watch(wordGoalProvider);
   final grammarGoal = ref.watch(grammarGoalProvider);
   final resetHour = ref.watch(resetHourProvider);
 
-  // Calculate learning day
-  final dayStartMillis = DateTimeUtils.getLearningDayStart(resetHour);
-  final dayEndMillis = DateTimeUtils.getLearningDayEnd(resetHour);
+  // Watch the statistics stream for real-time updates
+  final statsAsync = ref.watch(todayStatsProvider);
+  final stats = statsAsync.valueOrNull ?? LearningStats.initial;
 
-  final itemType = mode == LearningMode.words ? 'word' : 'grammar';
-  
-  // Fetch real stats
-  final learnedCount = await learningDao.getNewItemsCount(itemType, dayStartMillis, dayEndMillis);
-  final reviewedTotal = await learningDao.getReviewedItemsCount(itemType, dayStartMillis, dayEndMillis);
-  final dueCount = await learningDao.getDueItemsCount(itemType, now.millisecondsSinceEpoch);
-  
+  final learnedCount = mode == LearningMode.words ? stats.todayLearnedWords : stats.todayLearnedGrammars;
+  final reviewedTotal = mode == LearningMode.words ? stats.todayReviewedWords : stats.todayReviewedGrammars;
+  final dueCount = mode == LearningMode.words ? stats.dueWords : stats.dueGrammars;
   final goal = mode == LearningMode.words ? wordGoal : grammarGoal;
   
   // UI formatting
@@ -126,7 +120,12 @@ FutureOr<HomeViewModel> homeViewModel(Ref ref) async {
     accuracy: goal > 0 ? ((learnedCount / goal) * 100).toInt().clamp(0, 100) : 0, 
     progress: goal > 0 ? (learnedCount / goal).clamp(0.0, 1.0) : 0.0,
     levelLabel: selectedLevel,
-    // Restored original BentoColors: Primary (0xFFF97316) for words, GrammarPrimary (0xFF059669) for grammar
     highlightColor: mode == LearningMode.words ? const Color(0xFFF97316) : const Color(0xFF059669),
   );
+}
+
+@riverpod
+Stream<LearningStats> todayStats(Ref ref) {
+  final resetHour = ref.watch(resetHourProvider);
+  return ref.watch(statisticsRepositoryProvider).getLearningStats(resetHour);
 }

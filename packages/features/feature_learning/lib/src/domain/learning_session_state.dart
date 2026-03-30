@@ -1,5 +1,4 @@
-import 'learning_item.dart';
-import 'package:core_storage/core_storage.dart';
+import 'package:core_domain/core_domain.dart';
 
 sealed class LearningSessionState {
   const LearningSessionState();
@@ -55,5 +54,5 @@ class SessionSnapshot {
   final int currentIndex;
   final int completedCount;
   final int completedToday;
-  final LearningProgressData? previousProgress;
+  final StudyProgress? previousProgress;
 }

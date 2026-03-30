@@ -11,7 +11,7 @@ import '../learning/components/srs_action_area.dart';
 import '../learning/components/common/nemo_learn_header.dart';
 import '../learning/components/common/nemo_completion_view.dart';
 import '../domain/learning_session_state.dart';
-import '../domain/learning_item.dart';
+import 'package:core_domain/core_domain.dart';
 import '../learning/components/common/nemo_waiting_view.dart';
 import '../learning/typing_practice_dialog.dart';
 import 'package:core_storage/core_storage.dart';

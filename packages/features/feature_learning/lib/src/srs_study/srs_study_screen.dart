@@ -6,7 +6,7 @@ import 'package:core_ui/core_ui.dart';
 import 'package:core_prefs/core_prefs.dart';
 import 'package:core_storage/core_storage.dart';
 import 'package:feature_learning/src/srs_study/srs_study_providers.dart';
-import '../domain/learning_item.dart';
+import 'package:core_domain/core_domain.dart';
 import '../learning/components/cards/srs_learning_card.dart';
 import '../learning/components/cards/srs_grammar_card.dart';
 import '../learning/components/srs_action_area.dart';
@@ -148,7 +148,8 @@ class SrsStudyScreen extends HookConsumerWidget {
                     final isRevealed = session.currentIndex == index && isAnswerShown;
 
                     // use a stable key per item so AnimatedSwitcher can detect content replacement
-                    final contentKey = ValueKey(item is WordItem ? (item as WordItem).word.id : (item as GrammarItem).grammar.id);
+                    final String currentItemId = item is WordItem ? item.word.id : (item as GrammarItem).grammar.id;
+                    final contentKey = ValueKey(currentItemId);
 
                     Widget card;
                     if (item is WordItem) {
@@ -171,7 +172,8 @@ class SrsStudyScreen extends HookConsumerWidget {
                         },
                         playingAudioId: session.playingAudioId,
                       );
-                    } else if (item is GrammarItem) {
+                    }
+ else if (item is GrammarItem) {
                       card = SRSGrammarCard(
                         key: contentKey,
                         grammar: item.grammar,

@@ -7,7 +7,14 @@ void main() {
   group('SrsReview golden', () {
     testGoldens('srs_review basic', (tester) async {
       final builder = DeviceBuilder()
-        ..addScenario(name: 'default', widget: ProviderScope(child: SrsReviewScreen()));
+        ..addScenario(
+          name: 'default',
+          widget: ProviderScope(
+            child: SrsReviewScreen(
+              mode: 'word',
+            ),
+          ),
+        );
 
       await tester.pumpDeviceBuilder(builder);
       await screenMatchesGolden(tester, 'srs_review_default');

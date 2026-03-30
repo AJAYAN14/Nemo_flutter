@@ -267,6 +267,36 @@ class StatisticsRepositoryImpl implements StatisticsRepository {
     if (count <= 60) return 3;
     return 4;
   }
+
+  @override
+  Stream<List<LearningItem>> getAllLearnedWords() {
+    return _db.learningDao.watchAllProgressByType('word').asyncMap((progressList) async {
+      final items = <LearningItem>[];
+      for (var p in progressList) {
+        final idStr = p.id.replaceFirst('word_', '');
+        final word = await _db.wordDao.getWordWithExamples(idStr);
+        if (word != null) {
+          items.add(WordItem(word.toDomain(), progress: p.toDomain()));
+        }
+      }
+      return items;
+    });
+  }
+
+  @override
+  Stream<List<LearningItem>> getAllLearnedGrammars() {
+    return _db.learningDao.watchAllProgressByType('grammar').asyncMap((progressList) async {
+      final items = <LearningItem>[];
+      for (var p in progressList) {
+        final idStr = p.id.replaceFirst('grammar_', '');
+        final grammar = await _db.grammarDao.getGrammarWithDetails(idStr);
+        if (grammar != null) {
+          items.add(GrammarItem(grammar.toDomain(), progress: p.toDomain()));
+        }
+      }
+      return items;
+    });
+  }
 }
 
 @riverpod

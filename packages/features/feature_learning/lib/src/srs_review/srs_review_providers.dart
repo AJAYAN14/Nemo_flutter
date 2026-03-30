@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:core_prefs/core_prefs.dart';
 import 'package:core_domain/core_domain.dart';
-import '../domain/learning_item.dart';
+import 'package:core_storage/core_storage.dart';
 import '../domain/srs_scheduler.dart';
 import '../data/learning_repository.dart';
 import '../srs_study/srs_study_providers.dart';
@@ -207,8 +207,8 @@ class SrsReviewNotifier extends _$SrsReviewNotifier {
 
     if (result.isRequeue) {
       final reItem = item is WordItem 
-          ? item.copyWith(progress: result.updatedProgress)
-          : (item as GrammarItem).copyWith(progress: result.updatedProgress);
+          ? item.copyWith(progress: result.updatedProgress.toDomain())
+          : (item as GrammarItem).copyWith(progress: result.updatedProgress.toDomain());
       nextItems.add(reItem);
     }
 

@@ -1,9 +1,7 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_domain/core_domain.dart';
 import 'package:core_ui/core_ui.dart';
-import '../../../domain/card_badge.dart';
 
 class SRSLearningCard extends StatelessWidget {
   const SRSLearningCard({

@@ -4,7 +4,6 @@ import 'package:core_domain/core_domain.dart';
 import 'package:core_storage/core_storage.dart';
 import 'package:core_prefs/core_prefs.dart';
 import '../data/learning_repository.dart';
-import '../domain/learning_item.dart';
 
 part 'session_prep_providers.g.dart';
 

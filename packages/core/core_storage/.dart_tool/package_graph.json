@@ -13,6 +13,7 @@
         "path",
         "path_provider",
         "riverpod_annotation",
+        "rxdart",
         "sqlite3_flutter_libs"
       ],
       "devDependencies": [
@@ -123,6 +124,11 @@
         "freezed_annotation",
         "json_annotation"
       ]
+    },
+    {
+      "name": "rxdart",
+      "version": "0.27.7",
+      "dependencies": []
     },
     {
       "name": "riverpod_annotation",

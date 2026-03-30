@@ -4,7 +4,6 @@ import 'package:core_prefs/core_prefs.dart';
 import 'package:drift/drift.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../domain/learning_item.dart';
 import '../domain/srs_scheduler.dart';
 import '../domain/fsrs_parameter_optimizer.dart';
 
@@ -85,7 +84,7 @@ class LearningRepository {
           final progress = await _learningDao.getProgress('word_${wordEntry.id}');
           final wordWithEx = await _wordDao.getWordWithExamples(wordEntry.id);
           if (wordWithEx != null) {
-            newItems.add(WordItem(wordWithEx.toDomain(), progress: progress));
+            newItems.add(WordItem(wordWithEx.toDomain(), progress: progress?.toDomain()));
             added++;
           }
         }
@@ -102,7 +101,7 @@ class LearningRepository {
           final progress = await _learningDao.getProgress('grammar_${grammarEntry.id}');
           final grammarWithDetails = await _grammarDao.getGrammarWithDetails(grammarEntry.id);
           if (grammarWithDetails != null) {
-            newItems.add(GrammarItem(grammarWithDetails.toDomain(), progress: progress));
+            newItems.add(GrammarItem(grammarWithDetails.toDomain(), progress: progress?.toDomain()));
             added++;
           }
         }
@@ -134,13 +133,13 @@ class LearningRepository {
         final idStr = progress.id.replaceFirst('word_', '');
         final word = await _wordDao.getWordWithExamples(idStr);
         if (word != null) {
-          items.add(WordItem(word.toDomain(), progress: progress));
+          items.add(WordItem(word.toDomain(), progress: progress.toDomain()));
         }
       } else {
         final idStr = progress.id.replaceFirst('grammar_', '');
         final grammar = await _grammarDao.getGrammarWithDetails(idStr);
         if (grammar != null) {
-          items.add(GrammarItem(grammar.toDomain(), progress: progress));
+          items.add(GrammarItem(grammar.toDomain(), progress: progress.toDomain()));
         }
       }
     }
@@ -160,13 +159,13 @@ class LearningRepository {
         final idStr = progress.id.replaceFirst('word_', '');
         final word = await _wordDao.getWordWithExamples(idStr);
         if (word != null) {
-          items.add(WordItem(word.toDomain(), progress: progress));
+          items.add(WordItem(word.toDomain(), progress: progress.toDomain()));
         }
       } else {
         final idStr = progress.id.replaceFirst('grammar_', '');
         final grammar = await _grammarDao.getGrammarWithDetails(idStr);
         if (grammar != null) {
-          items.add(GrammarItem(grammar.toDomain(), progress: progress));
+          items.add(GrammarItem(grammar.toDomain(), progress: progress.toDomain()));
         }
       }
     }
@@ -184,13 +183,13 @@ class LearningRepository {
         final idStr = progress.id.replaceFirst('word_', '');
         final word = await _wordDao.getWordWithExamples(idStr);
         if (word != null) {
-          items.add(WordItem(word.toDomain(), progress: progress));
+          items.add(WordItem(word.toDomain(), progress: progress.toDomain()));
         }
       } else {
         final idStr = progress.id.replaceFirst('grammar_', '');
         final grammar = await _grammarDao.getGrammarWithDetails(idStr);
         if (grammar != null) {
-          items.add(GrammarItem(grammar.toDomain(), progress: progress));
+          items.add(GrammarItem(grammar.toDomain(), progress: progress.toDomain()));
         }
       }
     }
@@ -205,14 +204,14 @@ class LearningRepository {
         final word = await _wordDao.getWordWithExamples(idStr);
         final progress = await _learningDao.getProgress(id);
         if (word != null) {
-          items.add(WordItem(word.toDomain(), progress: progress));
+          items.add(WordItem(word.toDomain(), progress: progress?.toDomain()));
         }
       } else if (id.startsWith('grammar_')) {
         final idStr = id.replaceFirst('grammar_', '');
         final grammar = await _grammarDao.getGrammarWithDetails(idStr);
         final progress = await _learningDao.getProgress(id);
         if (grammar != null) {
-          items.add(GrammarItem(grammar.toDomain(), progress: progress));
+          items.add(GrammarItem(grammar.toDomain(), progress: progress?.toDomain()));
         }
       }
     }
@@ -284,12 +283,34 @@ class LearningRepository {
     );
   }
 
-  Future<void> undoUpdateProgress(String id, String itemType, LearningProgressData? oldData) async {
+  Future<void> undoUpdateProgress(String id, String itemType, StudyProgress? oldData) async {
     if (oldData == null) {
       // If there was no progress before, we might want to delete it or just skip
       return; 
     }
-    await _learningDao.updateProgress(oldData.toCompanion(true));
+    // Convert StudyProgress back to Companion using the dictionary-based toCompanion()
+    // or we can implement a more type-safe mapper in core_storage.
+    // For now, since toCompanion() returns a Map, we can't directly pass it to updateProgress.
+    // I'll update toCompanion() to return the actual Drift companion in core_storage.
+    // Wait, core_domain cannot depend on core_storage.
+    // So the conversion MUST happen here in the repository.
+    
+    final companion = LearningProgressCompanion(
+      id: Value(oldData.id),
+      itemType: Value(oldData.itemType),
+      repetitionCount: Value(oldData.repetitionCount),
+      interval: Value(oldData.interval),
+      difficulty: Value(oldData.easeFactor),
+      dueTime: Value(BigInt.from(oldData.dueTime)),
+      lastReviewed: Value(oldData.lastReviewed != null ? BigInt.from(oldData.lastReviewed!) : null),
+      firstLearned: Value(oldData.firstLearned != null ? BigInt.from(oldData.firstLearned!) : null),
+      step: Value(oldData.step),
+      isSuspended: Value(oldData.isSuspended),
+      lapses: Value(oldData.lapses),
+      isSkipped: Value(oldData.isSkipped),
+    );
+
+    await _learningDao.updateProgress(companion);
   }
 
   Future<void> suspend(String id, String itemType) async {
@@ -339,9 +360,27 @@ class LearningRepository {
     await _learningDao.setSuspended(fullId, false);
   }
 
-  Map<SrsRating, String> getIntervalPreviews(LearningProgressData? progress) {
+  Map<SrsRating, String> getIntervalPreviews(StudyProgress? progress) {
+    // Convert back to LearningProgressData for the scheduler which is still using Drift types
+    // or update the scheduler too. For now, let's keep consistency.
+    final data = progress == null ? null : LearningProgressData(
+      id: progress.id,
+      itemType: progress.itemType,
+      repetitionCount: progress.repetitionCount,
+      interval: progress.interval,
+      difficulty: progress.easeFactor,
+      stability: 0, // Placeholder
+      dueTime: BigInt.from(progress.dueTime),
+      lastReviewed: progress.lastReviewed != null ? BigInt.from(progress.lastReviewed!) : null,
+      firstLearned: progress.firstLearned != null ? BigInt.from(progress.firstLearned!) : null,
+      step: progress.step,
+      lapses: progress.lapses,
+      isSuspended: progress.isSuspended,
+      isSkipped: progress.isSkipped,
+    );
+
     return _scheduler.getIntervalPreviews(
-      currentProgress: progress,
+      currentProgress: data,
       learningSteps: _learningSteps,
       relearningSteps: _relearningSteps,
     );

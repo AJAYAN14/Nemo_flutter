@@ -1,36 +1,17 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:core_ui/core_ui.dart';
-import 'package:flutter/material.dart';
+import 'package:core_domain/core_domain.dart';
+import 'historical_statistics_provider.dart';
 
-class HistoricalStatisticsScreen extends StatelessWidget {
+class HistoricalStatisticsScreen extends ConsumerWidget {
   const HistoricalStatisticsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Mock data for words and grammar
-    final learnedWords = List.generate(
-      15,
-      (index) => _StatDisplayItem(
-        id: index,
-        japanese: '単語 $index',
-        hiragana: 'たんご',
-        chinese: '单词 $index',
-        level: 'N2',
-        isWord: true,
-      ),
-    );
-
-    final learnedGrammars = List.generate(
-      8,
-      (index) => _StatDisplayItem(
-        id: index,
-        japanese: '文法 $index',
-        hiragana: 'ぶんぽう',
-        chinese: '语法 $index',
-        level: 'N3',
-        isWord: false,
-      ),
-    );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final learnedWordsAsync = ref.watch(learnedWordsProvider);
+    final learnedGrammarsAsync = ref.watch(learnedGrammarsProvider);
 
     return Scaffold(
       backgroundColor: NemoColors.bgBase,
@@ -44,34 +25,42 @@ class HistoricalStatisticsScreen extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-        children: [
-          // 1. 累计学习汇总
-          const _SectionTitle('累计学习'),
-          _HistoricalSummaryCard(
-            totalWords: learnedWords.length,
-            totalGrammars: learnedGrammars.length,
+      body: learnedWordsAsync.when(
+        data: (learnedWords) => learnedGrammarsAsync.when(
+          data: (learnedGrammars) => ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+            children: [
+              // 1. 累计学习汇总
+              const _SectionTitle('累计学习'),
+              _HistoricalSummaryCard(
+                totalWords: learnedWords.length,
+                totalGrammars: learnedGrammars.length,
+              ),
+
+              const SizedBox(height: 24),
+
+              // 2. 已学单词列表
+              _SectionTitle('已学单词 (${learnedWords.length})'),
+              _StatisticsListCard(
+                items: learnedWords,
+                emptyMessage: '暂无单词学习记录',
+              ),
+
+              const SizedBox(height: 24),
+
+              // 3. 已学语法列表
+              _SectionTitle('已学语法 (${learnedGrammars.length})'),
+              _StatisticsListCard(
+                items: learnedGrammars,
+                emptyMessage: '暂无语法学习记录',
+              ),
+            ],
           ),
-
-          const SizedBox(height: 24),
-
-          // 2. 已学单词列表
-          _SectionTitle('已学单词 (${learnedWords.length})'),
-          _StatisticsListCard(
-            items: learnedWords,
-            emptyMessage: '暂无单词学习记录',
-          ),
-
-          const SizedBox(height: 24),
-
-          // 3. 已学语法列表
-          _SectionTitle('已学语法 (${learnedGrammars.length})'),
-          _StatisticsListCard(
-            items: learnedGrammars,
-            emptyMessage: '暂无语法学习记录',
-          ),
-        ],
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(child: Text('加载失败: $err')),
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('加载失败: $err')),
       ),
     );
   }
@@ -181,7 +170,7 @@ class _StatisticsListCard extends StatefulWidget {
     required this.emptyMessage,
   });
 
-  final List<_StatDisplayItem> items;
+  final List<LearningItem> items;
   final String emptyMessage;
 
   @override
@@ -296,13 +285,32 @@ class _StatisticsItemRow extends StatelessWidget {
     required this.showDivider,
   });
 
-  final _StatDisplayItem item;
+  final LearningItem item;
   final Color avatarColor;
   final bool showDivider;
 
   @override
   Widget build(BuildContext context) {
-    final avatarChar = item.japanese.isNotEmpty ? item.japanese[0] : '?';
+    late final String japanese;
+    late final String hiragana;
+    late final String chinese;
+    late final String level;
+
+    if (item is WordItem) {
+      final word = (item as WordItem).word;
+      japanese = word.japanese;
+      hiragana = word.hiragana;
+      chinese = word.chinese;
+      level = word.level;
+    } else {
+      final grammar = (item as GrammarItem).grammar;
+      japanese = grammar.grammar;
+      hiragana = ''; // No hiragana for grammar in this view
+      chinese = grammar.usages.firstOrNull?.explanation ?? '';
+      level = grammar.grammarLevel;
+    }
+
+    final avatarChar = japanese.isNotEmpty ? japanese[0] : '?';
 
     return Column(
       children: [
@@ -336,13 +344,13 @@ class _StatisticsItemRow extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          item.japanese,
+                          japanese,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
-                        if (item.level.isNotEmpty) ...[
+                        if (level.isNotEmpty) ...[
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -351,7 +359,7 @@ class _StatisticsItemRow extends StatelessWidget {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              item.level,
+                              level,
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w900,
@@ -364,7 +372,7 @@ class _StatisticsItemRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${item.hiragana} · ${item.chinese}',
+                      '${hiragana.isNotEmpty ? "$hiragana · " : ""}$chinese',
                       style: TextStyle(
                         fontSize: 13,
                         color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
@@ -393,20 +401,3 @@ class _StatisticsItemRow extends StatelessWidget {
   }
 }
 
-class _StatDisplayItem {
-  final int id;
-  final String japanese;
-  final String hiragana;
-  final String chinese;
-  final String level;
-  final bool isWord;
-
-  _StatDisplayItem({
-    required this.id,
-    required this.japanese,
-    required this.hiragana,
-    required this.chinese,
-    required this.level,
-    required this.isWord,
-  });
-}

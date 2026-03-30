@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:feature_learning/feature_learning.dart';
+import 'package:core_domain/core_domain.dart';
 
 part 'leech_management_providers.g.dart';
 
