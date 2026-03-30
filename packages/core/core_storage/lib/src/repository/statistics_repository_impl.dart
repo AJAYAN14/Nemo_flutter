@@ -148,6 +148,7 @@ class StatisticsRepositoryImpl implements StatisticsRepository {
       _db.learningDao.watchAllProgress(),
       _db.studyRecordDao.watchAllRecords(),
       (dueW, dueG, newW, newG, revW, revG, recordToday, allProg, allRecords) {
+        // 1:1 Parity: Mastered items have stability > 10 (FSRS logic)
         final masteredWords = allProg
             .where((e) => e.itemType == 'word' && e.stability > 10)
             .length;
@@ -155,6 +156,7 @@ class StatisticsRepositoryImpl implements StatisticsRepository {
             .where((e) => e.itemType == 'grammar' && e.stability > 10)
             .length;
 
+        // Calculate Streak and Week Study Days
         final dateSet = allRecords.map((e) => e.date).toSet();
         final streak = _calculateCurrentStreak(dateSet, today);
         final weekStudyDays = _calculateWeekStudyDays(dateSet, today);
@@ -173,7 +175,22 @@ class StatisticsRepositoryImpl implements StatisticsRepository {
           weekStudyDays: weekStudyDays,
         );
       },
-    );
+    ).asyncMap((stats) async {
+      // Fetch total counts (level-based for words to match Kotlin)
+      final levels = ['N1', 'N2', 'N3', 'N4', 'N5'];
+      int totalWordsCount = 0;
+      for (var level in levels) {
+        final wordsInLevel = await _db.wordDao.getWordsByLevel(level);
+        totalWordsCount += wordsInLevel.length;
+      }
+      
+      final allGrammars = await _db.grammarDao.getAllGrammars();
+      
+      return stats.copyWith(
+        totalWords: totalWordsCount,
+        totalGrammars: allGrammars.length,
+      );
+    });
   }
 
   int _calculateCurrentStreak(Set<int> dates, int today) {

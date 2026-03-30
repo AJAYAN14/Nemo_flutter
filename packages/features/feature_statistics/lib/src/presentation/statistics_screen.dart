@@ -1,36 +1,29 @@
 import 'package:core_designsystem/core_designsystem.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:core_ui/core_ui.dart';
 import '../routes/statistics_routes.dart';
 import 'components/learning_summary_carousel.dart';
+import 'statistics_providers.dart';
 
-class StatisticsScreen extends StatelessWidget {
+class StatisticsScreen extends ConsumerWidget {
   const StatisticsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final mediaQuery = MediaQuery.of(context);
     final topPadding = mediaQuery.padding.top + 8.0;
     final bottomPadding = mediaQuery.padding.bottom + 104.0;
 
-    // Mock data for the dashboard
-    const progress = 0.65;
-    const masteredCount = 1204;
-    const totalWords = 3500;
-    const todayLearned = 32;
-    const dailyGoal = 50;
-    const unmasteredCount = 2296;
-    const studyStreak = 15;
-    const dueCount = 84;
-    const totalStudyDays = 142;
-    const weekStudyDays = 6;
+    final statsAsync = ref.watch(dashboardStatsProvider);
 
     return Scaffold(
       backgroundColor: NemoColors.bgBase,
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(16, topPadding, 16, bottomPadding),
-        children: [
+      body: statsAsync.when(
+        data: (stats) => ListView(
+          padding: EdgeInsets.fromLTRB(16, topPadding, 16, bottomPadding),
+          children: [
             // Immersive Header
             const Padding(
               padding: EdgeInsets.only(bottom: 20, top: 8),
@@ -45,17 +38,19 @@ class StatisticsScreen extends StatelessWidget {
             ),
 
             // Learning Summary Carousel (Bento Grid)
-            const LearningSummaryCarousel(
-              progress: progress,
-              masteredCount: masteredCount,
-              totalWords: totalWords,
-              todayLearned: todayLearned,
-              dailyGoal: dailyGoal,
-              unmasteredCount: unmasteredCount,
-              studyStreak: studyStreak,
-              dueCount: dueCount,
-              totalStudyDays: totalStudyDays,
-              weekStudyDays: weekStudyDays,
+            LearningSummaryCarousel(
+              progress: stats.totalWords + stats.totalGrammars > 0
+                  ? stats.totalMastered / (stats.totalWords + stats.totalGrammars)
+                  : 0.0,
+              masteredCount: stats.totalMastered,
+              totalWords: stats.totalWords + stats.totalGrammars,
+              todayLearned: stats.todayTotalLearned,
+              dailyGoal: stats.wordDailyGoal + stats.grammarDailyGoal,
+              unmasteredCount: (stats.totalWords + stats.totalGrammars) - stats.totalMastered,
+              studyStreak: stats.dailyStreak,
+              dueCount: stats.totalDue,
+              totalStudyDays: stats.totalStudyDays,
+              weekStudyDays: stats.weekStudyDays,
             ),
 
             const SizedBox(height: 20),
@@ -169,6 +164,9 @@ class StatisticsScreen extends StatelessWidget {
             const SizedBox(height: 32),
           ],
         ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
+      ),
     );
   }
 }

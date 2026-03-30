@@ -87,6 +87,7 @@ class _LearningSummaryCarouselState extends State<LearningSummaryCarousel> {
         bottomRightValue: todayProgress.toString(),
         bottomRightUnit: '%',
         visualType: BentoVisualType.progress,
+        progress: todayProgress,
       ),
       BentoStatsGrid(
         title: '学习轨迹',
@@ -172,6 +173,7 @@ class BentoStatsGrid extends StatelessWidget {
     required this.bottomRightValue,
     required this.bottomRightUnit,
     required this.visualType,
+    this.progress = 0,
   });
 
   final String title;
@@ -187,6 +189,7 @@ class BentoStatsGrid extends StatelessWidget {
   final String bottomRightValue;
   final String bottomRightUnit;
   final BentoVisualType visualType;
+  final int progress;
 
   @override
   Widget build(BuildContext context) {
@@ -201,6 +204,7 @@ class BentoStatsGrid extends StatelessWidget {
             accentColor: accentColor,
             icon: icon,
             visualType: visualType,
+            progress: progress,
           ),
         ),
         const SizedBox(width: 10),
@@ -239,6 +243,7 @@ class _BentoMainTile extends StatelessWidget {
     required this.accentColor,
     required this.icon,
     required this.visualType,
+    this.progress = 0,
   });
 
   final String label;
@@ -247,6 +252,7 @@ class _BentoMainTile extends StatelessWidget {
   final Color accentColor;
   final IconData icon;
   final BentoVisualType visualType;
+  final int progress;
 
   @override
   Widget build(BuildContext context) {
@@ -275,7 +281,8 @@ class _BentoMainTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                _BentoVisualHint(visualType),
+                _BentoVisualHint(visualType, progress: progress),
+                const SizedBox(height: 8),
                 Text(
                   label.toUpperCase(),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -383,8 +390,9 @@ class _BentoSubTile extends StatelessWidget {
 }
 
 class _BentoVisualHint extends StatelessWidget {
-  const _BentoVisualHint(this.type);
+  const _BentoVisualHint(this.type, {this.progress = 0});
   final BentoVisualType type;
+  final int progress; // Percentage 0-100
 
   @override
   Widget build(BuildContext context) {
@@ -401,7 +409,7 @@ class _BentoVisualHint extends StatelessWidget {
               ),
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
-                widthFactor: 0.7,
+                widthFactor: (progress / 100).clamp(0.0, 1.0),
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
